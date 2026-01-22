@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
@@ -51,16 +51,46 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         _isLoading = true;
       });
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        final result = await AuthService.login(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Navigate to home screen on successful login
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        if (result['success']) {
+          // Login successful
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+        } else {
+          // Login failed - show error message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result['message']),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        // Unexpected error
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error inesperado: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -87,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 opacity: _fadeAnimation,
                 child: Card(
                   elevation: 20,
-                  shadowColor: Colors.black.withOpacity(0.3),
+                  shadowColor: Colors.black.withAlpha(77),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
