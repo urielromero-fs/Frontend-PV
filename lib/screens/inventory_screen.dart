@@ -24,14 +24,15 @@ class InventoryScreen extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              _showAddProductModal(context);
-            },
-          ),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showAddProductModal(context);
+        },
+        backgroundColor: const Color(0xFF05e265),
+        foregroundColor: Colors.white,
+        elevation: 8,
+        child: const Icon(Icons.add),
       ),
       body: Container(
         decoration: BoxDecoration(
