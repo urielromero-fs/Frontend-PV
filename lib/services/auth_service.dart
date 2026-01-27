@@ -6,6 +6,7 @@ class AuthService {
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _userEmailKey = 'user_email';
+  static const String _userNameKey = 'user_name';
   static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
 
   // Login with real API call
@@ -26,16 +27,30 @@ class AuthService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         
+        // Extract tokens from headers
+        final accessToken = response.headers['accesstoken'] ?? response.headers['authorization']?.replaceFirst('Bearer ', '') ?? '';
+        final refreshToken = response.headers['refreshtoken'] ?? '';
+        
+        // Extract user data from response body
+        final userData = responseData['user'] ?? {};
+        final userName = userData['userName'] ?? '';
+        final userEmail = userData['email'] ?? email;
+        
         // Store tokens and user data
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_accessTokenKey, responseData['accessToken'] ?? responseData['token'] ?? '');
-        await prefs.setString(_refreshTokenKey, responseData['refreshToken'] ?? '');
-        await prefs.setString(_userEmailKey, email);
+        await prefs.setString(_accessTokenKey, accessToken);
+        await prefs.setString(_refreshTokenKey, refreshToken);
+        await prefs.setString(_userNameKey, userName);
+        await prefs.setString(_userEmailKey, userEmail);
         
         return {
           'success': true,
           'message': 'Login exitoso',
-          'data': responseData,
+          'data': {
+            'user': userData,
+            'accessToken': accessToken,
+            'refreshToken': refreshToken,
+          },
         };
       } else if (response.statusCode == 401) {
         return {
@@ -62,6 +77,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_accessTokenKey);
     await prefs.remove(_refreshTokenKey);
+    await prefs.remove(_userNameKey);
     await prefs.remove(_userEmailKey);
   }
 
@@ -76,6 +92,27 @@ class AuthService {
   static Future<String?> getCurrentUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_userEmailKey);
+  }
+
+  // Get current user name
+  static Future<String?> getCurrentUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userNameKey);
+  }
+
+  // Get user data object
+  static Future<Map<String, String>?> getCurrentUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString(_userEmailKey);
+    final name = prefs.getString(_userNameKey);
+    
+    if (email != null && name != null) {
+      return {
+        'email': email,
+        'userName': name,
+      };
+    }
+    return null;
   }
 
   // Get access token
