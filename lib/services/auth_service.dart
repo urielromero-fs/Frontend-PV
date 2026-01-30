@@ -24,7 +24,7 @@ class AuthService {
         }),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         
         // Extract tokens from headers

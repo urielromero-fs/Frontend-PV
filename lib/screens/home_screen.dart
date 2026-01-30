@@ -4,9 +4,33 @@ import 'inventory_screen.dart';
 import 'payments_screen.dart';
 import 'reports_screen.dart';
 import 'users_screen.dart';
+import '../services/auth_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String? _userName;
+  String? _userEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final userName = await AuthService.getCurrentUserName();
+    final userEmail = await AuthService.getCurrentUserEmail();
+    setState(() {
+      _userName = userName;
+      _userEmail = userEmail;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,32 +57,36 @@ class HomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [const Color(0xFF05e265), const Color(0xFF04c457)],
+                      colors: const [Color(0xFF05e265), Color(0xFF04c457)],
                     ),
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.store,
-                          color: Color(0xFF05e265),
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'PV26',
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.store,
+                              color: Color(0xFF05e265),
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'PV26',
+                            style: GoogleFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -158,14 +186,14 @@ class HomeScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Usuario',
+                              _userName ?? 'Usuario',
                               style: GoogleFonts.poppins(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             Text(
-                              'admin@pv26.com',
+                              _userEmail??'admin@pv26.com',
                               style: GoogleFonts.poppins(
                                 color: Colors.white70,
                                 fontSize: 12,

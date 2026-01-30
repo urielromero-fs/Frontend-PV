@@ -379,6 +379,7 @@ void _showAddProductModal(BuildContext context) {
   final mayoreoController = TextEditingController();
   final barcodeController = TextEditingController();
   bool isBulk = false;
+  bool hasMayoreo = false;
 
   showDialog(
     context: context,
@@ -565,24 +566,51 @@ void _showAddProductModal(BuildContext context) {
                   ),
                   const SizedBox(height: 16),
 
-                  // Mayoreo Price
-                  TextField(
-                    controller: mayoreoController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: 'Precio Mayoreo',
-                      labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                        borderRadius: BorderRadius.circular(8),
+                  // Mayoreo Option
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: hasMayoreo,
+                        onChanged: (value) {
+                          setState(() {
+                            hasMayoreo = value ?? false;
+                          });
+                        },
+                        activeColor: const Color(0xFF05e265),
+                        checkColor: Colors.white,
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Color(0xFF05e265)),
-                        borderRadius: BorderRadius.circular(8),
+                      Text(
+                        '¿Tiene precio mayoreo?',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    style: GoogleFonts.poppins(color: Colors.white),
+                    ],
                   ),
+                  const SizedBox(height: 16),
+
+                  // Mayoreo Price (conditional)
+                  if (hasMayoreo) ...[
+                    TextField(
+                      controller: mayoreoController,
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Precio Mayoreo',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Color(0xFF05e265)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      style: GoogleFonts.poppins(color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ],
               ),
             ),
