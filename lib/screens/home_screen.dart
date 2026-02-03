@@ -204,8 +204,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.logout, color: Colors.white70),
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/login');
+                        onPressed: () async {
+                          final result = await AuthService.logout();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result['message'] ?? 'Sesión cerrada',
+                                  style: GoogleFonts.poppins(),
+                                ),
+                                backgroundColor: result['success'] == true 
+                                    ? const Color(0xFF05e265) 
+                                    : Colors.red,
+                              ),
+                            );
+                            Navigator.pushReplacementNamed(context, '/login');
+                          }
                         },
                       ),
                     ],

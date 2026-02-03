@@ -9,6 +9,106 @@ class AuthService {
   static const String _userNameKey = 'user_name';
   static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
 
+  // Forgot password with real API call
+  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/forgot-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Instrucciones enviadas a tu correo',
+          'data': responseData,
+        };
+      } else if (response.statusCode == 404) {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Correo no encontrado',
+        };
+      } else if (response.statusCode == 400) {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Correo inválido',
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+  }
+
+  // Register with real API call
+  static Future<Map<String, dynamic>> register(String name, String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/register'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        
+        return {
+          'success': true,
+          'message': 'Cuenta creada exitosamente',
+          'data': responseData,
+        };
+      } else if (response.statusCode == 400) {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Datos inválidos',
+        };
+      } else if (response.statusCode == 409) {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'El email ya está registrado',
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+  }
+
   // Login with real API call
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
@@ -72,13 +172,70 @@ class AuthService {
     }
   }
 
-  // Logout
-  static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_accessTokenKey);
-    await prefs.remove(_refreshTokenKey);
-    await prefs.remove(_userNameKey);
-    await prefs.remove(_userEmailKey);
+  // Logout with real API call
+  static Future<Map<String, dynamic>> logout() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final refreshToken = prefs.getString(_refreshTokenKey);
+      
+      if (refreshToken != null) {
+        // Make API call to logout
+        final response = await http.post(
+          Uri.parse('$_baseUrl/auth/logout'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode({
+            'refreshToken': refreshToken,
+          }),
+        );
+
+        // Clear local storage regardless of API response
+        await prefs.remove(_accessTokenKey);
+        await prefs.remove(_refreshTokenKey);
+        await prefs.remove(_userNameKey);
+        await prefs.remove(_userEmailKey);
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return {
+            'success': true,
+            'message': 'Sesión cerrada exitosamente',
+          };
+        } else {
+          // Even if API call fails, local logout is successful
+          return {
+            'success': true,
+            'message': 'Sesión cerrada localmente',
+          };
+        }
+      } else {
+        // No refresh token, just clear local storage
+        await prefs.remove(_accessTokenKey);
+        await prefs.remove(_refreshTokenKey);
+        await prefs.remove(_userNameKey);
+        await prefs.remove(_userEmailKey);
+        
+        return {
+          'success': true,
+          'message': 'Sesión cerrada localmente',
+        };
+      }
+    } catch (e) {
+      // Even if API call fails, try to clear local storage
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_accessTokenKey);
+        await prefs.remove(_refreshTokenKey);
+        await prefs.remove(_userNameKey);
+        await prefs.remove(_userEmailKey);
+      } catch (_) {}
+      
+      return {
+        'success': true,
+        'message': 'Sesión cerrada localmente',
+      };
+    }
   }
 
   // Check if user is logged in

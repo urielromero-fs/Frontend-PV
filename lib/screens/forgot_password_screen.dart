@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -25,24 +26,46 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         _isLoading = true;
       });
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      // Make real API call
+      final result = await AuthService.forgotPassword(
+        _emailController.text.trim(),
+      );
 
       setState(() {
         _isLoading = false;
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Se ha enviado un correo de recuperación a ${_emailController.text}',
-              style: GoogleFonts.poppins(),
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result['message'] ?? 'Instrucciones enviadas a tu correo',
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: const Color(0xFF05e265),
+              duration: const Duration(seconds: 4),
             ),
-            backgroundColor: const Color(0xFF05e265),
-          ),
-        );
-        Navigator.pop(context);
+          );
+          
+          // Navigate back to login after successful request
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result['message'] ?? 'Error al enviar instrucciones',
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
       }
     }
   }
