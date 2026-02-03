@@ -13,7 +13,7 @@ class AuthService {
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/auth/forgot-password'),
+        Uri.parse('$_baseUrl/auth/reset-password'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
