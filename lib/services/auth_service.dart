@@ -74,6 +74,9 @@ class AuthService {
         }),
       );
 
+
+
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         
@@ -82,12 +85,15 @@ class AuthService {
           'message': 'Cuenta creada exitosamente',
           'data': responseData,
         };
+
       } else if (response.statusCode == 400) {
+
         final errorData = jsonDecode(response.body);
         return {
           'success': false,
           'message': errorData['message'] ?? 'Datos inválidos',
         };
+
       } else if (response.statusCode == 409) {
         final errorData = jsonDecode(response.body);
         return {
