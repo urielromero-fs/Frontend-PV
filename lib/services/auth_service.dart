@@ -98,7 +98,6 @@ class AuthService {
         
         return {
           'success': true,
-<<<<<<< HEAD
           'message': 'Login exitoso',
           'data': {
             'user': userData,
@@ -107,7 +106,6 @@ class AuthService {
           },
         };
       } else if (response.statusCode == 401) {
-=======
           'message': 'Cuenta creada exitosamente',
           'data': responseData,
         };
@@ -122,7 +120,6 @@ class AuthService {
 
       } else if (response.statusCode == 409) {
         final errorData = jsonDecode(response.body);
->>>>>>> 1adf7c5c5dfc893ee49e1e10b4eacedbbfb95112
         return {
           'success': false,
           'message': 'Credenciales incorrectas',
