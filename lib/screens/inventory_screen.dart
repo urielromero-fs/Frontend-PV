@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/inventory_service.dart';
 
 class InventoryScreen extends StatelessWidget {
   const InventoryScreen({super.key});
@@ -371,21 +372,105 @@ class _ProductRow extends StatelessWidget {
 }
 
 void _showAddProductModal(BuildContext context) {
-  final nameController = TextEditingController();
-  final purchasePriceController = TextEditingController();
-  final salePriceController = TextEditingController();
-  final weightController = TextEditingController();
-  final unitsController = TextEditingController();
-  final mayoreoController = TextEditingController();
-  final barcodeController = TextEditingController();
-  bool isBulk = false;
-  bool hasMayoreo = false;
-
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (context, setState) {
+          final nameController = TextEditingController();
+          final purchasePriceController = TextEditingController();
+          final salePriceController = TextEditingController();
+          final weightController = TextEditingController();
+          final unitsController = TextEditingController();
+          final mayoreoController = TextEditingController();
+          final barcodeController = TextEditingController();
+          bool isBulk = false;
+          bool hasMayoreo = false;
+          bool isLoading = false;
+
+          Future<void> saveProduct() async {
+            // Get form values from the modal
+            final name = nameController.text.trim();
+            final barcode = barcodeController.text.trim();
+            final isBulkValue = isBulk;
+            final units = int.tryParse(unitsController.text) ?? 0;
+            final buyingPrice = double.tryParse(purchasePriceController.text) ?? 0.0;
+            final sellingPrice = double.tryParse(salePriceController.text) ?? 0.0;
+            final bulkPrice = double.tryParse(weightController.text) ?? 0.0;
+            final hasWholesalePrice = hasMayoreo;
+            final wholesalePrice = double.tryParse(mayoreoController.text) ?? 0.0;
+
+            // Validate required fields
+            if (name.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Por favor ingresa el nombre del producto',
+                    style: GoogleFonts.poppins(),
+                  ),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+
+            // Set loading state
+            setState(() {
+              isLoading = true;
+            });
+
+            // Make API call
+            final result = await InventoryService.createProduct(
+              name: name,
+              barcode: barcode.isEmpty ? 'N/A' : barcode,
+              isBulk: isBulkValue,
+              units: units,
+              buyingPrice: buyingPrice,
+              sellingPrice: sellingPrice,
+              bulkPrice: bulkPrice,
+              hasWholesalePrice: hasWholesalePrice,
+              wholesalePrice: wholesalePrice,
+            );
+
+            // Set loading to false
+            setState(() {
+              isLoading = false;
+            });
+
+            // Show result
+            if (context.mounted) {
+              if (result['success'] == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      result['message'] ?? 'Producto creado exitosamente',
+                      style: GoogleFonts.poppins(),
+                    ),
+                    backgroundColor: const Color(0xFF05e265),
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+                
+                // Close dialog after success
+                Future.delayed(const Duration(seconds: 2), () {
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      result['message'] ?? 'Error al crear producto',
+                      style: GoogleFonts.poppins(),
+                    ),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
+            }
+          }
           return AlertDialog(
             backgroundColor: const Color(0xFF1a1a1a),
             title: Text(
@@ -461,15 +546,17 @@ void _showAddProductModal(BuildContext context) {
                   // Bulk Option
                   Row(
                     children: [
-                      Checkbox(
+                      Switch(
                         value: isBulk,
                         onChanged: (value) {
                           setState(() {
-                            isBulk = value ?? false;
+                            isBulk = value;
                           });
                         },
-                        activeColor: const Color(0xFF05e265),
-                        checkColor: Colors.white,
+                        activeThumbColor: const Color(0xFF05e265),
+                        activeTrackColor: const Color(0xFF05e265).withAlpha(77),
+                        inactiveThumbColor: Colors.grey.shade400,
+                        inactiveTrackColor: Colors.grey.shade700,
                       ),
                       Text(
                         '¿Es a granel?',
@@ -569,15 +656,17 @@ void _showAddProductModal(BuildContext context) {
                   // Mayoreo Option
                   Row(
                     children: [
-                      Checkbox(
+                      Switch(
                         value: hasMayoreo,
                         onChanged: (value) {
                           setState(() {
-                            hasMayoreo = value ?? false;
+                            hasMayoreo = value;
                           });
                         },
-                        activeColor: const Color(0xFF05e265),
-                        checkColor: Colors.white,
+                        activeThumbColor: const Color(0xFF05e265),
+                        activeTrackColor: const Color(0xFF05e265).withAlpha(77),
+                        inactiveThumbColor: Colors.grey.shade400,
+                        inactiveTrackColor: Colors.grey.shade700,
                       ),
                       Text(
                         '¿Tiene precio mayoreo?',
@@ -627,20 +716,26 @@ void _showAddProductModal(BuildContext context) {
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
-                  // TODO: Save product
-                  Navigator.of(context).pop();
-                },
+                onPressed: isLoading ? null : saveProduct,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF05e265),
                   foregroundColor: Colors.white,
                 ),
-                child: Text(
-                  'Guardar',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        'Guardar',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ],
           );

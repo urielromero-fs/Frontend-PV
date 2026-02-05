@@ -9,55 +9,6 @@ class AuthService {
   static const String _userNameKey = 'user_name';
   static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
 
-  // Forgot password with real API call
-  static Future<Map<String, dynamic>> forgotPassword(String email) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/reset-password'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'email': email,
-        }),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        
-        return {
-          'success': true,
-          'message': responseData['message'] ?? 'Instrucciones enviadas a tu correo',
-          'data': responseData,
-        };
-      } else if (response.statusCode == 404) {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Correo no encontrado',
-        };
-      } else if (response.statusCode == 400) {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Correo inválido',
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Error en el servidor',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error de conexión: ${e.toString()}',
-      };
-    }
-  }
-
   // Register with real API call
   static Future<Map<String, dynamic>> register(String name, String email, String password) async {
     try {
@@ -126,10 +77,9 @@ class AuthService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        
         // Extract tokens from headers
-        final accessToken = response.headers['accesstoken'] ?? response.headers['authorization']?.replaceFirst('Bearer ', '') ?? '';
-        final refreshToken = response.headers['refreshtoken'] ?? '';
+        final accessToken = response.headers['x-access-token'] ?? response.headers['X-Access-Token'] ?? response.headers['authorization']?.replaceFirst('Bearer ', '') ?? '';
+        final refreshToken = response.headers['x-refresh-token'] ?? response.headers['X-Refresh-Token'] ?? '';
         
         // Extract user data from response body
         final userData = responseData['user'] ?? {};
@@ -156,6 +106,55 @@ class AuthService {
         return {
           'success': false,
           'message': 'Credenciales incorrectas',
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+  }
+
+  // Forgot password with real API call
+  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/forgot-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Instrucciones enviadas a tu correo',
+          'data': responseData,
+        };
+      } else if (response.statusCode == 404) {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Correo no encontrado',
+        };
+      } else if (response.statusCode == 400) {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Correo inválido',
         };
       } else {
         final errorData = jsonDecode(response.body);
