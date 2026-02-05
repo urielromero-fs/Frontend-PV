@@ -34,12 +34,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _isLoading = true;
       });
 
+
+
       // Make real API call
       final result = await AuthService.register(
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
       );
+
+
 
       setState(() {
         _isLoading = false;
@@ -247,8 +251,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               if (value == null || value.isEmpty) {
                                 return 'Por favor ingresa tu contraseña';
                               }
-                              if (value.length < 6) {
-                                return 'La contraseña debe tener al menos 6 caracteres';
+                              if (value.length < 8) {
+                                return 'La contraseña debe tener al menos 8 caracteres';
                               }
                               return null;
                             },
