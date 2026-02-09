@@ -106,23 +106,22 @@ class AuthService {
           },
         };
       } else if (response.statusCode == 401) {
-          'message': 'Cuenta creada exitosamente',
-          'data': responseData,
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Credenciales incorrectas',
         };
-
       } else if (response.statusCode == 400) {
-
         final errorData = jsonDecode(response.body);
         return {
           'success': false,
           'message': errorData['message'] ?? 'Datos inválidos',
         };
-
       } else if (response.statusCode == 409) {
         final errorData = jsonDecode(response.body);
         return {
           'success': false,
-          'message': 'Credenciales incorrectas',
+          'message': errorData['message'] ?? 'El email ya está registrado',
         };
       } else {
         final errorData = jsonDecode(response.body);
