@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	key>NSCameraUsageDescription</key>
+            <string>Usamos la cámara para escanear códigos de barras</string>
+
+
+
 </dict>
 </plist>

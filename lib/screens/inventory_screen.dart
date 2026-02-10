@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/inventory_service.dart';
+import 'barcode_scanner.dart';
 
 class InventoryScreen extends StatelessWidget {
   const InventoryScreen({super.key});
@@ -534,7 +535,7 @@ void _showAddProductModal(BuildContext context) {
                         child: IconButton(
                           icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
                           onPressed: () {
-                            _scanBarcode(context);
+                             _scanBarcode(context, barcodeController); // <-- pasamos el controlador
                           },
                           tooltip: 'Escanear Código de Barras',
                         ),
@@ -745,7 +746,23 @@ void _showAddProductModal(BuildContext context) {
   );
 }
 
-void _scanBarcode(BuildContext context) {
+
+Future<void> _scanBarcode(BuildContext context, TextEditingController barcodeController) async {
+  // Abrimos la página de scanner
+  final scannedCode = await Navigator.push<String>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => BarcodeScannerPage(), // el widget que creamos antes
+    ),
+  );
+
+  if (scannedCode != null && scannedCode.isNotEmpty) {
+    // Colocamos el código escaneado en el TextField
+    barcodeController.text = scannedCode;
+  }
+}
+
+void _scanBarcodeWithTwoOptions(BuildContext context) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
