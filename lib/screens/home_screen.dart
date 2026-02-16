@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'inventory_screen.dart';
 import 'payments_screen.dart';
 import 'reports_screen.dart';
@@ -14,8 +15,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? _userName;
-  String? _userEmail;
+  String _userName = '';
+  String _userEmail = '';
+  bool _isSidebarCollapsed = false;
 
   @override
   void initState() {
@@ -24,22 +26,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadUserData() async {
-    final userName = await AuthService.getCurrentUserName();
-    final userEmail = await AuthService.getCurrentUserEmail();
+    final prefs = await SharedPreferences.getInstance();
+    final userName = prefs.getString('user_name') ?? '';
+    final userEmail = prefs.getString('user_email') ?? '';
+    
     setState(() {
       _userName = userName;
       _userEmail = userEmail;
     });
   }
 
+  bool _isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < 768;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMobile = _isMobile(context);
+    final sidebarWidth = _isSidebarCollapsed ? 80.0 : 280.0;
+    
     return Scaffold(
       body: Row(
         children: [
           // Sidebar
           Container(
-            width: 280,
+            width: sidebarWidth,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -54,42 +65,110 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 // Logo/Brand
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(_isSidebarCollapsed ? 16 : 24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: const [Color(0xFF05e265), Color(0xFF04c457)],
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
+                  child: _isSidebarCollapsed
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.store,
+                                color: Color(0xFF05e265),
+                                size: 24,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.store,
-                              color: Color(0xFF05e265),
-                              size: 24,
+                            const SizedBox(height: 12),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isSidebarCollapsed = !_isSidebarCollapsed;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  // Increased visibility: More opaque background
+                                  color: const Color(0xFF05e265).withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFF05e265),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.menu_open, // Shows arrow pointing right to expand
+                                  color: Colors.white, // White icon for better contrast on green bg
+                                  size: 20,
+                                ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'PV26',
-                            style: GoogleFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.store,
+                                    color: Color(0xFF05e265),
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'PV26',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const Spacer(),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _isSidebarCollapsed = !_isSidebarCollapsed;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF05e265).withAlpha(51),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(0xFF05e265),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      _isSidebarCollapsed ? Icons.menu_open : Icons.menu,
+                                      color: const Color(0xFF05e265),
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                          ],
+                        ),
                 ),
                 
                 // Navigation Items
@@ -101,6 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.dashboard,
                         title: 'Dashboard',
                         isActive: true,
+                        isCollapsed: _isSidebarCollapsed,
                       ),
                       _NavItem(
                         icon: Icons.inventory_2,
@@ -113,6 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           );
                         },
+                        isCollapsed: _isSidebarCollapsed,
                       ),
                       _NavItem(
                         icon: Icons.payment,
@@ -125,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           );
                         },
+                        isCollapsed: _isSidebarCollapsed,
                       ),
                       _NavItem(
                         icon: Icons.analytics,
@@ -137,6 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           );
                         },
+                        isCollapsed: _isSidebarCollapsed,
                       ),
                       _NavItem(
                         icon: Icons.people,
@@ -149,6 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           );
                         },
+                        isCollapsed: _isSidebarCollapsed,
                       ),
                       const Divider(color: Colors.white24),
                       _NavItem(
@@ -157,6 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onTap: () {
                           // TODO: Navigate to settings
                         },
+                        isCollapsed: _isSidebarCollapsed,
                       ),
                     ],
                   ),
@@ -171,213 +256,229 @@ class _HomeScreenState extends State<HomeScreen> {
                       top: BorderSide(color: Colors.white.withOpacity(0.1)),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: const Color(0xFF05e265),
-                        child: const Icon(
-                          Icons.person,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  child: _isSidebarCollapsed
+                      ? Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.logout, color: Colors.white70),
+                            onPressed: () async {
+                              final result = await AuthService.logout();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      result['message'] ?? 'Sesión cerrada',
+                                      style: GoogleFonts.poppins(),
+                                    ),
+                                    backgroundColor: result['success'] == true
+                                        ? const Color(0xFF05e265)
+                                        : Colors.red,
+                                  ),
+                                );
+                                Navigator.pushReplacementNamed(context, '/login');
+                              }
+                            },
+                          ),
+                        )
+                      : Row(
                           children: [
-                            Text(
-                              _userName ?? 'Usuario',
-                              style: GoogleFonts.poppins(
+                            CircleAvatar(
+                              backgroundColor: const Color(0xFF05e265),
+                              child: const Icon(
+                                Icons.person,
                                 color: Colors.white,
-                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            Text(
-                              _userEmail??'admin@pv26.com',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white70,
-                                fontSize: 12,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _userName,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    _userEmail,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.logout, color: Colors.white70),
+                              onPressed: () async {
+                                final result = await AuthService.logout();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        result['message'] ?? 'Sesión cerrada',
+                                        style: GoogleFonts.poppins(),
+                                      ),
+                                      backgroundColor: result['success'] == true
+                                          ? const Color(0xFF05e265)
+                                          : Colors.red,
+                                    ),
+                                  );
+                                  Navigator.pushReplacementNamed(context, '/login');
+                                }
+                              },
                             ),
                           ],
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.white70),
-                        onPressed: () async {
-                          final result = await AuthService.logout();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  result['message'] ?? 'Sesión cerrada',
-                                  style: GoogleFonts.poppins(),
-                                ),
-                                backgroundColor: result['success'] == true 
-                                    ? const Color(0xFF05e265) 
-                                    : Colors.red,
-                              ),
-                            );
-                            Navigator.pushReplacementNamed(context, '/login');
-                          }
-                        },
-                      ),
-                    ],
-                  ),
                 ),
               ],
             ),
           ),
           
-          // Main Content
+          // Main Content Area
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF0a0a0a),
-                    const Color(0xFF1a1a1a),
-                  ],
-                ),
+                color: const Color(0xFF0a0a0a),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF000000),
+                      border: Border(
+                        bottom: BorderSide(color: Colors.white.withAlpha(26)),
+                      ),
+                    ),
+                    child: Row(
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Dashboard',
-                              style: GoogleFonts.poppins(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                        // Title
+                        Expanded(
+                          child: Text(
+                            'Dashboard',
+                            style: GoogleFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Gestiona tu negocio de manera eficiente',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white70,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
+                        
+                        // User Info
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF05e265),
-                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.white.withAlpha(13),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.add_shopping_cart, color: Colors.white, size: 20),
+                              const Icon(Icons.person, color: Colors.white70, size: 16),
                               const SizedBox(width: 8),
                               Text(
-                                'Nueva Venta',
+                                _userName,
                                 style: GoogleFonts.poppins(
                                   color: Colors.white,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 40),
-
-                    // Stats Cards
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatCard(
-                            title: 'Ventas Hoy',
-                            value: '\$12,450',
-                            icon: Icons.trending_up,
-                            color: const Color(0xFF05e265),
-                            change: '+12.5%',
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: _StatCard(
-                            title: 'Productos',
-                            value: '248',
-                            icon: Icons.inventory,
-                            color: const Color(0xFF2196F3),
-                            change: '+8',
-                          ),
+                        const SizedBox(width: 16),
+                        IconButton(
+                          icon: const Icon(Icons.logout, color: Colors.white70),
+                          onPressed: () async {
+                            final result = await AuthService.logout();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    result['message'] ?? 'Sesión cerrada',
+                                    style: GoogleFonts.poppins(),
+                                  ),
+                                  backgroundColor: result['success'] == true
+                                      ? const Color(0xFF05e265)
+                                      : Colors.red,
+                                ),
+                              );
+                              Navigator.pushReplacementNamed(context, '/login');
+                            }
+                          },
                         ),
                       ],
                     ),
-                    const SizedBox(height: 40),
-
-                    // Dashboard Grid
-                    Expanded(
-                      child: GridView.count(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 24,
-                        mainAxisSpacing: 24,
-                        childAspectRatio: 1.2,
+                  ),
+                  
+                  // Dashboard Content
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _DashboardCard(
-                            title: 'Inventario',
-                            subtitle: 'Gestiona tus productos',
-                            icon: Icons.inventory_2,
-                            color: const Color(0xFF05e265),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const InventoryScreen(),
-                                ),
-                              );
-                            },
+                          // Welcome Message
+                          Text(
+                            'Bienvenido, ${_userName}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                          _DashboardCard(
-                            title: 'Cobros',
-                            subtitle: 'Realiza ventas y cobros',
-                            icon: Icons.payment,
-                            color: const Color(0xFF2196F3),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const PaymentsScreen(),
-                                ),
-                              );
-                            },
+                          const SizedBox(height: 8),
+                          Text(
+                            'Aquí está el resumen de tu negocio',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
                           ),
-                          _DashboardCard(
-                            title: 'Reportes',
-                            subtitle: 'Analiza tus ventas',
-                            icon: Icons.analytics,
-                            color: const Color(0xFFFF9800),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ReportsScreen(),
+                          const SizedBox(height: 32),
+                          
+                          // Stats Grid
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Ventas Hoy',
+                                  value: '\$12,450',
+                                  icon: Icons.trending_up,
+                                  color: const Color(0xFF05e265),
+                                  change: '+12.5%',
                                 ),
-                              );
-                            },
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Productos',
+                                  value: '248',
+                                  icon: Icons.inventory,
+                                  color: const Color(0xFF2196F3),
+                                  change: '+5',
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _StatCard(
+                                  title: 'Clientes',
+                                  value: '1,426',
+                                  icon: Icons.people,
+                                  color: const Color(0xFFFF9800),
+                                  change: '+28',
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -392,46 +493,74 @@ class _NavItem extends StatelessWidget {
   final String title;
   final bool isActive;
   final VoidCallback? onTap;
+  final bool isCollapsed;
 
   const _NavItem({
     required this.icon,
     required this.title,
     this.isActive = false,
     this.onTap,
+    this.isCollapsed = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF05e265).withOpacity(0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: isActive 
-            ? Border.all(color: const Color(0xFF05e265))
-            : null,
-        ),
-        child: Row(
-          children: [
-            Icon(
+    final content = Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isCollapsed ? 8 : 16, 
+        vertical: 12,
+      ),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF05e265).withOpacity(0.2) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: isActive 
+          ? Border.all(color: const Color(0xFF05e265))
+          : null,
+      ),
+      child: isCollapsed
+          ? Icon(
               icon,
               color: isActive ? const Color(0xFF05e265) : Colors.white70,
               size: 20,
+            )
+          : Row(
+              children: [
+                Icon(
+                  icon,
+                  color: isActive ? const Color(0xFF05e265) : Colors.white70,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      color: isActive ? const Color(0xFF05e265) : Colors.white70,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                color: isActive ? const Color(0xFF05e265) : Colors.white70,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
+    );
+
+    if (isCollapsed) {
+      return Tooltip(
+        message: title,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: content,
         ),
-      ),
+      );
+    }
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: content,
     );
   }
 }
