@@ -13,7 +13,14 @@ class InventoryScreen extends StatefulWidget {
 }
 
 class _InventoryScreenState extends State<InventoryScreen> {
-  List<dynamic> products = [];
+  List<dynamic> allProducts = []; //Original list
+  List<dynamic> filteredProducts = []; //Filtered list for search
+
+
+  String searchQuery = '';
+  final TextEditingController searchController = TextEditingController();
+
+
   bool isLoading = false;
   String errorMessage = '';
 
@@ -33,7 +40,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     if (result['success'] == true) {
       setState(() {
-        products = result['data'];
+        allProducts = result['data'];
+        filteredProducts = List.from(allProducts); // Inicialmente, mostrar todos los productos
         isLoading = false;
       });
     } else {
@@ -42,6 +50,30 @@ class _InventoryScreenState extends State<InventoryScreen> {
         isLoading = false;
       });
     }
+  }
+
+
+  void filterProducts(String query) {
+
+      setState(() {
+
+        searchQuery = query;
+
+        if(query.isEmpty){
+          filteredProducts = List.from(allProducts);
+        } else {
+          filteredProducts = allProducts.where((product) {
+            final name = product['name']?.toString().toLowerCase() ?? '';
+            final barcode = (product['barcode'] ?? '').toString().toLowerCase();
+            final searchLower = query.toLowerCase();
+
+            return name.contains(searchLower) || barcode.contains(searchLower);
+
+          }).toList();
+        }
+        
+      });
+
   }
 
 
@@ -107,14 +139,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
                              children: [
                                Expanded(
                                  child: TextField(
-                                   decoration: InputDecoration(
-                                     hintText: 'Buscar productos...',
-                                     hintStyle: GoogleFonts.poppins(color: Colors.white70),
-                                     prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                                     border: InputBorder.none,
-                                   ),
-                                   style: GoogleFonts.poppins(color: Colors.white),
-                                 ),
+                                    controller: searchController,
+                                    onChanged: filterProducts,
+                                    decoration: InputDecoration(
+                                      hintText: 'Buscar por nombre o código...',
+                                      hintStyle: GoogleFonts.poppins(color: Colors.white70),
+                                      prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                                      border: InputBorder.none,
+                                    ),
+                                    style: GoogleFonts.poppins(color: Colors.white),
+                                  ),
                                ),
                                const SizedBox(width: 16),
                                Container(
@@ -153,7 +187,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   Expanded(
                     child: _StatCard(
                       title: 'Total Productos',
-                      value: products.length.toString(),
+                      value: allProducts.length.toString(),
                       icon: Icons.inventory,
                       color: const Color(0xFF05e265),
                     ),
@@ -163,7 +197,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   Expanded(
                     child: _StatCard(
                       title: 'Bajo Stock',
-                      value: products.where((p) => (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0).length.toString(),
+                      value: allProducts.where((p) => (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0).length.toString(),
                       icon: Icons.warning,
                       color: const Color(0xFFFF9800),
                     ),
@@ -173,7 +207,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   Expanded(
                     child: _StatCard(
                       title: 'Sin Stock',
-                      value: products.where((p) => (p['units'] ?? 0) == 0).length.toString(),
+                      value: allProducts.where((p) => (p['units'] ?? 0) == 0).length.toString(),
                       icon: Icons.error,
                       color: const Color(0xFFE91E63),
                     ),
@@ -221,12 +255,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             ? const Center(child: CircularProgressIndicator())
                             : errorMessage.isNotEmpty
                                 ? Center(child: Text(errorMessage, style: GoogleFonts.poppins(color: Colors.red)))
-                                : products.isEmpty
+                                : filteredProducts.isEmpty
                                     ? Center(child: Text('No hay productos', style: GoogleFonts.poppins(color: Colors.white70)))
                                     : ListView.builder(
-                                        itemCount: products.length,
+                                        itemCount: filteredProducts.length,
                                         itemBuilder: (context, index) {
-                                          final product = products[index];
+                                          final product = filteredProducts[index];
                                           return _ProductRow(
                                             id: (product['_id'] ?? '').toString(),
                                             name: product['name'] ?? 'Sin nombre',
@@ -1365,12 +1399,6 @@ class _EditProductDialogState extends State<EditProductDialog> {
         super.dispose();
       }
     }
-
-
-
-
-
-
 
 
 
