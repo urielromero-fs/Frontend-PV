@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/inventory_service.dart';
@@ -457,6 +458,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
   final purchasePriceController = TextEditingController();
   final salePriceController = TextEditingController();
   final weightController = TextEditingController();
+  //final categoryController = TextEditingController();
   final unitsController = TextEditingController();
   final mayoreoController = TextEditingController();
   final barcodeController = TextEditingController();
@@ -464,6 +466,30 @@ class _AddProductDialogState extends State<AddProductDialog> {
   bool isBulk = false;
   bool hasMayoreo = false;
   bool isLoading = false;
+
+
+  String selectedCategory = 'Sin categoría';
+
+  final List<String> categories = [
+      "Sin categoría",
+      "Abarrotes",
+      "Básicos",
+      "Botanas",
+      "Enlatados",
+      "Lácteos",
+      "Bebidas",
+      "Carnes",
+      "Panadería",
+      "Frutas y Verduras",
+      "Limpieza",
+      "Higiene Personal",
+      "Artículos para Bebé",
+      "Mascotas",
+      "Otros",
+    ];  
+
+
+
 
   Future<void> saveProduct() async {
     final name = nameController.text.trim();
@@ -479,17 +505,25 @@ class _AddProductDialogState extends State<AddProductDialog> {
       isLoading = true;
     });
 
+   
     final result = await InventoryService.createProduct(
       name: name,
       barcode: barcodeController.text.isEmpty ? 'N/A' : barcodeController.text,
       isBulk: isBulk,
       weight: double.tryParse(weightController.text) ?? 0.0,
+
+      category: selectedCategory,
+
       units: int.tryParse(unitsController.text) ?? 0,
       buyingPrice: double.tryParse(purchasePriceController.text) ?? 0.0,
       sellingPrice: double.tryParse(salePriceController.text) ?? 0.0,
       bulkPrice: double.tryParse(weightController.text) ?? 0.0,
       hasWholesalePrice: hasMayoreo,
       wholesalePrice: double.tryParse(mayoreoController.text) ?? 0.0,
+
+
+    
+      
     );
 
     setState(() {
@@ -508,404 +542,19 @@ class _AddProductDialogState extends State<AddProductDialog> {
     purchasePriceController.dispose();
     salePriceController.dispose();
     weightController.dispose();
+    //categoryController.dispose();
     unitsController.dispose();
     mayoreoController.dispose();
     barcodeController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-                backgroundColor: const Color(0xFF1a1a1a),
-                title: Text(
-                  'Agregar Producto',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-
-               content: SizedBox(
-                   width: 500,
-                   child: ConstrainedBox(
-                     constraints: BoxConstraints(
-                       maxHeight: MediaQuery.of(context).size.height * 0.75,
-                     ),
-                     child: SingleChildScrollView(
-                       child: Column(
-                         mainAxisSize: MainAxisSize.min,
-
-                    children: [
-                      // Product Name
-                      TextField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Nombre del Producto',
-                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Color(0xFF05e265)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // Barcode Field
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: barcodeController,
-                              decoration: InputDecoration(
-                                labelText: 'CB (Código de Barras)',
-                                labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(color: Color(0xFF05e265)),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              style: GoogleFonts.poppins(color: Colors.white),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF05e265),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-                              onPressed: () {
-                                 _scanBarcode(context, barcodeController); // <-- pasamos el controlador
-                              },
-                              tooltip: 'Escanear Código de Barras',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Bulk Option
-                      Row(
-                        children: [
-                          Switch(
-                            value: isBulk,
-                            onChanged: (value) {
-                              setState(() {
-                                isBulk = value;
-                              });
-                            },
-                            activeThumbColor: const Color(0xFF05e265),
-                            activeTrackColor: const Color(0xFF05e265).withAlpha(77),
-                            inactiveThumbColor: Colors.grey.shade400,
-                            inactiveTrackColor: Colors.grey.shade700,
-                          ),
-                          Text(
-                            '¿Es a granel?',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Weight (only for bulk products)
-                      if (isBulk) ...[
-                        TextField(
-                          controller: weightController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,2}'),
-                              ),
-                            ],
-                          decoration: InputDecoration(
-                            labelText: 'Peso (kg)',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Color(0xFF05e265)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          style: GoogleFonts.poppins(color: Colors.white),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-
-                      // Units (always shown)
-                      TextField(
-                        controller: unitsController,
-                        keyboardType: TextInputType.numberWithOptions(decimal: false),
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        decoration: InputDecoration(
-                          labelText: 'Unidades',
-                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Color(0xFF05e265)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Purchase Price
-                      TextField(
-                        controller: purchasePriceController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d+\.?\d{0,2}'),
-                            ),
-                          ],
-                        decoration: InputDecoration(
-                          labelText: 'Precio de Compra',
-                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Color(0xFF05e265)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Sale Price
-                      TextField(
-                        controller: salePriceController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d+\.?\d{0,2}'),
-                            ),
-                          ],
-                        decoration: InputDecoration(
-                          labelText: 'Precio de Venta',
-                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Color(0xFF05e265)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Mayoreo Option
-                      Row(
-                        children: [
-                          Switch(
-                            value: hasMayoreo,
-                            onChanged: (value) {
-                              setState(() {
-                                hasMayoreo = value;
-                              });
-                            },
-                            activeThumbColor: const Color(0xFF05e265),
-                            activeTrackColor: const Color(0xFF05e265).withAlpha(77),
-                            inactiveThumbColor: Colors.grey.shade400,
-                            inactiveTrackColor: Colors.grey.shade700,
-                          ),
-                          Text(
-                            '¿Tiene precio mayoreo?',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Mayoreo Price (conditional)
-                      if (hasMayoreo) ...[
-                        TextField(
-                          controller: mayoreoController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,2}'),
-                              ),
-                            ],
-                          decoration: InputDecoration(
-                            labelText: 'Precio Mayoreo',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Color(0xFF05e265)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          style: GoogleFonts.poppins(color: Colors.white),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ],
-                  ),
-                  ),
-                ),
-
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text(
-                      'Cancelar',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: isLoading ? null : saveProduct,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF05e265),
-                      foregroundColor: Colors.white,
-                    ),
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Guardar',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                  ),
-                ],
-
-              );
-
-  }
-}
-
-
-class _EditProductDialogState extends State<EditProductDialog> {
-
-  final nameController = TextEditingController();
-  final purchasePriceController = TextEditingController();
-  final salePriceController = TextEditingController();
-  final weightController = TextEditingController();
-  final unitsController = TextEditingController();
-  final mayoreoController = TextEditingController();
-  final barcodeController = TextEditingController();
-
-  bool isBulk = false;
-  bool hasMayoreo = false;
-  bool isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-
-    nameController.text = widget.product['name']?.toString() ?? '';
-    barcodeController.text = widget.product['barcode']?.toString() ?? '';
-    unitsController.text = (widget.product['units'] ?? 0).toString();
-    purchasePriceController.text = (widget.product['buyingPrice'] ?? 0).toString();
-    salePriceController.text = (widget.product['sellingPrice'] ?? 0).toString();
-    weightController.text = (widget.product['weight'] ?? 0).toString();
-    mayoreoController.text = (widget.product['wholesalePrice'] ?? 0).toString();
-
-    isBulk = widget.product['isBulk'] ?? false;
-    hasMayoreo = widget.product['hasWholesalePrice'] ?? false;
-  }
-
-    Future<void> updateProduct() async {
-      final id = widget.product['_id']?.toString() ?? '';
-
-      if (id.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ID inválido')),
-        );
-        return;
-      }
-
-      if (nameController.text.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ingresa el nombre')),
-        );
-        return;
-      }
-
-      setState(() {
-        isLoading = true;
-      });
-
-      final result = await InventoryService.updateProduct(
-        id: id,
-        name: nameController.text.trim(),
-        barcode: barcodeController.text,
-        isBulk: isBulk,
-        weight: double.tryParse(weightController.text) ?? 0.0,
-        units: int.tryParse(unitsController.text) ?? 0,
-        buyingPrice: double.tryParse(purchasePriceController.text) ?? 0.0,
-        sellingPrice: double.tryParse(salePriceController.text) ?? 0.0,
-        bulkPrice: double.tryParse(weightController.text) ?? 0.0,
-        hasWholesalePrice: hasMayoreo,
-        wholesalePrice: double.tryParse(mayoreoController.text) ?? 0.0,
-      );
-
-      setState(() {
-        isLoading = false;
-      });
-
-      if (result['success'] == true) {
-        widget.onProductUpdated();
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Error al actualizar')),
-        );
-      }
-    }
-
-      @override
+    @override
       Widget build(BuildContext context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1a1a1a),
           title: Text(
-            'Actualizar Producto',
+            'Añadir Producto',
             style: GoogleFonts.poppins(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -923,11 +572,18 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   children: [
 
                     // Product Name
-                    TextField(
+                    // Product Name con margen superior
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0), // <- margen arriba
+                    child: TextField(
                       controller: nameController,
                       decoration: InputDecoration(
                         labelText: 'Nombre del Producto',
                         labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                         floatingLabelStyle: GoogleFonts.poppins(
+                              color: Colors.white, // color cuando flota
+                              fontWeight: FontWeight.w500,
+                            ),
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.white.withAlpha(51)),
                           borderRadius: BorderRadius.circular(8),
@@ -939,7 +595,9 @@ class _EditProductDialogState extends State<EditProductDialog> {
                       ),
                       style: GoogleFonts.poppins(color: Colors.white),
                     ),
-                    const SizedBox(height: 15),
+                  ),
+                  const SizedBox(height: 16),
+
 
                     // Barcode Field
                     Row(
@@ -1032,6 +690,40 @@ class _EditProductDialogState extends State<EditProductDialog> {
                       ),
                       const SizedBox(height: 16),
                     ],
+
+                  //Category Dropdown
+                    DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      items: categories.map((category) {
+                        return DropdownMenuItem<String>(
+                          value: category,
+                          child: Text(category, style: GoogleFonts.poppins(color: Colors.white)),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                            setState(() {
+                              selectedCategory = value;
+                            });
+                          }
+                      },
+                      dropdownColor: const Color(0xFF1a1a1a), 
+                      style: GoogleFonts.poppins(color: Colors.white), 
+                      decoration: InputDecoration(
+                        labelText: 'Categoría',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Color(0xFF05e265)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
 
                     // Units
                     TextField(
@@ -1159,6 +851,466 @@ class _EditProductDialogState extends State<EditProductDialog> {
                 ),
               ),
             ),
+
+          
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Cancelar',
+                style: GoogleFonts.poppins(
+                  color: Colors.white70,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: isLoading ? null : saveProduct,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF05e265),
+                foregroundColor: Colors.white,
+              ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      'Añadir',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ],
+        );
+      }
+
+
+
+
+
+
+  
+}
+
+
+class _EditProductDialogState extends State<EditProductDialog> {
+
+  final nameController = TextEditingController();
+  final purchasePriceController = TextEditingController();
+  final salePriceController = TextEditingController();
+  final weightController = TextEditingController();
+  //final categoryController = TextEditingController();
+  final unitsController = TextEditingController();
+  final mayoreoController = TextEditingController();
+  final barcodeController = TextEditingController();
+
+  bool isBulk = false;
+  bool hasMayoreo = false;
+  bool isLoading = false;
+
+  String selectedCategory = 'Sin categoría';
+
+  final List<String> categories = [
+  "Sin categoría",
+  "Abarrotes",
+  "Básicos",
+  "Botanas",
+  "Enlatados",
+  "Lácteos",
+  "Bebidas",
+  "Carnes",
+  "Panadería",
+  "Frutas y Verduras",
+  "Limpieza",
+  "Higiene Personal",
+  "Artículos para Bebé",
+  "Mascotas",
+  "Otros",
+  ];  
+
+  @override
+  void initState() {
+    super.initState();
+
+
+    nameController.text = widget.product['name']?.toString() ?? '';
+    barcodeController.text = widget.product['barcode']?.toString() ?? '';
+    unitsController.text = (widget.product['units'] ?? 0).toString();
+    purchasePriceController.text = (widget.product['buyingPrice'] ?? 0).toString();
+    salePriceController.text = (widget.product['sellingPrice'] ?? 0).toString();
+    weightController.text = (widget.product['weight'] ?? 0).toString();
+
+
+    selectedCategory = widget.product['category']?.toString() ?? 'Sin categoría';
+    
+
+    mayoreoController.text = (widget.product['wholesalePrice'] ?? 0).toString();
+
+    isBulk = widget.product['isBulk'] ?? false;
+    hasMayoreo = widget.product['hasWholesalePrice'] ?? false;
+  }
+
+    Future<void> updateProduct() async {
+      final id = widget.product['_id']?.toString() ?? '';
+
+      if (id.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ID inválido')),
+        );
+        return;
+      }
+
+      if (nameController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ingresa el nombre')),
+        );
+        return;
+      }
+
+      setState(() {
+        isLoading = true;
+      });
+
+      final result = await InventoryService.updateProduct(
+        id: id,
+        name: nameController.text.trim(),
+        barcode: barcodeController.text,
+        isBulk: isBulk,
+        weight: double.tryParse(weightController.text) ?? 0.0,
+
+        category: selectedCategory,
+
+        units: int.tryParse(unitsController.text) ?? 0,
+        buyingPrice: double.tryParse(purchasePriceController.text) ?? 0.0,
+        sellingPrice: double.tryParse(salePriceController.text) ?? 0.0,
+        bulkPrice: double.tryParse(weightController.text) ?? 0.0,
+        hasWholesalePrice: hasMayoreo,
+        wholesalePrice: double.tryParse(mayoreoController.text) ?? 0.0,
+      );
+
+      setState(() {
+        isLoading = false;
+      });
+
+      if (result['success'] == true) {
+        widget.onProductUpdated();
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? 'Error al actualizar')),
+        );
+      }
+    }
+
+      @override
+      Widget build(BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1a1a1a),
+          title: Text(
+            'Actualizar Producto',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SizedBox(
+            width: 500,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.75,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+
+                    // Product Name
+                    // Product Name con margen superior
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0), // <- margen arriba
+                    child: TextField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre del Producto',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Color(0xFF05e265)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      style: GoogleFonts.poppins(color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+
+                    // Barcode Field
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: barcodeController,
+                            decoration: InputDecoration(
+                              labelText: 'CB (Código de Barras)',
+                              labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: const BorderSide(color: Color(0xFF05e265)),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            style: GoogleFonts.poppins(color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF05e265),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+                            onPressed: () {
+                              _scanBarcode(context, barcodeController);
+                            },
+                            tooltip: 'Escanear Código de Barras',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Bulk Option
+                    Row(
+                      children: [
+                        Switch(
+                          value: isBulk,
+                          onChanged: (value) {
+                            setState(() {
+                              isBulk = value;
+                            });
+                          },
+                          activeThumbColor: const Color(0xFF05e265),
+                          activeTrackColor: const Color(0xFF05e265).withAlpha(77),
+                          inactiveThumbColor: Colors.grey.shade400,
+                          inactiveTrackColor: Colors.grey.shade700,
+                        ),
+                        Text(
+                          '¿Es a granel?',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Weight (only for bulk products)
+                    if (isBulk) ...[
+                      TextField(
+                        controller: weightController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d+\.?\d{0,2}'),
+                          ),
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'Peso (kg)',
+                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(color: Color(0xFF05e265)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        style: GoogleFonts.poppins(color: Colors.white),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                  //Category Dropdown
+                    DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      items: categories.map((category) {
+                        return DropdownMenuItem<String>(
+                          value: category,
+                          child: Text(category, style: GoogleFonts.poppins(color: Colors.white)),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                            setState(() {
+                              selectedCategory = value;
+                            });
+                          }
+                      },
+                      dropdownColor: const Color(0xFF1a1a1a), 
+                      style: GoogleFonts.poppins(color: Colors.white), 
+                      decoration: InputDecoration(
+                        labelText: 'Categoría',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Color(0xFF05e265)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+
+                    // Units
+                    TextField(
+                      controller: unitsController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(
+                        labelText: 'Unidades',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Color(0xFF05e265)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      style: GoogleFonts.poppins(color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Purchase Price
+                    TextField(
+                      controller: purchasePriceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,2}'),
+                        ),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: 'Precio de Compra',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Color(0xFF05e265)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      style: GoogleFonts.poppins(color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Sale Price
+                    TextField(
+                      controller: salePriceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,2}'),
+                        ),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: 'Precio de Venta',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(color: Color(0xFF05e265)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      style: GoogleFonts.poppins(color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Mayoreo Option
+                    Row(
+                      children: [
+                        Switch(
+                          value: hasMayoreo,
+                          onChanged: (value) {
+                            setState(() {
+                              hasMayoreo = value;
+                            });
+                          },
+                          activeThumbColor: const Color(0xFF05e265),
+                          activeTrackColor: const Color(0xFF05e265).withAlpha(77),
+                          inactiveThumbColor: Colors.grey.shade400,
+                          inactiveTrackColor: Colors.grey.shade700,
+                        ),
+                        Text(
+                          '¿Tiene precio mayoreo?',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    if (hasMayoreo) ...[
+                      TextField(
+                        controller: mayoreoController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d+\.?\d{0,2}'),
+                          ),
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'Precio Mayoreo',
+                          labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(color: Color(0xFF05e265)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        style: GoogleFonts.poppins(color: Colors.white),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+          
           ),
           actions: [
             TextButton(
@@ -1206,6 +1358,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
         purchasePriceController.dispose();
         salePriceController.dispose();
         weightController.dispose();
+        //categoryController.dispose();
         unitsController.dispose();
         mayoreoController.dispose();
         barcodeController.dispose();
