@@ -87,28 +87,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
 
-  // void filterProducts(String query) {
 
-  //     setState(() {
-
-  //       searchQuery = query;
-
-  //       if(query.isEmpty){
-  //         filteredProducts = List.from(allProducts);
-  //       } else {
-  //         filteredProducts = allProducts.where((product) {
-  //           final name = product['name']?.toString().toLowerCase() ?? '';
-  //           final barcode = (product['barcode'] ?? '').toString().toLowerCase();
-  //           final searchLower = query.toLowerCase();
-
-  //           return name.contains(searchLower) || barcode.contains(searchLower);
-
-  //         }).toList();
-  //       }
-        
-  //     });
-
-  // }
 
   void applyFilters() {
   List<dynamic> temp = List.from(allProducts);
@@ -1147,7 +1126,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
 ) async {
   final result = await showDialog<String>(
     context: context,
-    barrierDismissible: false,
+    barrierDismissible: true,
     builder: (_) => const BarcodeScannerModal(),
   );
 
@@ -1295,7 +1274,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   children: [
 
                     // Product Name
-                    // Product Name con margen superior
+                   
                   Padding(
                     padding: const EdgeInsets.only(top: 16.0), // <- margen arriba
                     child: TextField(
@@ -1632,7 +1611,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
         ) async {
           final result = await showDialog<String>(
             context: context,
-            barrierDismissible: false,
+            barrierDismissible: true,
             builder: (_) => const BarcodeScannerModal(),
           );
 
