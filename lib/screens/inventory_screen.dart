@@ -5,6 +5,9 @@ import '../services/inventory_service.dart';
 import 'barcode_scanner.dart';
 import 'package:flutter/services.dart';
 
+
+
+
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
 
@@ -16,6 +19,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
   List<dynamic> allProducts = []; //Original list
   List<dynamic> filteredProducts = []; //Filtered list for search
 
+  String selectedCategoryFilter = 'Todas';
+  String selectedSortOption = 'Ninguno';
+  bool filterBulkOnly = false;
+
 
   String searchQuery = '';
   final TextEditingController searchController = TextEditingController();
@@ -23,6 +30,33 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   bool isLoading = false;
   String errorMessage = '';
+
+
+  final List<String> categoryFilters = [
+  'Todas',
+  "Sin categoría",
+  "Abarrotes",
+  "Básicos",
+  "Botanas",
+  "Enlatados",
+  "Lácteos",
+  "Bebidas",
+  "Carnes",
+  "Panadería",
+  "Frutas y Verduras",
+  "Limpieza",
+  "Higiene Personal",
+  "Artículos para Bebé",
+  "Mascotas",
+  "Otros",
+  ];
+
+  final List<String> sortOptions = [
+  'Ninguno',
+  'Precio Ascendente',
+  'Precio Descendente',
+  ];
+
 
   @override
   void initState() {
@@ -53,29 +87,71 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
 
-  void filterProducts(String query) {
+  // void filterProducts(String query) {
 
-      setState(() {
+  //     setState(() {
 
-        searchQuery = query;
+  //       searchQuery = query;
 
-        if(query.isEmpty){
-          filteredProducts = List.from(allProducts);
-        } else {
-          filteredProducts = allProducts.where((product) {
-            final name = product['name']?.toString().toLowerCase() ?? '';
-            final barcode = (product['barcode'] ?? '').toString().toLowerCase();
-            final searchLower = query.toLowerCase();
+  //       if(query.isEmpty){
+  //         filteredProducts = List.from(allProducts);
+  //       } else {
+  //         filteredProducts = allProducts.where((product) {
+  //           final name = product['name']?.toString().toLowerCase() ?? '';
+  //           final barcode = (product['barcode'] ?? '').toString().toLowerCase();
+  //           final searchLower = query.toLowerCase();
 
-            return name.contains(searchLower) || barcode.contains(searchLower);
+  //           return name.contains(searchLower) || barcode.contains(searchLower);
 
-          }).toList();
-        }
+  //         }).toList();
+  //       }
         
-      });
+  //     });
 
+  // }
+
+  void applyFilters() {
+  List<dynamic> temp = List.from(allProducts);
+
+  //  Filtro por búsqueda
+  if (searchQuery.isNotEmpty) {
+    temp = temp.where((product) {
+      final name = (product['name'] ?? '').toString().toLowerCase();
+      final barcode = (product['barcode'] ?? '').toString().toLowerCase();
+      final searchLower = searchQuery.toLowerCase();
+
+      return name.contains(searchLower) ||
+             barcode.contains(searchLower);
+    }).toList();
   }
 
+  // Filtro por categoría
+  if (selectedCategoryFilter != 'Todas') {
+    temp = temp.where((product) {
+      return product['category'] == selectedCategoryFilter;
+    }).toList();
+  }
+
+  //  Filtro por granel
+  if (filterBulkOnly) {
+    temp = temp.where((product) {
+      return product['isBulk'] == true;
+    }).toList();
+  }
+
+  // Ordenamiento por precio
+  if (selectedSortOption == 'Precio Ascendente') {
+    temp.sort((a, b) =>
+      (a['sellingPrice'] ?? 0).compareTo(b['sellingPrice'] ?? 0));
+  } else if (selectedSortOption == 'Precio Descendente') {
+    temp.sort((a, b) =>
+      (b['sellingPrice'] ?? 0).compareTo(a['sellingPrice'] ?? 0));
+  }
+
+  setState(() {
+    filteredProducts = temp;
+  });
+}
 
 
   @override
@@ -140,7 +216,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                Expanded(
                                  child: TextField(
                                     controller: searchController,
-                                    onChanged: filterProducts,
+                                    onChanged: (value) {
+                                        searchQuery = value;
+                                        applyFilters();
+                                      },
                                     decoration: InputDecoration(
                                       hintText: 'Buscar por nombre o código...',
                                       hintStyle: GoogleFonts.poppins(color: Colors.white70),
@@ -160,15 +239,33 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                  child: Row(
                                    mainAxisSize: MainAxisSize.min,
                                    children: [
-                                     const Icon(Icons.filter_list, color: Colors.white, size: 20),
+                                     
                                      const SizedBox(width: 8),
-                                     Text(
-                                       'Filtrar',
-                                       style: GoogleFonts.poppins(
-                                         color: Colors.white,
-                                         fontWeight: FontWeight.w600,
-                                       ),
-                                     ),
+                                     GestureDetector(
+                                        onTap: _showFilterDialog,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF05e265),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.filter_list, color: Colors.white, size: 20),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Filtrar',
+                                                style: GoogleFonts.poppins(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+
                                    ],
                                  ),
                                ),
@@ -349,6 +446,121 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
 
 
+    void _showFilterDialog() {
+        showDialog(
+          context: context,
+          builder: (_) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1a1a1a),
+              title: Text(
+                'Filtros',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: StatefulBuilder(
+                builder: (context, setModalState) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      // Categoría
+                      DropdownButtonFormField<String>(
+                        value: selectedCategoryFilter,
+                        dropdownColor: const Color(0xFF1a1a1a),
+                        items: categoryFilters.map((cat) {
+                          return DropdownMenuItem(
+                            value: cat,
+                            child: Text(cat,
+                                style: GoogleFonts.poppins(color: Colors.white)),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setModalState(() {
+                            selectedCategoryFilter = value!;
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Categoría',
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Ordenamiento
+                      DropdownButtonFormField<String>(
+                        value: selectedSortOption,
+                        dropdownColor: const Color(0xFF1a1a1a),
+                        items: sortOptions.map((sort) {
+                          return DropdownMenuItem(
+                            value: sort,
+                            child: Text(sort,
+                                style: GoogleFonts.poppins(color: Colors.white)),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setModalState(() {
+                            selectedSortOption = value!;
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Ordenar por',
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Granel
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: filterBulkOnly,
+                            activeColor: const Color(0xFF05e265),
+                            onChanged: (value) {
+                              setModalState(() {
+                                filterBulkOnly = value ?? false;
+                              });
+                            },
+                          ),
+                          Text(
+                            'Solo productos a granel',
+                            style: GoogleFonts.poppins(color: Colors.white),
+                          )
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedCategoryFilter = 'Todas';
+                      selectedSortOption = 'Ninguno';
+                      filterBulkOnly = false;
+                    });
+                    applyFilters();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Limpiar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    applyFilters();
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF05e265),
+                  ),
+                  child: const Text('Aplicar'),
+                ),
+              ],
+            );
+          },
+        );
+      }
 
 
 
@@ -929,7 +1141,22 @@ class _AddProductDialogState extends State<AddProductDialog> {
 
 
 
+  Future<void> _scanBarcode(
+  BuildContext context,
+  TextEditingController controller,
+) async {
+  final result = await showDialog<String>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const BarcodeScannerModal(),
+  );
 
+  if (result != null && mounted) {
+    setState(() {
+      controller.text = result;
+    });
+  }
+}
 
 
   
@@ -1398,24 +1625,49 @@ class _EditProductDialogState extends State<EditProductDialog> {
         barcodeController.dispose();
         super.dispose();
       }
+
+      Future<void> _scanBarcode(
+          BuildContext context,
+          TextEditingController controller,
+        ) async {
+          final result = await showDialog<String>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const BarcodeScannerModal(),
+          );
+
+          if (result != null && mounted) {
+            setState(() {
+              controller.text = result;
+            });
+          }
+        }
+
+
+     
+
     }
 
 
 
-Future<void> _scanBarcode(BuildContext context, TextEditingController barcodeController) async {
-  // Abrimos la página de scanner
-  final scannedCode = await Navigator.push<String>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => BarcodeScannerPage(), // el widget que creamos antes
-    ),
-  );
+// Future<void> _scanBarcode(BuildContext context, TextEditingController barcodeController) async {
+  
+  
+//   // Abrimos la página de scanner
+//   // final scannedCode = await Navigator.push<String>(
+//   //   context,
+//   //   MaterialPageRoute(
+//   //     builder: (_) => BarcodeScannerPage(), // el widget que creamos antes
+//   //   ),
+//   // );
 
-  if (scannedCode != null && scannedCode.isNotEmpty) {
-    // Colocamos el código escaneado en el TextField
-    barcodeController.text = scannedCode;
-  }
-}
+//   if (scannedCode != null && scannedCode.isNotEmpty) {
+//     // Colocamos el código escaneado en el TextField
+//     barcodeController.text = scannedCode;
+//   }
+// }
+
+
 
 void _scanBarcodeWithTwoOptions(BuildContext context) {
   showDialog(

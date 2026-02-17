@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/services.dart';
 
-class BarcodeScannerPage extends StatefulWidget {
-  const BarcodeScannerPage({super.key});
+
+
+class BarcodeScannerModal extends StatefulWidget {
+  const BarcodeScannerModal({super.key});
 
   @override
-  State<BarcodeScannerPage> createState() => _BarcodeScannerPageState();
+  State<BarcodeScannerModal> createState() => _BarcodeScannerModalState();
 }
 
-class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
-  bool scanned = false; // evita lecturas duplicadas
+class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
+  bool scanned = false;
   late MobileScannerController controller;
 
   @override
@@ -18,7 +20,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
     super.initState();
     controller = MobileScannerController(
       facing: CameraFacing.back,
-      torchEnabled: false, // linterna apagada por defecto
+      torchEnabled: false,
     );
   }
 
@@ -30,53 +32,61 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Escanear producto'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.flash_on),
-            onPressed: () {
-              controller.toggleTorch();
-            },
-          )
-        ],
-      ),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: controller,
-            onDetect: (capture) {
-              if (scanned) return;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(40),
+      child: Container(
+        height: 350,
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: MobileScanner(
+                controller: controller,
+                onDetect: (capture) {
+                  if (scanned) return;
 
-              // Obtenemos el primer código detectado en el frame
-              final barcode = capture.barcodes.first;
-              final String? code = barcode.rawValue;
-              if (code == null) return;
+                  final barcode = capture.barcodes.first;
+                  final String? code = barcode.rawValue;
+                  if (code == null) return;
 
-              scanned = true; // marca que ya se escaneó
+                  scanned = true;
 
-              // vibración al detectar
-              HapticFeedback.mediumImpact();
+                  HapticFeedback.mediumImpact();
 
-              // cerrar el scanner y devolver el código
-              Navigator.pop(context, code);
-            },
-          ),
-
-          Center(
-            child: Container(
-              width: 250,
-              height: 100,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.green, width: 3),
-                borderRadius: BorderRadius.circular(12),
+                  Navigator.pop(context, code);
+                },
               ),
             ),
-          ),
-        ],
+
+            Center(
+              child: Container(
+                width: 220,
+                height: 100,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.green, width: 3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+}
 
-}
-}
+
