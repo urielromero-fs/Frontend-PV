@@ -170,10 +170,10 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                     Expanded(
                       child: GridView.builder(
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4, // More items per row
-                          childAspectRatio: 0.8, // Taller for photo + price
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
+                          crossAxisCount: 6, // More items per row for smaller cards
+                          childAspectRatio: 1.0, // Square cards for compact layout
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
                         ),
                         itemCount: _products.length,
                         itemBuilder: (context, index) {
@@ -545,73 +545,60 @@ class _ProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white.withAlpha(26)),
         ),
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Image Area (Placeholder)
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(20),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.image,
-                      color: Colors.white.withAlpha(50),
-                      size: 40,
-                    ),
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Product Name
+              Text(
+                name,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
                 ),
-                // Price Tag
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              
+              // Price and Bulk Indicator
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '\$${price.toStringAsFixed(0)}',
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFF05e265),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  child: Column(
-                    children: [
-                       Text(
-                        name,
-                        style: GoogleFonts.poppins(color: Colors.white70, fontSize: 10),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  if (isBulk) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(3),
                       ),
-                      Text(
-                        '\$${price.toStringAsFixed(2)}',
+                      child: Text(
+                        'Granel',
                         style: GoogleFonts.poppins(
-                          color: const Color(0xFF05e265),
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 7,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-             if (isBulk)
-              Positioned(
-                top: 4,
-                right: 4,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Icon(Icons.scale, size: 12, color: Colors.white),
-                ),
+                    ),
+                  ],
+                ],
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
