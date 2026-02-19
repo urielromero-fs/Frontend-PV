@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/inventory_service.dart';
 import 'barcode_scanner.dart';
-import 'package:flutter/services.dart';
+
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -903,9 +903,11 @@ class _AddProductDialogState extends State<AddProductDialog> {
                           child: IconButton(
                             icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
                             onPressed: () {
-                              _scanBarcode(context, barcodeController);
+                              //_scanBarcode(context, barcodeController);
+                               _scanBarcodeWithOptions(context, barcodeController);
                             },
                             tooltip: 'Escanear Código de Barras',
+                            
                           ),
                         ),
                       ],
@@ -1169,22 +1171,25 @@ class _AddProductDialogState extends State<AddProductDialog> {
 
 
 
-  Future<void> _scanBarcode(
-  BuildContext context,
-  TextEditingController controller,
-) async {
-  final result = await showDialog<String>(
-    context: context,
-    barrierDismissible: true,
-    builder: (_) => const BarcodeScannerModal(),
-  );
 
-  if (result != null && mounted) {
-    setState(() {
-      controller.text = result;
-    });
-  }
-}
+
+
+      Future<void> _scanBarcodeWithOptions(
+        BuildContext context,
+        TextEditingController controller,
+      ) async {
+        final result = await showDialog<String>(
+          context: context,
+          barrierDismissible: true,
+          builder: (_) => const BarcodeScannerModal(),
+        );
+
+        if (result != null && mounted) {
+          setState(() {
+            controller.text = result;
+          });
+        }
+      }
 
 
   
@@ -1376,7 +1381,8 @@ class _EditProductDialogState extends State<EditProductDialog> {
                           child: IconButton(
                             icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
                             onPressed: () {
-                              _scanBarcode(context, barcodeController);
+                              //_scanBarcode(context, barcodeController);
+                               _scanBarcodeWithOptions(context, barcodeController);
                             },
                             tooltip: 'Escanear Código de Barras',
                           ),
@@ -1654,7 +1660,9 @@ class _EditProductDialogState extends State<EditProductDialog> {
         super.dispose();
       }
 
-      Future<void> _scanBarcode(
+
+
+        Future<void> _scanBarcodeWithOptions(
           BuildContext context,
           TextEditingController controller,
         ) async {
@@ -1679,123 +1687,3 @@ class _EditProductDialogState extends State<EditProductDialog> {
 
 
 
-
-void _scanBarcodeWithTwoOptions(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
-        title: Text(
-          'Escanear Código de Barras',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Selecciona el método de escaneo:',
-              style: GoogleFonts.poppins(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _ScanOption(
-                  icon: Icons.camera_alt,
-                  label: 'Cámara',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _scanWithCamera();
-                  },
-                ),
-                _ScanOption(
-                  icon: Icons.qr_code_scanner,
-                  label: 'Scanner',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _scanWithHardware();
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text(
-              'Cancelar',
-              style: GoogleFonts.poppins(
-                color: Colors.white70,
-              ),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-void _scanWithCamera() {
-  // TODO: Implement camera scanning
-  // This would use mobile_scanner or qr_code_scanner package
-}
-
-void _scanWithHardware() {
-  // TODO: Implement hardware scanner
-  // This would connect to external barcode scanner via Bluetooth/USB
-}
-
-class _ScanOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _ScanOption({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white.withAlpha(13),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withAlpha(26)),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: const Color(0xFF05e265),
-              size: 32,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
