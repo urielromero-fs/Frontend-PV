@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/product_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -60,6 +62,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         if (result['success']) {
           // Login successful
           if (mounted) {
+            // Cargar productos después del login
+            await context.read<ProductProvider>().fetchProducts();
             Navigator.pushReplacementNamed(context, '/home');
           }
         } else {

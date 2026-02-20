@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/inventory_service.dart';
 import 'barcode_scanner.dart';
-
+import '../utils/product_filters.dart';
+import 'package:provider/provider.dart';
+import '../providers/product_provider.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -16,17 +18,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
   List<dynamic> allProducts = []; //Original list
   List<dynamic> filteredProducts = []; //Filtered list for search
 
-  String selectedCategoryFilter = 'Todas';
-  String selectedSortOption = 'Ninguno';
-  bool filterBulkOnly = false;
+  //String selectedCategoryFilter = 'Todas';
+  //String selectedSortOption = 'Ninguno';
+  //bool filterBulkOnly = false;
 
 
-  String searchQuery = '';
-  final TextEditingController searchController = TextEditingController();
+  //String searchQuery = '';
+  //final TextEditingController searchController = TextEditingController();
 
 
   bool isLoading = false;
   String errorMessage = '';
+
+  // Filtros locales
+  String searchQuery = '';
+  String selectedCategoryFilter = 'Todas';
+  String selectedSortOption = 'Ninguno';
+  bool filterBulkOnly = false;
+  final TextEditingController searchController = TextEditingController();
 
 
   final List<String> categoryFilters = [
@@ -58,80 +67,97 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-    fetchProducts(); // cargar productos al iniciar
-  }
-
-  Future<void> fetchProducts() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = '';
-    });
-
-    final result = await InventoryService.getProducts();
-
-    if (result['success'] == true) {
-      setState(() {
-        allProducts = result['data'];
-        filteredProducts = List.from(allProducts); // Inicialmente, mostrar todos los productos
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        errorMessage = result['message'] ?? 'Error desconocido';
-        isLoading = false;
-      });
+    //fetchProducts(); // cargar productos al iniciar
+    // Traer productos solo si aún no se han cargado
+    final provider = Provider.of<ProductProvider>(context, listen: false);
+    if (provider.allProducts.isEmpty) {
+      provider.fetchProducts();
     }
   }
 
+  // Future<void> fetchProducts() async {
+  //   setState(() {
+  //     isLoading = true;
+  //     errorMessage = '';
+  //   });
+
+  //   final result = await InventoryService.getProducts();
+
+  //   if (result['success'] == true) {
+  //     setState(() {
+  //       allProducts = result['data'];
+  //       filteredProducts = List.from(allProducts); // Inicialmente, mostrar todos los productos
+  //       isLoading = false;
+  //     });
+  //   } else {
+  //     setState(() {
+  //       errorMessage = result['message'] ?? 'Error desconocido';
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
 
 
 
-  void applyFilters() {
-  List<dynamic> temp = List.from(allProducts);
 
-  //  Filtro por búsqueda
-  if (searchQuery.isNotEmpty) {
-    temp = temp.where((product) {
-      final name = (product['name'] ?? '').toString().toLowerCase();
-      final barcode = (product['barcode'] ?? '').toString().toLowerCase();
-      final searchLower = searchQuery.toLowerCase();
+//   void applyFilters() {
+//   List<dynamic> temp = List.from(allProducts);
 
-      return name.contains(searchLower) ||
-             barcode.contains(searchLower);
-    }).toList();
-  }
+//   //  Filtro por búsqueda
+//   if (searchQuery.isNotEmpty) {
+//     temp = temp.where((product) {
+//       final name = (product['name'] ?? '').toString().toLowerCase();
+//       final barcode = (product['barcode'] ?? '').toString().toLowerCase();
+//       final searchLower = searchQuery.toLowerCase();
 
-  // Filtro por categoría
-  if (selectedCategoryFilter != 'Todas') {
-    temp = temp.where((product) {
-      return product['category'] == selectedCategoryFilter;
-    }).toList();
-  }
+//       return name.contains(searchLower) ||
+//              barcode.contains(searchLower);
+//     }).toList();
+//   }
 
-  //  Filtro por granel
-  if (filterBulkOnly) {
-    temp = temp.where((product) {
-      return product['isBulk'] == true;
-    }).toList();
-  }
+//   // Filtro por categoría
+//   if (selectedCategoryFilter != 'Todas') {
+//     temp = temp.where((product) {
+//       return product['category'] == selectedCategoryFilter;
+//     }).toList();
+//   }
 
-  // Ordenamiento por precio
-  if (selectedSortOption == 'Precio Ascendente') {
-    temp.sort((a, b) =>
-      (a['sellingPrice'] ?? 0).compareTo(b['sellingPrice'] ?? 0));
-  } else if (selectedSortOption == 'Precio Descendente') {
-    temp.sort((a, b) =>
-      (b['sellingPrice'] ?? 0).compareTo(a['sellingPrice'] ?? 0));
-  }
+//   //  Filtro por granel
+//   if (filterBulkOnly) {
+//     temp = temp.where((product) {
+//       return product['isBulk'] == true;
+//     }).toList();
+//   }
 
-  setState(() {
-    filteredProducts = temp;
-  });
-}
+//   // Ordenamiento por precio
+//   if (selectedSortOption == 'Precio Ascendente') {
+//     temp.sort((a, b) =>
+//       (a['sellingPrice'] ?? 0).compareTo(b['sellingPrice'] ?? 0));
+//   } else if (selectedSortOption == 'Precio Descendente') {
+//     temp.sort((a, b) =>
+//       (b['sellingPrice'] ?? 0).compareTo(a['sellingPrice'] ?? 0));
+//   }
+
+//   setState(() {
+//     filteredProducts = temp;
+//   });
+// }
 
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<ProductProvider>(context);
+    final allProducts = provider.allProducts;
+
+    // Aplicar filtros 
+    final filteredProducts = filterProducts(
+      products: allProducts,
+      searchQuery: searchQuery,
+      category: selectedCategoryFilter,
+      onlyBulk: filterBulkOnly,
+      sortOption: selectedSortOption,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -148,7 +174,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: fetchProducts,
+            onPressed: () => provider.fetchProducts(),
 
           ),
         ],
@@ -193,9 +219,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                  child: TextField(
                                     controller: searchController,
                                     onChanged: (value) {
+                                      setState(() {
                                         searchQuery = value;
-                                        applyFilters();
-                                      },
+                                      });
+                                    },
                                     decoration: InputDecoration(
                                       hintText: 'Buscar por nombre o código...',
                                       hintStyle: GoogleFonts.poppins(color: Colors.white70),
@@ -373,7 +400,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       showDialog(
         context: context,
         builder: (_) => AddProductDialog(
-          onProductAdded: fetchProducts,
+          onProductAdded: () {
+          final provider = Provider.of<ProductProvider>(context, listen: false);
+          provider.fetchProducts();
+        },
         ),
       );
     }
@@ -383,7 +413,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
         context: context,
         builder: (_) => EditProductDialog(
           product: product,
-          onProductUpdated: fetchProducts,
+          onProductUpdated: () {
+              final provider = Provider.of<ProductProvider>(context, listen: false);
+              provider.fetchProducts();
+              },
         ),
       );
     }
@@ -411,9 +444,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       if (confirm != true) return;
 
       final result = await InventoryService.deleteProduct(id);
+      final provider = Provider.of<ProductProvider>(context, listen: false);
 
       if (result['success'] == true) {
-        fetchProducts();
+        provider.fetchProducts();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result['message'])),
@@ -517,14 +551,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       selectedSortOption = 'Ninguno';
                       filterBulkOnly = false;
                     });
-                    applyFilters();
+                    //applyFilters();
                     Navigator.pop(context);
                   },
                   child: const Text('Limpiar'),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    applyFilters();
+                    //applyFilters();
+                    setState(() {}); // aplica filtros
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(

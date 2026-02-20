@@ -338,150 +338,378 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           
           // Main Content Area
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF0a0a0a),
-              ),
-              child: Column(
-                children: [
-                  // Header
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF000000),
-                      border: Border(
-                        bottom: BorderSide(color: Colors.white.withAlpha(26)),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        // Title
-                        Expanded(
-                          child: Text(
-                            'Dashboard',
-                            style: GoogleFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+          // Expanded(
+          //   child: Container(
+          //     decoration: BoxDecoration(
+          //       color: const Color(0xFF0a0a0a),
+          //     ),
+          //     child: Column(
+          //       children: [
+          //         // Header
+          //         Container(
+          //           padding: const EdgeInsets.all(16),
+          //           decoration: BoxDecoration(
+          //             color: const Color(0xFF000000),
+          //             border: Border(
+          //               bottom: BorderSide(color: Colors.white.withAlpha(26)),
+          //             ),
+          //           ),
+          //           child: Row(
+          //             children: [
+          //               // Title
+          //               Expanded(
+          //                 child: Text(
+          //                   'Dashboard',
+          //                   style: GoogleFonts.poppins(
+          //                     fontSize: 24,
+          //                     fontWeight: FontWeight.bold,
+          //                     color: Colors.white,
+          //                   ),
+          //                 ),
+          //               ),
                         
-                        // User Info
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(13),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.person, color: Colors.white70, size: 16),
-                              const SizedBox(width: 8),
-                              Text(
-                                _userName,
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        IconButton(
-                          icon: const Icon(Icons.logout, color: Colors.white70),
-                          onPressed: () async {
-                            final result = await AuthService.logout();
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    result['message'] ?? 'Sesión cerrada',
-                                    style: GoogleFonts.poppins(),
-                                  ),
-                                  backgroundColor: result['success'] == true
-                                      ? const Color(0xFF05e265)
-                                      : Colors.red,
-                                ),
-                              );
-                              Navigator.pushReplacementNamed(context, '/login');
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+          //               // User Info
+          //               Container(
+          //                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          //                 decoration: BoxDecoration(
+          //                   color: Colors.white.withAlpha(13),
+          //                   borderRadius: BorderRadius.circular(20),
+          //                 ),
+          //                 child: Row(
+          //                   children: [
+          //                     const Icon(Icons.person, color: Colors.white70, size: 16),
+          //                     const SizedBox(width: 8),
+          //                     Text(
+          //                       _userName,
+          //                       style: GoogleFonts.poppins(
+          //                         color: Colors.white,
+          //                         fontSize: 14,
+          //                       ),
+          //                     ),
+          //                   ],
+          //                 ),
+          //               ),
+          //               const SizedBox(width: 16),
+          //               IconButton(
+          //                 icon: const Icon(Icons.logout, color: Colors.white70),
+          //                 onPressed: () async {
+          //                   final result = await AuthService.logout();
+          //                   if (context.mounted) {
+          //                     ScaffoldMessenger.of(context).showSnackBar(
+          //                       SnackBar(
+          //                         content: Text(
+          //                           result['message'] ?? 'Sesión cerrada',
+          //                           style: GoogleFonts.poppins(),
+          //                         ),
+          //                         backgroundColor: result['success'] == true
+          //                             ? const Color(0xFF05e265)
+          //                             : Colors.red,
+          //                       ),
+          //                     );
+          //                     Navigator.pushReplacementNamed(context, '/login');
+          //                   }
+          //                 },
+          //               ),
+          //             ],
+          //           ),
+          //         ),
                   
-                  // Dashboard Content
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Welcome Message
-                          Text(
-                            'Bienvenido, ${_userName}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Aquí está el resumen de tu negocio',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 32),
+          //         // Dashboard Content
+          //         Expanded(
+          //           child: Padding(
+          //             padding: const EdgeInsets.all(24),
+          //             child: Column(
+          //               crossAxisAlignment: CrossAxisAlignment.start,
+          //               children: [
+          //                 // Welcome Message
+          //                 Text(
+          //                   'Bienvenido, ${_userName}',
+          //                   style: GoogleFonts.poppins(
+          //                     fontSize: 32,
+          //                     fontWeight: FontWeight.bold,
+          //                     color: Colors.white,
+          //                   ),
+          //                 ),
+          //                 const SizedBox(height: 8),
+          //                 Text(
+          //                   'Aquí está el resumen de tu negocio',
+          //                   style: GoogleFonts.poppins(
+          //                     color: Colors.white70,
+          //                     fontSize: 16,
+          //                   ),
+          //                 ),
+          //                 const SizedBox(height: 32),
                           
-                          // Stats Grid
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Ventas Hoy',
-                                  value: '\$12,450',
-                                  icon: Icons.trending_up,
-                                  color: const Color(0xFF05e265),
-                                  change: '+12.5%',
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Productos',
-                                  value: '248',
-                                  icon: Icons.inventory,
-                                  color: const Color(0xFF2196F3),
-                                  change: '+5',
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _StatCard(
-                                  title: 'Clientes',
-                                  value: '1,426',
-                                  icon: Icons.people,
-                                  color: const Color(0xFFFF9800),
-                                  change: '+28',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          //                 // Stats Grid
+          //                 // Row(
+          //                 //   children: [
+          //                 //     Expanded(
+          //                 //       child: _StatCard(
+          //                 //         title: 'Ventas Hoy',
+          //                 //         value: '\$12,450',
+          //                 //         icon: Icons.trending_up,
+          //                 //         color: const Color(0xFF05e265),
+          //                 //         change: '+12.5%',
+          //                 //       ),
+          //                 //     ),
+          //                 //     const SizedBox(width: 16),
+          //                 //     Expanded(
+          //                 //       child: _StatCard(
+          //                 //         title: 'Productos',
+          //                 //         value: '248',
+          //                 //         icon: Icons.inventory,
+          //                 //         color: const Color(0xFF2196F3),
+          //                 //         change: '+5',
+          //                 //       ),
+          //                 //     ),
+          //                 //     const SizedBox(width: 16),
+          //                 //     Expanded(
+          //                 //       child: _StatCard(
+          //                 //         title: 'Clientes',
+          //                 //         value: '1,426',
+          //                 //         icon: Icons.people,
+          //                 //         color: const Color(0xFFFF9800),
+          //                 //         change: '+28',
+          //                 //       ),
+          //                 //     ),
+          //                 //   ],
+          //                 // ),
+                        
+          //                 LayoutBuilder(
+          //                   builder: (context, constraints) {
+          //                     final isMobile = constraints.maxWidth < 768;
+          //                     return isMobile
+          //                         ? Column(
+          //                             children: [
+          //                               _StatCard(
+          //                                 title: 'Ventas Hoy',
+          //                                 value: '\$12,450',
+          //                                 icon: Icons.trending_up,
+          //                                 color: const Color(0xFF05e265),
+          //                                 change: '+12.5%',
+          //                               ),
+          //                               const SizedBox(height: 16),
+          //                               _StatCard(
+          //                                 title: 'Productos',
+          //                                 value: '248',
+          //                                 icon: Icons.inventory,
+          //                                 color: const Color(0xFF2196F3),
+          //                                 change: '+5',
+          //                               ),
+          //                               const SizedBox(height: 16),
+          //                               _StatCard(
+          //                                 title: 'Clientes',
+          //                                 value: '1,426',
+          //                                 icon: Icons.people,
+          //                                 color: const Color(0xFFFF9800),
+          //                                 change: '+28',
+          //                               ),
+          //                             ],
+          //                           )
+          //                         : Row(
+          //                             children: [
+          //                               Expanded(
+          //                                 child: _StatCard(
+          //                                   title: 'Ventas Hoy',
+          //                                   value: '\$12,450',
+          //                                   icon: Icons.trending_up,
+          //                                   color: const Color(0xFF05e265),
+          //                                   change: '+12.5%',
+          //                                 ),
+          //                               ),
+          //                               const SizedBox(width: 16),
+          //                               Expanded(
+          //                                 child: _StatCard(
+          //                                   title: 'Productos',
+          //                                   value: '248',
+          //                                   icon: Icons.inventory,
+          //                                   color: const Color(0xFF2196F3),
+          //                                   change: '+5',
+          //                                 ),
+          //                               ),
+          //                               const SizedBox(width: 16),
+          //                               Expanded(
+          //                                 child: _StatCard(
+          //                                   title: 'Clientes',
+          //                                   value: '1,426',
+          //                                   icon: Icons.people,
+          //                                   color: const Color(0xFFFF9800),
+          //                                   change: '+28',
+          //                                 ),
+          //                               ),
+          //                             ],
+          //                           );
+          //                   },
+          //                 ),
+                        
+                        
+          //               ],
+          //             ),
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+        
+          // Main Content Area
+Expanded(
+  child: Container(
+    color: const Color(0xFF0a0a0a),
+    child: Column(
+      children: [
+        // Header
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF000000),
+            border: Border(
+              bottom: BorderSide(color: Colors.white.withAlpha(26)),
             ),
           ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Dashboard',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(13),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.person, color: Colors.white70, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      _userName,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Scrollable Dashboard Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Welcome
+                    Text(
+                      'Bienvenido, $_userName',
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Aquí está el resumen de tu negocio',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Responsive Stats
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isMobile = constraints.maxWidth < 768;
+
+                        if (isMobile) {
+                          return Column(
+                            children: [
+                              _StatCard(
+                                title: 'Ventas Hoy',
+                                value: '\$12,450',
+                                icon: Icons.trending_up,
+                                color: const Color(0xFF05e265),
+                                change: '+12.5%',
+                              ),
+                              const SizedBox(height: 16),
+                              _StatCard(
+                                title: 'Productos',
+                                value: '248',
+                                icon: Icons.inventory,
+                                color: const Color(0xFF2196F3),
+                                change: '+5',
+                              ),
+                              const SizedBox(height: 16),
+                              _StatCard(
+                                title: 'Clientes',
+                                value: '1,426',
+                                icon: Icons.people,
+                                color: const Color(0xFFFF9800),
+                                change: '+28',
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Ventas Hoy',
+                                value: '\$12,450',
+                                icon: Icons.trending_up,
+                                color: const Color(0xFF05e265),
+                                change: '+12.5%',
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Productos',
+                                value: '248',
+                                icon: Icons.inventory,
+                                color: const Color(0xFF2196F3),
+                                change: '+5',
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _StatCard(
+                                title: 'Clientes',
+                                value: '1,426',
+                                icon: Icons.people,
+                                color: const Color(0xFFFF9800),
+                                change: '+28',
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+        
+        
         ],
       ),
     );

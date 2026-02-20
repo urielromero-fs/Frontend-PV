@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/register_screen.dart';
-import 'services/auth_service.dart';
+import 'providers/product_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +17,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MultiProvider(
+      providers: [  
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+      ], 
+
+    
+      child: MaterialApp(
       title: 'Punto de Venta',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -41,6 +49,7 @@ class MyApp extends StatelessWidget {
         '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/register': (context) => const RegisterScreen(),
       },
+      ),
     );
   }
 }

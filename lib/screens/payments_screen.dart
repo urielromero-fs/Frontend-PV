@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../providers/product_provider.dart';
+import '../utils/product_filters.dart';
+
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
@@ -33,13 +37,46 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
   late TabController _tabController;
   List<Ticket> _tickets = [];
   
-  // Dummy products (would come from a service/database)
-  final List<Map<String, dynamic>> _products = List.generate(20, (index) => {
-    'name': 'Producto ${index + 1}',
-    'price': (index + 1) * 15.0,
-    'isBulk': index % 5 == 0, // Every 5th item is bulk
-    'image': null, // Placeholder
-  });
+  // // Dummy products (would come from a service/database)
+  // final List<Map<String, dynamic>> _products = List.generate(20, (index) => {
+  //   'name': 'Producto ${index + 1}',
+  //   'price': (index + 1) * 15.0,
+  //   'isBulk': index % 5 == 0, // Every 5th item is bulk
+  //   'image': null, // Placeholder
+  // });
+
+  final TextEditingController searchController = TextEditingController();
+
+
+  String searchQuery = '';
+  String selectedCategoryFilter = 'Todas';
+  String selectedSortOption = 'Ninguno';
+  bool filterBulkOnly = false;
+  
+  final List<String> categoryFilters = [
+      'Todas',
+      "Sin categoría",
+      "Abarrotes",
+      "Básicos",
+      "Botanas",
+      "Enlatados",
+      "Lácteos",
+      "Bebidas",
+      "Carnes",
+      "Panadería",
+      "Frutas y Verduras",
+      "Limpieza",
+      "Higiene Personal",
+      "Artículos para Bebé",
+      "Mascotas",
+      "Otros",
+    ];
+
+    final List<String> sortOptions = [
+      'Ninguno',
+      'Precio Ascendente',
+      'Precio Descendente',
+    ];
 
   @override
   void initState() {
@@ -75,9 +112,23 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
   }
 
   Ticket get currentTicket => _tickets[_tabController.index];
+  
+  
 
   @override
   Widget build(BuildContext context) {
+
+    final provider = Provider.of<ProductProvider>(context);
+    final allProducts = provider.allProducts;
+
+    final filteredProducts = filterProducts(
+      products: provider.allProducts,
+      searchQuery: searchQuery,
+      category: selectedCategoryFilter,
+      onlyBulk: filterBulkOnly,
+      sortOption: selectedSortOption,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -145,6 +196,11 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                               border: Border.all(color: Colors.white.withAlpha(26)),
                             ),
                             child: TextField(
+                              onChanged: (value) {
+                                  setState(() {
+                                    searchQuery = value;
+                                  });
+                                },
                               decoration: InputDecoration(
                                 hintText: 'Buscar producto...',
                                 hintStyle: GoogleFonts.poppins(color: Colors.white70),
@@ -158,7 +214,8 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                         const SizedBox(width: 12),
                         // Category Filter Buttons (Example)
                         IconButton(
-                          onPressed: () {}, 
+                          onPressed: _showFilterDialog, 
+                          
                           icon: const Icon(Icons.filter_list, color: Colors.white70),
                           tooltip: 'Filtrar',
                         ),
@@ -175,17 +232,30 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
-                        itemCount: _products.length,
+                        itemCount: filteredProducts.length,
+                        // itemBuilder: (context, index) {
+                        //   final product = allProducts[index];
+                        //   return _ProductCard(
+                        //     name: product['name'],
+                        //     price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
+                        //     isBulk: product['isBulk'],
+                        //     onTap: () {
+                        //       _addToCart(product);
+                        //     },
+                        //   );
+                        // },
+
                         itemBuilder: (context, index) {
-                          final product = _products[index];
-                          return _ProductCard(
-                            name: product['name'],
-                            price: product['price'],
-                            isBulk: product['isBulk'],
-                            onTap: () {
-                              _addToCart(product);
-                            },
-                          );
+                            final product = filteredProducts[index]; // <-- y aquí
+                            return _ProductCard(
+                              name: product['name'],
+                              price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
+                              isBulk: product['isBulk'],
+                              onTap: () {
+                                _addToCart(product);
+                              },
+
+                           );
                         },
                       ),
                     ),
@@ -396,7 +466,8 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
   }
 
   void _addToCart(Map<String, dynamic> product) async {
-    double price = product['price'];
+    //double price = product['price'];
+    double price = (product['sellingPrice'] as num?)?.toDouble() ?? 0.0;
     double quantity = 1;
     bool isBulk = product['isBulk'] ?? false;
 
@@ -506,6 +577,131 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
       ),
     );
   }
+
+  
+    void _showFilterDialog() {
+        showDialog(
+          context: context,
+          builder: (_) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1a1a1a),
+              title: Text(
+                'Filtros',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: StatefulBuilder(
+                builder: (context, setModalState) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      // Categoría
+                      DropdownButtonFormField<String>(
+                        value: selectedCategoryFilter,
+                        dropdownColor: const Color(0xFF1a1a1a),
+                        items: categoryFilters.map((cat) {
+                          return DropdownMenuItem(
+                            value: cat,
+                            child: Text(cat,
+                                style: GoogleFonts.poppins(color: Colors.white)),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setModalState(() {
+                            selectedCategoryFilter = value!;
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Categoría',
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Ordenamiento
+                      DropdownButtonFormField<String>(
+                        value: selectedSortOption,
+                        dropdownColor: const Color(0xFF1a1a1a),
+                        items: sortOptions.map((sort) {
+                          return DropdownMenuItem(
+                            value: sort,
+                            child: Text(sort,
+                                style: GoogleFonts.poppins(color: Colors.white)),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setModalState(() {
+                            selectedSortOption = value!;
+                          });
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Ordenar por',
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Granel
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: filterBulkOnly,
+                            activeColor: const Color(0xFF05e265),
+                            onChanged: (value) {
+                              setModalState(() {
+                                filterBulkOnly = value ?? false;
+                              });
+                            },
+                          ),
+                          Text(
+                            'Solo productos a granel',
+                            style: GoogleFonts.poppins(color: Colors.white),
+                          )
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedCategoryFilter = 'Todas';
+                      selectedSortOption = 'Ninguno';
+                      filterBulkOnly = false;
+                    });
+                    //applyFilters();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Limpiar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    //applyFilters();
+                    setState(() {}); // aplica filtros
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF05e265),
+                  ),
+                  child: const Text('Aplicar'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+
+
+
+
+
+
+
 }
 
 class CartItem {
