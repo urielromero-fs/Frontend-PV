@@ -19,6 +19,7 @@ class Ticket {
   double subtotal;
   double discount;
   double total;
+  double? amountTendered;
   DateTime createdAt;
 
   Ticket({
@@ -27,6 +28,7 @@ class Ticket {
     this.subtotal = 0.0,
     this.discount = 0.0,
     this.total = 0.0,
+    this.amountTendered,
     DateTime? createdAt,
   }) : 
     items = items ?? [],
@@ -78,10 +80,153 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
       'Precio Descendente',
     ];
 
+  bool _isRegisterOpen = false;
+  double _initialCash = 0.0;
+  double _totalSales = 0.0;
+  double _totalWithdrawals = 0.0;
+
   @override
   void initState() {
     super.initState();
     _addNewTicket();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isRegisterOpen) {
+        _showOpenRegisterDialog();
+      }
+    });
+  }
+
+  Future<void> _showOpenRegisterDialog() async {
+    final amountController = TextEditingController();
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a1a),
+        title: Text('Iniciar Cobro de Caja', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Cantidad para iniciar el cobro de caja:', style: GoogleFonts.poppins(color: Colors.white70)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: GoogleFonts.poppins(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Monto inicial',
+                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                prefixText: '\$ ',
+                prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.3))),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+               Navigator.pop(context);
+               Navigator.pop(context); // Return to previous screen if cancelled
+            },
+            child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+               setState(() {
+                 _initialCash = double.tryParse(amountController.text) ?? 0.0;
+                 _isRegisterOpen = true;
+               });
+               Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265)),
+            child: Text('Iniciar', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showCloseRegisterDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a1a),
+        title: Text('Cerrar Operación', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text('¿Estás seguro de que deseas cerrar la caja?', style: GoogleFonts.poppins(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _isRegisterOpen = false;
+              });
+              Navigator.pop(context); // Close the confirmation dialog
+              _showDailyReportDialog(); // Open the report dialog
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: Text('Cerrar Caja', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDailyReportDialog() async {
+    final double endCash = _initialCash + _totalSales - _totalWithdrawals;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a1a),
+        title: Text('Reporte del Día', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildReportRow('Fondo Inicial:', '\$${_initialCash.toStringAsFixed(2)}'),
+            const SizedBox(height: 8),
+            _buildReportRow('Total Vendido:', '\$${_totalSales.toStringAsFixed(2)}', color: const Color(0xFF05e265)),
+            const SizedBox(height: 8),
+            _buildReportRow('Salidas de Efectivo:', '-\$${_totalWithdrawals.toStringAsFixed(2)}', color: Colors.redAccent),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Divider(color: Colors.white24),
+            ),
+            _buildReportRow('Total en Caja:', '\$${endCash.toStringAsFixed(2)}', isBold: true),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _initialCash = 0.0;
+                _totalSales = 0.0;
+                _totalWithdrawals = 0.0;
+              });
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265)),
+            child: Text('Aceptar', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportRow(String label, String value, {Color color = Colors.white, bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: GoogleFonts.poppins(color: Colors.white70, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+        Text(value, style: GoogleFonts.poppins(color: color, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, fontSize: isBold ? 16 : 14)),
+      ],
+    );
   }
 
   void _addNewTicket() {
@@ -129,13 +274,38 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
       sortOption: selectedSortOption,
     );
 
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Cobros',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-          ),
+        title: Row(
+          children: [
+             Text(
+              'Cobros',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (_isRegisterOpen) ...[
+              const SizedBox(width: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF05e265).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF05e265).withOpacity(0.5)),
+                ),
+                child: Text(
+                  'Caja Abierta',
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF05e265),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ]
         ),
         backgroundColor: const Color(0xFF000000),
         foregroundColor: Colors.white,
@@ -147,30 +317,53 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
           },
         ),
         actions: [
+          if (_isRegisterOpen)
+            Padding(
+              padding: EdgeInsets.only(right: isMobile ? 4.0 : 8.0),
+              child: ElevatedButton.icon(
+                onPressed: _showCloseRegisterDialog,
+                icon: const Icon(Icons.lock_outline, size: 16),
+                label: isMobile ? const Text('') : const Text('Cerrar Operación'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange.withOpacity(0.2),
+                  foregroundColor: Colors.orange,
+                  elevation: 0,
+                  side: BorderSide(color: Colors.orange.withOpacity(0.5)),
+                  padding: isMobile ? const EdgeInsets.all(8) : null,
+                ),
+              ),
+            ),
            Padding(
-            padding: const EdgeInsets.only(right: 16.0),
+            padding: EdgeInsets.only(right: isMobile ? 8.0 : 16.0),
             child: ElevatedButton.icon(
               onPressed: _showWithdrawalDialog,
               icon: const Icon(Icons.money_off, size: 16),
-              label: const Text('Salida de Efectivo'),
+              label: isMobile ? const Text('') : const Text('Salida de Efectivo'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red.withOpacity(0.2),
                 foregroundColor: Colors.redAccent,
                 elevation: 0,
                 side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                padding: isMobile ? const EdgeInsets.all(8) : null,
               ),
             ),
           ),
         ],
       ),
-      body: Row(
-        children: [
-          // Left Panel - Product Search/Add
-          Expanded(
-            flex: 3, // Increased flex for grid
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
+      body: isMobile 
+        ? _buildMobileLayout(filteredProducts)
+        : Row(
+            children: _buildDesktopLayout(filteredProducts),
+          ),
+      floatingActionButton: isMobile ? _buildMobileCartBottomBar() : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  Widget _buildMobileLayout(List<dynamic> filteredProducts) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
@@ -226,27 +419,16 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                     // Products Grid
                     Expanded(
                       child: GridView.builder(
+                        padding: const EdgeInsets.only(bottom: 80), // Padding for the bottom bar
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 6, // More items per row for smaller cards
+                          crossAxisCount: 3, // Less items per row on mobile
                           childAspectRatio: 1.0, // Square cards for compact layout
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
                         itemCount: filteredProducts.length,
-                        // itemBuilder: (context, index) {
-                        //   final product = allProducts[index];
-                        //   return _ProductCard(
-                        //     name: product['name'],
-                        //     price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
-                        //     isBulk: product['isBulk'],
-                        //     onTap: () {
-                        //       _addToCart(product);
-                        //     },
-                        //   );
-                        // },
-
                         itemBuilder: (context, index) {
-                            final product = filteredProducts[index]; // <-- y aquí
+                            final product = filteredProducts[index];
                             return _ProductCard(
                               name: product['name'],
                               price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
@@ -254,7 +436,94 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                               onTap: () {
                                 _addToCart(product);
                               },
+                           );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+    );
+  }
 
+  List<Widget> _buildDesktopLayout(List<dynamic> filteredProducts) {
+    return [
+      // Left Panel - Product Search/Add
+      Expanded(
+        flex: 3, 
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF000000),
+                    const Color(0xFF1a1a1a),
+                  ],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Search Bar and Categories
+                     Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(13),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white.withAlpha(26)),
+                            ),
+                            child: TextField(
+                              onChanged: (value) {
+                                  setState(() {
+                                    searchQuery = value;
+                                  });
+                                },
+                              decoration: InputDecoration(
+                                hintText: 'Buscar producto...',
+                                hintStyle: GoogleFonts.poppins(color: Colors.white70),
+                                icon: const Icon(Icons.search, color: Colors.white70),
+                                border: InputBorder.none,
+                              ),
+                              style: GoogleFonts.poppins(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Category Filter Buttons (Example)
+                        IconButton(
+                          onPressed: _showFilterDialog, 
+                          icon: const Icon(Icons.filter_list, color: Colors.white70),
+                          tooltip: 'Filtrar',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Products Grid
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 6, 
+                          childAspectRatio: 1.0, // Square cards for compact layout
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemCount: filteredProducts.length,
+                        itemBuilder: (context, index) {
+                            final product = filteredProducts[index]; 
+                            return _ProductCard(
+                              name: product['name'],
+                              price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
+                              isBulk: product['isBulk'],
+                              onTap: () {
+                                _addToCart(product);
+                              },
                            );
                         },
                       ),
@@ -266,10 +535,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
           ),
 
           // Divider
-          Container(
-            width: 1,
-            color: Colors.white.withAlpha(26),
-          ),
+          Container(width: 1, color: Colors.white.withAlpha(26)),
 
           // Right Panel - Tickets & Cart
           Expanded(
@@ -431,10 +697,34 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                                   ],
                                 ),
                                 const SizedBox(height: 16),
+                                if (currentTicket.amountTendered != null) ...[
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Recibido:', style: GoogleFonts.poppins(color: Colors.white70)),
+                                      Text('\$${currentTicket.amountTendered!.toStringAsFixed(2)}', style: GoogleFonts.poppins(color: Colors.white)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Cambio:', style: GoogleFonts.poppins(color: Colors.white70)),
+                                      Text('\$${(currentTicket.amountTendered! - currentTicket.total).toStringAsFixed(2)}', style: GoogleFonts.poppins(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
-                                    onPressed: currentTicket.items.isNotEmpty ? _processPayment : null,
+                                    onPressed: currentTicket.items.isEmpty ? null : () {
+                                      if (currentTicket.amountTendered == null) {
+                                        _showPaymentDialog();
+                                      } else {
+                                        _processPayment();
+                                      }
+                                    },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF05e265),
                                       foregroundColor: Colors.white,
@@ -444,7 +734,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                                       ),
                                     ),
                                     child: Text(
-                                      'COBRAR',
+                                      currentTicket.amountTendered == null ? 'COBRAR' : 'FINALIZAR VENTA',
                                       style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
                                     ),
                                   ),
@@ -460,9 +750,299 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
               ),
             ),
           ),
+    ];
+  }
+
+  Widget _buildMobileCartBottomBar() {
+    int totalItems = currentTicket.items.fold(0, (sum, item) => sum + item.quantity.toInt());
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF05e265),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF05e265).withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
+      child: InkWell(
+        onTap: _showMobileCartBottomSheet,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.shopping_cart, color: Colors.white),
+                if (totalItems > 0)
+                  Positioned(
+                    right: -8,
+                    top: -8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        totalItems.toString(),
+                        style: GoogleFonts.poppins(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Text(
+              'Ver Carrito',
+              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(width: 16),
+            Text(
+              '\$${currentTicket.total.toStringAsFixed(2)}',
+              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  void _showMobileCartBottomSheet() {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              return Container(
+                height: MediaQuery.of(context).size.height * 0.8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1a1a1a),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 8, bottom: 16),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Carrito',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close, color: Colors.white70),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Ticket Tabs
+                            Container(
+                              color: Colors.black,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TabBar(
+                                      controller: _tabController,
+                                      isScrollable: true,
+                                      indicatorColor: const Color(0xFF05e265),
+                                      labelColor: const Color(0xFF05e265),
+                                      unselectedLabelColor: Colors.white54,
+                                      tabs: _tickets.asMap().entries.map((entry) {
+                                        return Tab(
+                                          child: Row(
+                                            children: [
+                                              Text('Ticket ${entry.key + 1}'),
+                                              if (_tickets.length > 1)
+                                                Padding(
+                                                  padding: const EdgeInsets.only(left: 8.0),
+                                                  child: InkWell(
+                                                    onTap: () {
+                                                      _closeTicket(entry.key);
+                                                      setModalState(() {});
+                                                      setState(() {});
+                                                    },
+                                                    child: const Icon(Icons.close, size: 16),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onTap: (index) {
+                                        setModalState(() {});
+                                        setState(() {});
+                                      },
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add_circle, color: Color(0xFF05e265)),
+                                    onPressed: () {
+                                      _addNewTicket();
+                                      setModalState(() {});
+                                      setState(() {});
+                                    },
+                                    tooltip: 'Nuevo Ticket',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // Cart Items List
+                            Expanded(
+                              child: currentTicket.items.isEmpty
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.shopping_cart_outlined,
+                                            color: Colors.white.withAlpha(51),
+                                            size: 48,
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            'Ticket vacío',
+                                            style: GoogleFonts.poppins(
+                                              color: Colors.white70,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      itemCount: currentTicket.items.length,
+                                      itemBuilder: (context, index) {
+                                        return _CartItemWidget(
+                                          item: currentTicket.items[index],
+                                          onQuantityChanged: (quantity) {
+                                            setModalState(() {
+                                              if (quantity == 0) {
+                                                currentTicket.items.removeAt(index);
+                                              } else {
+                                                currentTicket.items[index].quantity = quantity;
+                                              }
+                                              _calculateTotals();
+                                            });
+                                            setState(() {});
+                                          },
+                                          onRemove: () {
+                                            setModalState(() {
+                                              currentTicket.items.removeAt(index);
+                                              _calculateTotals();
+                                            });
+                                            setState(() {});
+                                          },
+                                        );
+                                      },
+                                    ),
+                            ),
+                            // Summary
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(13),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withAlpha(26)),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Total', style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                      Text(
+                                        '\$${currentTicket.total.toStringAsFixed(2)}',
+                                        style: GoogleFonts.poppins(color: const Color(0xFF05e265), fontSize: 24, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  if (currentTicket.amountTendered != null) ...[
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Recibido:', style: GoogleFonts.poppins(color: Colors.white70)),
+                                        Text('\$${currentTicket.amountTendered!.toStringAsFixed(2)}', style: GoogleFonts.poppins(color: Colors.white)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Cambio:', style: GoogleFonts.poppins(color: Colors.white70)),
+                                        Text('\$${(currentTicket.amountTendered! - currentTicket.total).toStringAsFixed(2)}', style: GoogleFonts.poppins(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: currentTicket.items.isEmpty ? null : () {
+                                        if (currentTicket.amountTendered == null) {
+                                          _showPaymentDialog(setModalState: setModalState);
+                                        } else {
+                                          _processPayment();
+                                          Navigator.pop(context);
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF05e265),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        currentTicket.amountTendered == null ? 'COBRAR' : 'FINALIZAR VENTA',
+                                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
   }
 
   void _addToCart(Map<String, dynamic> product) async {
@@ -511,6 +1091,68 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
     currentTicket.subtotal = currentTicket.items.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
     currentTicket.total = currentTicket.subtotal - currentTicket.discount;
     if (currentTicket.total < 0) currentTicket.total = 0.0;
+    
+    if (currentTicket.amountTendered != null && currentTicket.amountTendered! < currentTicket.total) {
+      currentTicket.amountTendered = null;
+    }
+  }
+
+  Future<void> _showPaymentDialog({StateSetter? setModalState}) async {
+    final amountController = TextEditingController();
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a1a),
+        title: Text('Cobrar - \$${currentTicket.total.toStringAsFixed(2)}', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Cantidad con la que paga el cliente:', style: GoogleFonts.poppins(color: Colors.white70)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: GoogleFonts.poppins(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Monto recibido',
+                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                prefixText: '\$ ',
+                prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.3))),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final double amount = double.tryParse(amountController.text) ?? 0.0;
+              if (amount >= currentTicket.total) {
+                if (setModalState != null) {
+                  setModalState(() {
+                    currentTicket.amountTendered = amount;
+                  });
+                }
+                setState(() {
+                  currentTicket.amountTendered = amount;
+                });
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('El monto recibido debe ser mayor o igual al total'), backgroundColor: Colors.redAccent),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265)),
+            child: Text('Aceptar', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _processPayment() {
@@ -520,6 +1162,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
         backgroundColor: const Color(0xFF05e265),
       ),
     );
+    
+    setState(() {
+      _totalSales += currentTicket.total;
+      currentTicket.items.clear();
+      currentTicket.amountTendered = null;
+      _calculateTotals();
+    });
   }
 
   Future<void> _showWithdrawalDialog() async {
@@ -565,6 +1214,10 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
           ),
           ElevatedButton(
             onPressed: () {
+              final double amount = double.tryParse(amountController.text) ?? 0.0;
+              setState(() {
+                _totalWithdrawals += amount;
+              });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Retiro registrado correctamente'), backgroundColor: Colors.orange),
