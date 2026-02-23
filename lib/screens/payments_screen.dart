@@ -619,6 +619,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                                 onPressed: () {
                                   setState(() {
                                     currentTicket.items.clear();
+                                    currentTicket.discount = 0.0;
                                     _calculateTotals();
                                   });
                                 },
@@ -686,10 +687,70 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                             ),
                             child: Column(
                               children: [
+                                if (currentTicket.discount > 0) ...[
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Subtotal', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 16)),
+                                      Text(
+                                        '\$${currentTicket.subtotal.toStringAsFixed(2)}',
+                                        style: GoogleFonts.poppins(color: Colors.white70, fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Descuento', style: GoogleFonts.poppins(color: Colors.orange, fontSize: 16)),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '-\$${currentTicket.discount.toStringAsFixed(2)}',
+                                            style: GoogleFonts.poppins(color: Colors.orange, fontSize: 16, fontWeight: FontWeight.bold),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: () => _showDiscountDialog(),
+                                            child: const Icon(Icons.edit, color: Colors.orange, size: 16),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Divider(color: Colors.white24),
+                                  const SizedBox(height: 8),
+                                ],
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('Total', style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                    Row(
+                                      children: [
+                                        Text('Total', style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                        if (currentTicket.discount == 0) ...[
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: () => _showDiscountDialog(),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.orange.withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.local_offer_outlined, color: Colors.orange, size: 12),
+                                                  const SizedBox(width: 4),
+                                                  Text('Desc.', style: GoogleFonts.poppins(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                     Text(
                                       '\$${currentTicket.total.toStringAsFixed(2)}',
                                       style: GoogleFonts.poppins(color: const Color(0xFF05e265), fontSize: 24, fontWeight: FontWeight.bold),
@@ -975,10 +1036,70 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                               ),
                               child: Column(
                                 children: [
+                                  if (currentTicket.discount > 0) ...[
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Subtotal', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 16)),
+                                        Text(
+                                          '\$${currentTicket.subtotal.toStringAsFixed(2)}',
+                                          style: GoogleFonts.poppins(color: Colors.white70, fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Descuento', style: GoogleFonts.poppins(color: Colors.orange, fontSize: 16)),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              '-\$${currentTicket.discount.toStringAsFixed(2)}',
+                                              style: GoogleFonts.poppins(color: Colors.orange, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            GestureDetector(
+                                              onTap: () => _showDiscountDialog(setModalState: setModalState),
+                                              child: const Icon(Icons.edit, color: Colors.orange, size: 16),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Divider(color: Colors.white24),
+                                    const SizedBox(height: 8),
+                                  ],
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text('Total', style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                      Row(
+                                        children: [
+                                          Text('Total', style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                          if (currentTicket.discount == 0) ...[
+                                            const SizedBox(width: 8),
+                                            GestureDetector(
+                                              onTap: () => _showDiscountDialog(setModalState: setModalState),
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.orange.withOpacity(0.2),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(Icons.local_offer_outlined, color: Colors.orange, size: 12),
+                                                    const SizedBox(width: 4),
+                                                    Text('Desc.', style: GoogleFonts.poppins(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
                                       Text(
                                         '\$${currentTicket.total.toStringAsFixed(2)}',
                                         style: GoogleFonts.poppins(color: const Color(0xFF05e265), fontSize: 24, fontWeight: FontWeight.bold),
@@ -1167,8 +1288,83 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
       _totalSales += currentTicket.total;
       currentTicket.items.clear();
       currentTicket.amountTendered = null;
+      currentTicket.discount = 0.0;
       _calculateTotals();
     });
+  }
+
+  Future<void> _showDiscountDialog({StateSetter? setModalState}) async {
+    final discountController = TextEditingController(text: currentTicket.discount > 0 ? currentTicket.discount.toStringAsFixed(2) : '');
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a1a),
+        title: Text('Aplicar Descuento', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Ingresa el monto de descuento para este ticket:', style: GoogleFonts.poppins(color: Colors.white70)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: discountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: GoogleFonts.poppins(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Monto de descuento',
+                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                prefixText: '\$ ',
+                prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.3))),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          if (currentTicket.discount > 0)
+            TextButton(
+              onPressed: () {
+                if (setModalState != null) {
+                  setModalState(() {
+                    currentTicket.discount = 0.0;
+                    _calculateTotals();
+                  });
+                }
+                setState(() {
+                  currentTicket.discount = 0.0;
+                  _calculateTotals();
+                });
+                Navigator.pop(context);
+              },
+              child: Text('Quitar Descuento', style: GoogleFonts.poppins(color: Colors.redAccent)),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final double discount = double.tryParse(discountController.text) ?? 0.0;
+              if (discount >= 0) {
+                if (setModalState != null) {
+                  setModalState(() {
+                    currentTicket.discount = discount;
+                    _calculateTotals();
+                  });
+                }
+                setState(() {
+                  currentTicket.discount = discount;
+                  _calculateTotals();
+                });
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265)),
+            child: Text('Aplicar', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showWithdrawalDialog() async {

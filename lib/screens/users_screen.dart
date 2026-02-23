@@ -1,11 +1,181 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class UsersScreen extends StatelessWidget {
+class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
 
   @override
+  State<UsersScreen> createState() => _UsersScreenState();
+}
+
+class _UsersScreenState extends State<UsersScreen> {
+  // Mock data for users (just for presentation)
+  List<Map<String, dynamic>> users = List.generate(15, (index) => {
+    'id': 'user_$index',
+    'name': 'Usuario ${index + 1}',
+    'email': 'usuario${index + 1}@pv26.com',
+    'role': index % 3 == 0 ? 'Admin' : index % 2 == 0 ? 'Cajero' : 'Vendedor',
+    'status': index % 5 == 0 ? 'Inactivo' : 'Activo',
+    'joinDate': '${index + 1}/01/2026',
+  });
+
+  void _showUserForm([Map<String, dynamic>? user]) {
+    final bool isEditing = user != null;
+    final nameController = TextEditingController(text: isEditing ? user['name'] : '');
+    final emailController = TextEditingController(text: isEditing ? user['email'] : '');
+    String selectedRole = isEditing ? user['role'] : 'Cajero';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1a1a1a),
+              title: Text(
+                isEditing ? 'Editar Usuario' : 'Nuevo Usuario',
+                style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      style: GoogleFonts.poppins(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'Nombre Completo',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
+                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: GoogleFonts.poppins(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'Correo Electrónico',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
+                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedRole,
+                      dropdownColor: const Color(0xFF1a1a1a),
+                      style: GoogleFonts.poppins(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'Rol',
+                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
+                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                      ),
+                      items: ['Admin', 'Cajero', 'Vendedor'].map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        setModalState(() {
+                          selectedRole = newValue!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (nameController.text.isNotEmpty && emailController.text.isNotEmpty) {
+                      setState(() {
+                        if (isEditing) {
+                          final int index = users.indexWhere((u) => u['id'] == user['id']);
+                          if (index != -1) {
+                            users[index] = {
+                              ...users[index],
+                              'name': nameController.text,
+                              'email': emailController.text,
+                              'role': selectedRole,
+                            };
+                          }
+                        } else {
+                          users.insert(0, {
+                            'id': 'user_${DateTime.now().millisecondsSinceEpoch}',
+                            'name': nameController.text,
+                            'email': emailController.text,
+                            'role': selectedRole,
+                            'status': 'Activo',
+                            'joinDate': 'Recién',
+                          });
+                        }
+                      });
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(isEditing ? 'Usuario actualizado' : 'Usuario creado exitosamente'),
+                          backgroundColor: const Color(0xFF05e265),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF05e265),
+                  ),
+                  child: Text(isEditing ? 'Guardar' : 'Crear', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _deleteUser(String id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a1a),
+        title: Text('Eliminar Usuario', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text('¿Estás seguro de que deseas eliminar este usuario?', style: GoogleFonts.poppins(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                users.removeWhere((u) => u['id'] == id);
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Usuario eliminado'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: Text('Eliminar', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -26,9 +196,7 @@ class UsersScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: Add user
-            },
+            onPressed: () => _showUserForm(),
           ),
         ],
       ),
@@ -109,19 +277,54 @@ class UsersScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white.withOpacity(0.1)),
                   ),
-                  child: ListView.builder(
-                    itemCount: 20,
-                    itemBuilder: (context, index) {
-                      return _UserRow(
-                        name: 'Usuario ${index + 1}',
-                        email: 'usuario${index + 1}@pv26.com',
-                        role: index % 3 == 0 ? 'Admin' : 
-                               index % 2 == 0 ? 'Cajero' : 'Vendedor',
-                        status: index % 5 == 0 ? 'Inactivo' : 'Activo',
-                        statusColor: index % 5 == 0 ? const Color(0xFFE91E63) : const Color(0xFF05e265),
-                        joinDate: '${index + 1}/01/2024',
-                      );
-                    },
+                  child: Column(
+                    children: [
+                      // Encabezado de la tabla (solo en escritorio)
+                      if (!isMobile) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(13),
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(flex: 2, child: Text('Usuario', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
+                              Expanded(child: Text('Rol', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
+                              Expanded(child: Text('Registro', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
+                              Expanded(child: Text('Estado', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
+                              Expanded(child: Text('Acciones', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
+                            ],
+                          ),
+                        ),
+                        const Divider(color: Colors.white24, height: 1),
+                      ],
+                      // Lista de usuarios
+                      Expanded(
+                        child: users.isEmpty
+                            ? Center(child: Text('No hay usuarios registrados', style: GoogleFonts.poppins(color: Colors.white70)))
+                            : ListView.builder(
+                                itemCount: users.length,
+                                itemBuilder: (context, index) {
+                                  final user = users[index];
+                                  return _UserRow(
+                                    name: user['name'],
+                                    email: user['email'],
+                                    role: user['role'],
+                                    status: user['status'],
+                                    statusColor: user['status'] == 'Inactivo' ? const Color(0xFFE91E63) : const Color(0xFF05e265),
+                                    joinDate: user['joinDate'],
+                                    isMobile: isMobile,
+                                    onEdit: () => _showUserForm(user),
+                                    onDelete: () => _deleteUser(user['id']),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -188,6 +391,9 @@ class _UserRow extends StatelessWidget {
   final String status;
   final Color statusColor;
   final String joinDate;
+  final bool isMobile;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   const _UserRow({
     required this.name,
@@ -196,78 +402,161 @@ class _UserRow extends StatelessWidget {
     required this.status,
     required this.statusColor,
     required this.joinDate,
+    required this.isMobile,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
+    final actionsMenu = PopupMenuButton<String>(
+      color: const Color(0xFF1a1a1a),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      onSelected: (String value) {
+        if (value == 'edit') {
+          onEdit();
+        } else if (value == 'delete') {
+          onDelete();
+        }
+      },
+      itemBuilder: (BuildContext context) => [
+        PopupMenuItem<String>(
+          value: 'edit',
+          child: Row(
+            children: [
+              const Icon(Icons.edit, color: Color(0xFF05e265), size: 20),
+              const SizedBox(width: 12),
+              Text(
+                'Editar',
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              const Icon(Icons.delete, color: Color(0xFFE91E63), size: 20),
+              const SizedBox(width: 12),
+              Text(
+                'Eliminar',
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ],
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFF05e265).withAlpha(26),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFF05e265).withAlpha(51),
+            width: 1,
+          ),
+        ),
+        child: const Icon(
+          Icons.more_vert,
+          color: Color(0xFF05e265),
+          size: 20,
+        ),
+      ),
+    );
+
+    if (isMobile) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: statusColor,
+                  child: Text(
+                    name.substring(0, 1).toUpperCase(),
+                    style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name, style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+                      Text(email, style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14)),
+                      const SizedBox(height: 4),
+                      Text('Rol: $role', style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                actionsMenu,
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Registro: $joinDate', style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status,
+                    style: GoogleFonts.poppins(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
       ),
       child: Row(
         children: [
-          // Avatar
-          CircleAvatar(
-            backgroundColor: statusColor,
-            child: Text(
-              name.substring(0, 1).toUpperCase(),
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          
-          // User Info
           Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            flex: 2,
+            child: Row(
               children: [
-                Text(
-                  name,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                CircleAvatar(
+                  backgroundColor: statusColor,
+                  radius: 16,
+                  child: Text(
+                    name.substring(0, 1).toUpperCase(),
+                    style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),
-                Text(
-                  email,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white70,
-                    fontSize: 14,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name, style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(email, style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          
-          // Role
-          Expanded(
-            child: Text(
-              role,
-              style: GoogleFonts.poppins(
-                color: Colors.white70,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          
-          // Join Date
-          Expanded(
-            child: Text(
-              joinDate,
-              style: GoogleFonts.poppins(
-                color: Colors.white70,
-              ),
-            ),
-          ),
-          
-          // Status
+          Expanded(child: Text(role, style: GoogleFonts.poppins(color: Colors.white70, fontWeight: FontWeight.w500))),
+          Expanded(child: Text(joinDate, style: GoogleFonts.poppins(color: Colors.white70))),
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -278,45 +567,11 @@ class _UserRow extends StatelessWidget {
               child: Text(
                 status,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  color: statusColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: GoogleFonts.poppins(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
           ),
-          
-          // Actions
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white70),
-            color: const Color(0xFF1a1a1a),
-            onSelected: (value) {
-              // TODO: Handle menu actions
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit, color: Colors.white70, size: 20),
-                    SizedBox(width: 8),
-                    Text('Editar'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
-                    Text('Eliminar'),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          Expanded(child: actionsMenu),
         ],
       ),
     );

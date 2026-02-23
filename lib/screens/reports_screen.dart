@@ -1,11 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ReportsScreen extends StatelessWidget {
+class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
   @override
+  State<ReportsScreen> createState() => _ReportsScreenState();
+}
+
+class _ReportsScreenState extends State<ReportsScreen> {
+  String _selectedPeriod = 'Este Día';
+
+  // Dummy data arrays based on period
+  Map<String, Map<String, String>> metricData = {
+    'Este Día': {
+      'ventas': '\$1,230', 'ordenes': '45', 'clientes': '12', 'ticket': '\$115',
+      'ventas_change': '+5%', 'ordenes_change': '+2%', 'clientes_change': '+1%', 'ticket_change': '+3%'
+    },
+    'Esta Semana': {
+      'ventas': '\$8,450', 'ordenes': '150', 'clientes': '35', 'ticket': '\$122',
+      'ventas_change': '+12%', 'ordenes_change': '+8%', 'clientes_change': '+5%', 'ticket_change': '+4%'
+    },
+    'Este Mes': {
+      'ventas': '\$45,230', 'ordenes': '342', 'clientes': '67', 'ticket': '\$132',
+      'ventas_change': '+23%', 'ordenes_change': '+18%', 'clientes_change': '+12%', 'ticket_change': '+5%'
+    }
+  };
+
+  void _showPeriodSelector() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1a1a1a),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Seleccionar Período',
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              _buildPeriodOption('Este Día'),
+              _buildPeriodOption('Esta Semana'),
+              _buildPeriodOption('Este Mes'),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      }
+    );
+  }
+
+  Widget _buildPeriodOption(String period) {
+    return ListTile(
+      title: Text(
+        period,
+        style: GoogleFonts.poppins(
+          color: _selectedPeriod == period ? const Color(0xFFFF9800) : Colors.white70,
+          fontWeight: _selectedPeriod == period ? FontWeight.bold : FontWeight.normal,
+        ),
+        textAlign: TextAlign.center,
+      ),
+      onTap: () {
+        setState(() {
+          _selectedPeriod = period;
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  void _exportReport() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Generando y descargando reporte de $_selectedPeriod...'),
+        backgroundColor: const Color(0xFF05e265),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final currentData = metricData[_selectedPeriod]!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -26,9 +108,7 @@ class ReportsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.download),
-            onPressed: () {
-              // TODO: Export report
-            },
+            onPressed: _exportReport,
           ),
         ],
       ),
@@ -60,7 +140,7 @@ class ReportsScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Período: Este Mes',
+                        'Período: $_selectedPeriod',
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontSize: 16,
@@ -68,25 +148,28 @@ class ReportsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF9800),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.calendar_today, color: Colors.white, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Cambiar',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
+                    InkWell(
+                      onTap: _showPeriodSelector,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF9800),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.calendar_today, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Cambiar',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -100,20 +183,20 @@ class ReportsScreen extends StatelessWidget {
                   Expanded(
                     child: _MetricCard(
                       title: 'Ventas Totales',
-                      value: '\$45,230',
+                      value: currentData['ventas']!,
                       icon: Icons.trending_up,
                       color: const Color(0xFF05e265),
-                      change: '+23%',
+                      change: currentData['ventas_change']!,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: _MetricCard(
                       title: 'Órdenes',
-                      value: '342',
+                      value: currentData['ordenes']!,
                       icon: Icons.receipt,
                       color: const Color(0xFF2196F3),
-                      change: '+18%',
+                      change: currentData['ordenes_change']!,
                     ),
                   ),
                 ],
@@ -124,20 +207,20 @@ class ReportsScreen extends StatelessWidget {
                   Expanded(
                     child: _MetricCard(
                       title: 'Clientes Nuevos',
-                      value: '67',
+                      value: currentData['clientes']!,
                       icon: Icons.person_add,
                       color: const Color(0xFFFF9800),
-                      change: '+12%',
+                      change: currentData['clientes_change']!,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: _MetricCard(
                       title: 'Ticket Promedio',
-                      value: '\$132',
+                      value: currentData['ticket']!,
                       icon: Icons.attach_money,
                       color: const Color(0xFF9C27B0),
-                      change: '+5%',
+                      change: currentData['ticket_change']!,
                     ),
                   ),
                 ],

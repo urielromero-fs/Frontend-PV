@@ -40,6 +40,105 @@ class _HomeScreenState extends State<HomeScreen> {
     return MediaQuery.of(context).size.width < 768;
   }
 
+  void _showSettingsModal() {
+    final nameController = TextEditingController(text: _userName);
+    final emailController = TextEditingController(text: _userEmail);
+    final passwordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1a1a1a),
+          title: Text(
+            'Configuración de Perfil',
+            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Actualiza tus datos de acceso.', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  style: GoogleFonts.poppins(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Nombre Completo',
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
+                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                    prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: GoogleFonts.poppins(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Correo Electrónico',
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
+                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                    prefixIcon: const Icon(Icons.email, color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  style: GoogleFonts.poppins(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Nueva Contraseña (opcional)',
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
+                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                    prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                setState(() {
+                  _userName = nameController.text;
+                  _userEmail = emailController.text;
+                });
+                
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('user_name', _userName);
+                await prefs.setString('user_email', _userEmail);
+                // La contraseña se enviaría al backend en un caso real.
+                
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Perfil actualizado exitosamente'),
+                      backgroundColor: Color(0xFF05e265),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF05e265),
+              ),
+              child: Text('Guardar', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
@@ -223,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       _NavItem(
                         icon: Icons.people,
-                        title: 'Clientes',
+                        title: 'Usuarios',
                         onTap: () {
                           Navigator.push(
                             context,
@@ -239,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.settings,
                         title: 'Configuración',
                         onTap: () {
-                          // TODO: Navigate to settings
+                          _showSettingsModal();
                         },
                         isCollapsed: _isSidebarCollapsed,
                       ),
