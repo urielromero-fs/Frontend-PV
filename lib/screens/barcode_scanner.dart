@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'web_barcode_scanner.dart'; 
+
+
 
 class BarcodeScannerModal extends StatefulWidget {
   const BarcodeScannerModal({super.key});
@@ -58,11 +61,11 @@ class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
             : useHardwareScanner
                 ? _buildHardwareScanner()
                 : kIsWeb
-                    ? _buildWebNotSupported()
+                    ? _buildWebScanner()
                     : _buildMobileScanner(),
       ),
     );
-  }
+  } 
 
   // ===============================
   // SELECTOR DE OPCIONES
@@ -225,19 +228,21 @@ class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
   // ===============================
   // WEB
   // ===============================
-  Widget _buildWebNotSupported() {
-    return Stack(
-      children: [
-        const Center(
-          child: Text(
-            "No soportado en Web",
-            style: TextStyle(color: Colors.white),
-          ),
+  Widget _buildWebScanner() {
+  return Stack(
+    children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: WebBarcodeScanner(
+          onScanned: (code) {
+            Navigator.pop(context, code);
+          },
         ),
-        _closeButton(),
-      ],
-    );
-  }
+      ),
+      _closeButton(),
+    ],
+  );
+}
 
   Widget _closeButton() {
     return Positioned(
