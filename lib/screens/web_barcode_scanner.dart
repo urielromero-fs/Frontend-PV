@@ -35,6 +35,12 @@ class _WebBarcodeScannerState extends State<WebBarcodeScanner> {
       color: Colors.black,
       child: MobileScanner(
         controller: controller,
+        scanWindow: Rect.fromCenter(
+          center: Offset(MediaQuery.of(context).size.width / 2, 175), // Ajustado a tu modal de 350
+          width: 200,
+          height: 200,
+        ),
+
         onDetect: (capture) {
           final List<Barcode> barcodes = capture.barcodes;
           if (barcodes.isNotEmpty) {
