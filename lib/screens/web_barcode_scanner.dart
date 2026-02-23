@@ -105,7 +105,12 @@ class _WebBarcodeScannerState extends State<WebBarcodeScanner> {
           // 1. El Scanner de fondo
           MobileScanner(
             controller: controller,
-            scanWindow: scanWindow, // Esto optimiza la detección en Web
+            scanWindow: Rect.fromCenter(
+              center: Offset(MediaQuery.of(context).size.width / 2, 175), // Ajustado a tu modal de 350
+              width: 200,
+              height: 200,
+            ),
+      
             onDetect: (capture) {
               final barcode = capture.barcodes.first;
               if (barcode.rawValue != null) {
