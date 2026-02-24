@@ -55,20 +55,20 @@ class CashSessionService {
 
 //Close cash session
 
-static Future<Map<String, dynamic>> closeSession(double closingAmount, String sessionId) async {
+static Future<Map<String, dynamic>> closeSession(String sessionId) async {
     try {
       final headers = await _getHeaders();
+
+      
       
       final response = await http.post(
         Uri.parse('$_baseUrl/cash-sessions/close/$sessionId'),
-        headers: headers,
-        body: jsonEncode({
-          'closingAmount': closingAmount
-          }),
+        headers: headers
+        
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
+        final responseData = response.body.isNotEmpty ? jsonDecode(response.body) : {};
         
         return {
           'success': true,
@@ -76,7 +76,7 @@ static Future<Map<String, dynamic>> closeSession(double closingAmount, String se
           'data': responseData,
         };
       } else {
-        final errorData = jsonDecode(response.body);
+         final errorData = response.body.isNotEmpty ? jsonDecode(response.body) : {};
         return {
           'success': false,
           'message': errorData['message'] ?? 'Error desconocido',

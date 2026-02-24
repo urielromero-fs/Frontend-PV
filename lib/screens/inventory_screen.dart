@@ -18,13 +18,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   List<dynamic> allProducts = []; //Original list
   List<dynamic> filteredProducts = []; //Filtered list for search
 
-  //String selectedCategoryFilter = 'Todas';
-  //String selectedSortOption = 'Ninguno';
-  //bool filterBulkOnly = false;
 
-
-  //String searchQuery = '';
-  //final TextEditingController searchController = TextEditingController();
 
 
   bool isLoading = false;
@@ -67,81 +61,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-    //fetchProducts(); // cargar productos al iniciar
-    // Traer productos solo si aún no se han cargado
+    
     final provider = Provider.of<ProductProvider>(context, listen: false);
     if (provider.allProducts.isEmpty) {
       provider.fetchProducts();
     }
   }
 
-  // Future<void> fetchProducts() async {
-  //   setState(() {
-  //     isLoading = true;
-  //     errorMessage = '';
-  //   });
-
-  //   final result = await InventoryService.getProducts();
-
-  //   if (result['success'] == true) {
-  //     setState(() {
-  //       allProducts = result['data'];
-  //       filteredProducts = List.from(allProducts); // Inicialmente, mostrar todos los productos
-  //       isLoading = false;
-  //     });
-  //   } else {
-  //     setState(() {
-  //       errorMessage = result['message'] ?? 'Error desconocido';
-  //       isLoading = false;
-  //     });
-  //   }
-  // }
 
 
-
-
-//   void applyFilters() {
-//   List<dynamic> temp = List.from(allProducts);
-
-//   //  Filtro por búsqueda
-//   if (searchQuery.isNotEmpty) {
-//     temp = temp.where((product) {
-//       final name = (product['name'] ?? '').toString().toLowerCase();
-//       final barcode = (product['barcode'] ?? '').toString().toLowerCase();
-//       final searchLower = searchQuery.toLowerCase();
-
-//       return name.contains(searchLower) ||
-//              barcode.contains(searchLower);
-//     }).toList();
-//   }
-
-//   // Filtro por categoría
-//   if (selectedCategoryFilter != 'Todas') {
-//     temp = temp.where((product) {
-//       return product['category'] == selectedCategoryFilter;
-//     }).toList();
-//   }
-
-//   //  Filtro por granel
-//   if (filterBulkOnly) {
-//     temp = temp.where((product) {
-//       return product['isBulk'] == true;
-//     }).toList();
-//   }
-
-//   // Ordenamiento por precio
-//   if (selectedSortOption == 'Precio Ascendente') {
-//     temp.sort((a, b) =>
-//       (a['sellingPrice'] ?? 0).compareTo(b['sellingPrice'] ?? 0));
-//   } else if (selectedSortOption == 'Precio Descendente') {
-//     temp.sort((a, b) =>
-//       (b['sellingPrice'] ?? 0).compareTo(a['sellingPrice'] ?? 0));
-//   }
-
-//   setState(() {
-//     filteredProducts = temp;
-//   });
-// }
 
 
   @override
@@ -182,7 +110,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-           //_showAddProductModal(context, fetchProducts);
            _showAddProductModal();
         },
         backgroundColor: const Color(0xFF05e265),

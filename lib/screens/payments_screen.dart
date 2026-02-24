@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../utils/product_filters.dart';
-
+import '../services/sale_service.dart';
+import '../services/cashSession_service.dart';
+import 'home_screen.dart'; 
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
@@ -39,17 +41,10 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
   late TabController _tabController;
   List<Ticket> _tickets = [];
   
-  // // Dummy products (would come from a service/database)
-  // final List<Map<String, dynamic>> _products = List.generate(20, (index) => {
-  //   'name': 'Producto ${index + 1}',
-  //   'price': (index + 1) * 15.0,
-  //   'isBulk': index % 5 == 0, // Every 5th item is bulk
-  //   'image': null, // Placeholder
-  // });
 
   final TextEditingController searchController = TextEditingController();
 
-
+  //Filtro
   String searchQuery = '';
   String selectedCategoryFilter = 'Todas';
   String selectedSortOption = 'Ninguno';
@@ -80,22 +75,138 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
       'Precio Descendente',
     ];
 
+
+  //Cash session
   bool _isRegisterOpen = false;
   double _initialCash = 0.0;
   double _totalSales = 0.0;
   double _totalWithdrawals = 0.0;
+  bool _isLoadingSession = false;
+  String? _currentSessionId;
+
+
+
 
   @override
   void initState() {
     super.initState();
     _addNewTicket();
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    _initCashSession();
+  }
+
+
+  Future<void> _initCashSession() async {
+      await _checkOpenSession();
+
+      // Solo mostrar diálogo si no hay sesión abierta
       if (!_isRegisterOpen) {
         _showOpenRegisterDialog();
       }
-    });
+    }
+
+
+      Future<void> _checkOpenSession() async {
+            final result = await CashSessionService.getOpenSession();
+
+            if (!result['success']) {
+              // error real de backend
+              print("Error obteniendo sesión: ${result['message']}");
+              return;
+            }
+
+            final data = result['data'];
+
+            if (data == null) {
+              setState(() {
+                _isRegisterOpen = false;
+                _currentSessionId = null;
+              });
+              return;
+            }
+
+            // 
+            if (data is Map<String, dynamic>) {
+              setState(() {
+                _isRegisterOpen = true;
+                _currentSessionId = data['_id'];
+                _initialCash = (data['openingAmount'] ?? 0).toDouble();
+              });
+            }
+          }
+
+  Future<void> _processSale() async {
+
+  
+
+  //Mostrar diálogo de carga
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF05e265))),
+  );
+
+  try {
+    // Mapear items al formato del endpoint
+    
+    final List<Map<String, dynamic>> productsPayload = currentTicket.items.map((item) {
+      return {
+        'productId':item.id.toString(), 
+        'quantity':item.quantity.toDouble(),
+      };
+    }).toList();
+
+    print(productsPayload);
+
+    //Llamar al servicio
+    final result = await SaleService.createSale(products: productsPayload);
+
+    // Quitar diálogo de carga
+    Navigator.pop(context);
+
+    if (result['success']) {
+      // Actualizar contadores locales para el reporte diario
+      
+
+        setState(() {
+          _totalSales += currentTicket.total;
+          currentTicket.items.clear();
+          currentTicket.amountTendered = null;
+          currentTicket.discount = 0.0;
+          _calculateTotals();
+        });
+
+      _showSuccessDialog(result['message']);
+    } else {
+      _showErrorSnackBar(result['message']);
+    }
+  } catch (e) {
+    Navigator.pop(context); // Quitar carga en caso de error
+    _showErrorSnackBar('Error de conexión: $e');
   }
+}
+
+void _showErrorSnackBar(String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(backgroundColor: Colors.redAccent, content: Text(message)),
+  );
+}
+
+void _showSuccessDialog(String message) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFF1a1a1a),
+      title: const Icon(Icons.check_circle, color: Color(0xFF05e265), size: 60),
+      content: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Aceptar', style: TextStyle(color: Color(0xFF05e265))),
+        ),
+      ],
+    ),
+  );
+}
 
   Future<void> _showOpenRegisterDialog() async {
     final amountController = TextEditingController();
@@ -133,13 +244,34 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
             child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
           ),
           ElevatedButton(
-            onPressed: () {
-               setState(() {
-                 _initialCash = double.tryParse(amountController.text) ?? 0.0;
-                 _isRegisterOpen = true;
-               });
-               Navigator.pop(context);
-            },
+            onPressed: () async {
+                  final amount =
+                      double.tryParse(amountController.text) ?? 0.0;
+
+                  setState(() => _isLoadingSession = true);
+
+                  final result =
+                      await CashSessionService.startSession(amount);
+
+                  setState(() => _isLoadingSession = false);
+
+                  if (result['success']) {
+                    final data = result['data'];
+
+                    setState(() {
+                      _initialCash = amount;
+                      _isRegisterOpen = true;
+                      _currentSessionId = data?['_id'];
+                      
+                    });
+
+                    Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(result['message'])),
+                    );
+                  }
+                },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265)),
             child: Text('Iniciar', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
           ),
@@ -149,6 +281,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
   }
 
   Future<void> _showCloseRegisterDialog() async {
+    
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -161,13 +294,57 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
             child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
           ),
           ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _isRegisterOpen = false;
-              });
-              Navigator.pop(context); // Close the confirmation dialog
-              _showDailyReportDialog(); // Open the report dialog
-            },
+            onPressed: //() {
+            //   setState(() {
+            //     _isRegisterOpen = false;
+            //   });
+            //   Navigator.pop(context); // Close the confirmation dialog
+            //   _showDailyReportDialog(); // Open the report dialog
+            // }, 
+               () async {
+                    if (_currentSessionId == null) return;
+
+                  
+
+                    setState(() => _isLoadingSession = true);
+
+
+                    print(_currentSessionId);  
+
+                    final result =
+                        await CashSessionService.closeSession(_currentSessionId.toString());
+
+                    
+               
+                    setState(() => _isLoadingSession = false);
+
+                    if (result['success']) {
+                      setState(() {
+                        _isRegisterOpen = false;
+                        _currentSessionId = null;
+                      });
+
+                      Navigator.pop(context);
+            
+                      
+                      await _showDailyReportDialog();
+                       
+                     // 2️⃣ Redirigir al dashboard
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        (route) => false, // elimina todas las rutas anteriores
+                      );
+
+
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(result['message'])),
+                      );
+                    }
+                  },
+                 
+                 
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
             child: Text('Cerrar Caja', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
           ),
@@ -210,6 +387,8 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                 _totalSales = 0.0;
                 _totalWithdrawals = 0.0;
               });
+              Navigator.pop(context);
+
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265)),
             child: Text('Aceptar', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
@@ -783,7 +962,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                                       if (currentTicket.amountTendered == null) {
                                         _showPaymentDialog();
                                       } else {
-                                        _processPayment();
+                                        _processSale();
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -1132,7 +1311,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
                                         if (currentTicket.amountTendered == null) {
                                           _showPaymentDialog(setModalState: setModalState);
                                         } else {
-                                          _processPayment();
+                                          _processSale();
                                           Navigator.pop(context);
                                         }
                                       },
@@ -1198,6 +1377,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
         currentTicket.items[existingIndex].quantity += quantity;
       } else {
         currentTicket.items.add(CartItem(
+          id: product['_id'],
           name: product['name'],
           price: price,
           quantity: quantity,
@@ -1554,12 +1734,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
 }
 
 class CartItem {
+  String id; 
   String name;
   double price;
   double quantity;
   bool isBulk;
 
   CartItem({
+    required this.id,      
     required this.name,
     required this.price,
     required this.quantity,
