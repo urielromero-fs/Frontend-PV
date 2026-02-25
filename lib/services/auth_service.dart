@@ -7,10 +7,15 @@ class AuthService {
   static const String _refreshTokenKey = 'refresh_token';
   static const String _userEmailKey = 'user_email';
   static const String _userNameKey = 'user_name';
+  static const String _userRoleKey = 'user_role';
   static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
 
   // Register with real API call
-  static Future<Map<String, dynamic>> register(String name, String email, String password) async {
+  static Future<Map<String, dynamic>> register(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/register'),
@@ -18,16 +23,12 @@ class AuthService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({
-          'name': name,
-          'email': email,
-          'password': password,
-        }),
+        body: jsonEncode({'name': name, 'email': email, 'password': password}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        
+
         return {
           'success': true,
           'message': 'Cuenta creada exitosamente',
@@ -61,7 +62,10 @@ class AuthService {
   }
 
   // Login with real API call
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<Map<String, dynamic>> login(
+    String email,
+    String password,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/login'),
@@ -69,33 +73,37 @@ class AuthService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
+        body: jsonEncode({'email': email, 'password': password}),
       );
-
-
-
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         // Extract tokens from headers
-        final accessToken = response.headers['x-access-token'] ?? response.headers['X-Access-Token'] ?? response.headers['authorization']?.replaceFirst('Bearer ', '') ?? '';
-        final refreshToken = response.headers['x-refresh-token'] ?? response.headers['X-Refresh-Token'] ?? '';
-        
+        final accessToken =
+            response.headers['x-access-token'] ??
+            response.headers['X-Access-Token'] ??
+            response.headers['authorization']?.replaceFirst('Bearer ', '') ??
+            '';
+        final refreshToken =
+            response.headers['x-refresh-token'] ??
+            response.headers['X-Refresh-Token'] ??
+            '';
+
         // Extract user data from response body
         final userData = responseData['user'] ?? {};
         final userName = userData['userName'] ?? '';
         final userEmail = userData['email'] ?? email;
-        
+        final userRole =
+            userData['role'] ?? 'seller'; // Default a seller si no viene
+
         // Store tokens and user data
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_accessTokenKey, accessToken);
         await prefs.setString(_refreshTokenKey, refreshToken);
         await prefs.setString(_userNameKey, userName);
         await prefs.setString(_userEmailKey, userEmail);
-        
+        await prefs.setString(_userRoleKey, userRole);
+
         return {
           'success': true,
           'message': 'Login exitoso',
@@ -106,10 +114,7 @@ class AuthService {
           },
         };
       } else if (response.statusCode == 401) {
-        return {
-          'success': false,
-          'message': 'Credenciales incorrectas',
-        };
+        return {'success': false, 'message': 'Credenciales incorrectas'};
       } else {
         final errorData = jsonDecode(response.body);
         return {
@@ -134,17 +139,16 @@ class AuthService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({
-          'email': email,
-        }),
+        body: jsonEncode({'email': email}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        
+
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Instrucciones enviadas a tu correo',
+          'message':
+              responseData['message'] ?? 'Instrucciones enviadas a tu correo',
           'data': responseData,
         };
       } else if (response.statusCode == 404) {
@@ -179,7 +183,7 @@ class AuthService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final refreshToken = prefs.getString(_refreshTokenKey);
-      
+
       if (refreshToken != null) {
         // Make API call to logout
         final response = await http.post(
@@ -188,9 +192,7 @@ class AuthService {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: jsonEncode({
-            'refreshToken': refreshToken,
-          }),
+          body: jsonEncode({'refreshToken': refreshToken}),
         );
 
         // Clear local storage regardless of API response
@@ -198,18 +200,13 @@ class AuthService {
         await prefs.remove(_refreshTokenKey);
         await prefs.remove(_userNameKey);
         await prefs.remove(_userEmailKey);
+        await prefs.remove(_userRoleKey);
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          return {
-            'success': true,
-            'message': 'Sesión cerrada exitosamente',
-          };
+          return {'success': true, 'message': 'Sesión cerrada exitosamente'};
         } else {
           // Even if API call fails, local logout is successful
-          return {
-            'success': true,
-            'message': 'Sesión cerrada localmente',
-          };
+          return {'success': true, 'message': 'Sesión cerrada localmente'};
         }
       } else {
         // No refresh token, just clear local storage
@@ -217,11 +214,9 @@ class AuthService {
         await prefs.remove(_refreshTokenKey);
         await prefs.remove(_userNameKey);
         await prefs.remove(_userEmailKey);
-        
-        return {
-          'success': true,
-          'message': 'Sesión cerrada localmente',
-        };
+        await prefs.remove(_userRoleKey);
+
+        return {'success': true, 'message': 'Sesión cerrada localmente'};
       }
     } catch (e) {
       // Even if API call fails, try to clear local storage
@@ -231,12 +226,10 @@ class AuthService {
         await prefs.remove(_refreshTokenKey);
         await prefs.remove(_userNameKey);
         await prefs.remove(_userEmailKey);
+        await prefs.remove(_userRoleKey);
       } catch (_) {}
-      
-      return {
-        'success': true,
-        'message': 'Sesión cerrada localmente',
-      };
+
+      return {'success': true, 'message': 'Sesión cerrada localmente'};
     }
   }
 
@@ -259,17 +252,20 @@ class AuthService {
     return prefs.getString(_userNameKey);
   }
 
+  // Get current user role
+  static Future<String?> getCurrentUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userRoleKey);
+  }
+
   // Get user data object
   static Future<Map<String, String>?> getCurrentUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString(_userEmailKey);
     final name = prefs.getString(_userNameKey);
-    
+
     if (email != null && name != null) {
-      return {
-        'email': email,
-        'userName': name,
-      };
+      return {'email': email, 'userName': name};
     }
     return null;
   }
@@ -296,10 +292,7 @@ class AuthService {
     try {
       final refreshToken = await getRefreshToken();
       if (refreshToken == null) {
-        return {
-          'success': false,
-          'message': 'No refresh token available',
-        };
+        return {'success': false, 'message': 'No refresh token available'};
       }
 
       final response = await http.post(
@@ -308,18 +301,19 @@ class AuthService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({
-          'refreshToken': refreshToken,
-        }),
+        body: jsonEncode({'refreshToken': refreshToken}),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        
+
         // Update access token
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_accessTokenKey, responseData['accessToken'] ?? '');
-        
+        await prefs.setString(
+          _accessTokenKey,
+          responseData['accessToken'] ?? '',
+        );
+
         return {
           'success': true,
           'message': 'Token refreshed successfully',

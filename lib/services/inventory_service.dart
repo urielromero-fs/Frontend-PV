@@ -21,7 +21,7 @@ class InventoryService {
     required String barcode,
     required bool isBulk,
     required double weight,
-    required String category, 
+    required String category,
     required int units,
     required double buyingPrice,
     required double sellingPrice,
@@ -31,7 +31,7 @@ class InventoryService {
   }) async {
     try {
       final headers = await _getHeaders();
-      
+
       final response = await http.post(
         Uri.parse('$_baseUrl/products'),
         headers: headers,
@@ -52,7 +52,7 @@ class InventoryService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        
+
         return {
           'success': true,
           'message': 'Producto creado exitosamente',
@@ -90,14 +90,11 @@ class InventoryService {
     }
   }
 
-
-
-
   // Get all products
   static Future<Map<String, dynamic>> getProducts() async {
     try {
       final headers = await _getHeaders();
-      
+
       final response = await http.get(
         Uri.parse('$_baseUrl/products'),
         headers: headers,
@@ -105,7 +102,7 @@ class InventoryService {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        
+
         return {
           'success': true,
           'message': 'Productos obtenidos exitosamente',
@@ -143,7 +140,7 @@ class InventoryService {
   }) async {
     try {
       final headers = await _getHeaders();
-      
+
       final response = await http.put(
         Uri.parse('$_baseUrl/products/$id'),
         headers: headers,
@@ -164,7 +161,7 @@ class InventoryService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        
+
         return {
           'success': true,
           'message': 'Producto actualizado exitosamente',
@@ -189,17 +186,14 @@ class InventoryService {
   static Future<Map<String, dynamic>> deleteProduct(String id) async {
     try {
       final headers = await _getHeaders();
-      
+
       final response = await http.delete(
         Uri.parse('$_baseUrl/products/$id'),
         headers: headers,
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        return {
-          'success': true,
-          'message': 'Producto eliminado exitosamente',
-        };
+        return {'success': true, 'message': 'Producto eliminado exitosamente'};
       } else {
         final errorData = jsonDecode(response.body);
         return {

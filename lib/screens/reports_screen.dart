@@ -14,17 +14,35 @@ class _ReportsScreenState extends State<ReportsScreen> {
   // Dummy data arrays based on period
   Map<String, Map<String, String>> metricData = {
     'Este Día': {
-      'ventas': '\$1,230', 'ordenes': '45', 'clientes': '12', 'ticket': '\$115',
-      'ventas_change': '+5%', 'ordenes_change': '+2%', 'clientes_change': '+1%', 'ticket_change': '+3%'
+      'ventas': '\$1,230',
+      'ordenes': '45',
+      'clientes': '12',
+      'ticket': '\$115',
+      'ventas_change': '+5%',
+      'ordenes_change': '+2%',
+      'clientes_change': '+1%',
+      'ticket_change': '+3%',
     },
     'Esta Semana': {
-      'ventas': '\$8,450', 'ordenes': '150', 'clientes': '35', 'ticket': '\$122',
-      'ventas_change': '+12%', 'ordenes_change': '+8%', 'clientes_change': '+5%', 'ticket_change': '+4%'
+      'ventas': '\$8,450',
+      'ordenes': '150',
+      'clientes': '35',
+      'ticket': '\$122',
+      'ventas_change': '+12%',
+      'ordenes_change': '+8%',
+      'clientes_change': '+5%',
+      'ticket_change': '+4%',
     },
     'Este Mes': {
-      'ventas': '\$45,230', 'ordenes': '342', 'clientes': '67', 'ticket': '\$132',
-      'ventas_change': '+23%', 'ordenes_change': '+18%', 'clientes_change': '+12%', 'ticket_change': '+5%'
-    }
+      'ventas': '\$45,230',
+      'ordenes': '342',
+      'clientes': '67',
+      'ticket': '\$132',
+      'ventas_change': '+23%',
+      'ordenes_change': '+18%',
+      'clientes_change': '+12%',
+      'ticket_change': '+5%',
+    },
   };
 
   void _showPeriodSelector() {
@@ -42,7 +60,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
             children: [
               Text(
                 'Seleccionar Período',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
               _buildPeriodOption('Este Día'),
@@ -52,7 +74,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ],
           ),
         );
-      }
+      },
     );
   }
 
@@ -61,8 +83,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
       title: Text(
         period,
         style: GoogleFonts.poppins(
-          color: _selectedPeriod == period ? const Color(0xFFFF9800) : Colors.white70,
-          fontWeight: _selectedPeriod == period ? FontWeight.bold : FontWeight.normal,
+          color: _selectedPeriod == period
+              ? const Color(0xFFFF9800)
+              : Colors.white70,
+          fontWeight: _selectedPeriod == period
+              ? FontWeight.bold
+              : FontWeight.normal,
         ),
         textAlign: TextAlign.center,
       ),
@@ -92,9 +118,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       appBar: AppBar(
         title: Text(
           'Reportes',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         backgroundColor: const Color(0xFF000000),
         foregroundColor: Colors.white,
@@ -117,10 +141,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF000000),
-              const Color(0xFF1a1a1a),
-            ],
+            colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
           ),
         ),
         child: Padding(
@@ -151,7 +172,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     InkWell(
                       onTap: _showPeriodSelector,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFF9800),
                           borderRadius: BorderRadius.circular(8),
@@ -159,7 +183,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.calendar_today, color: Colors.white, size: 20),
+                            const Icon(
+                              Icons.calendar_today,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               'Cambiar',
@@ -261,9 +289,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            Expanded(
-                              child: _SalesChart(),
-                            ),
+                            Expanded(child: _SalesChart()),
                           ],
                         ),
                       ),
@@ -290,9 +316,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            Expanded(
-                              child: _CategoryChart(),
-                            ),
+                            Expanded(child: _CategoryChart()),
                           ],
                         ),
                       ),
@@ -368,10 +392,7 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             title,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
+            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
           ),
         ],
       ),
@@ -425,10 +446,7 @@ class _Bar extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           label,
-          style: GoogleFonts.poppins(
-            color: Colors.white70,
-            fontSize: 10,
-          ),
+          style: GoogleFonts.poppins(color: Colors.white70, fontSize: 10),
         ),
       ],
     );
@@ -497,10 +515,7 @@ class _CategoryItem extends StatelessWidget {
             ),
             Text(
               '$percentage%',
-              style: GoogleFonts.poppins(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
+              style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
             ),
           ],
         ),
