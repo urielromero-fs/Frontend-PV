@@ -21,18 +21,16 @@ class SaleService {
   }) async {
     try {
       final headers = await _getHeaders();
-      
+
       final response = await http.post(
         Uri.parse('$_baseUrl/sale'),
         headers: headers,
-        body: jsonEncode({
-          'products': products
-        }),
+        body: jsonEncode({'products': products}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        
+
         return {
           'success': true,
           'message': 'Venta creada exitosamente',
@@ -45,10 +43,7 @@ class SaleService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error al crear la venta: $e',
-      };
+      return {'success': false, 'message': 'Error al crear la venta: $e'};
     }
   }
 }

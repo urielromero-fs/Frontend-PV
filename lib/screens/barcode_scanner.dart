@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-import 'web_barcode_scanner.dart'; 
-
-
+import 'web_barcode_scanner.dart';
 
 class BarcodeScannerModal extends StatefulWidget {
   const BarcodeScannerModal({super.key});
@@ -59,13 +57,13 @@ class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
         child: showOptions
             ? _buildOptions()
             : useHardwareScanner
-                ? _buildHardwareScanner()
-                : kIsWeb
-                    ? _buildWebScanner()
-                    : _buildMobileScanner(),
+            ? _buildHardwareScanner()
+            : kIsWeb
+            ? _buildWebScanner()
+            : _buildMobileScanner(),
       ),
     );
-  } 
+  }
 
   // ===============================
   // SELECTOR DE OPCIONES
@@ -229,20 +227,20 @@ class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
   // WEB
   // ===============================
   Widget _buildWebScanner() {
-  return Stack(
-    children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: WebBarcodeScanner(
-          onScanned: (code) {
-            Navigator.pop(context, code);
-          },
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: WebBarcodeScanner(
+            onScanned: (code) {
+              Navigator.pop(context, code);
+            },
+          ),
         ),
-      ),
-      _closeButton(),
-    ],
-  );
-}
+        _closeButton(),
+      ],
+    );
+  }
 
   Widget _closeButton() {
     return Positioned(

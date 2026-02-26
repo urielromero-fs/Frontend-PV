@@ -10,19 +10,30 @@ class UsersScreen extends StatefulWidget {
 
 class _UsersScreenState extends State<UsersScreen> {
   // Mock data for users (just for presentation)
-  List<Map<String, dynamic>> users = List.generate(15, (index) => {
-    'id': 'user_$index',
-    'name': 'Usuario ${index + 1}',
-    'email': 'usuario${index + 1}@pv26.com',
-    'role': index % 3 == 0 ? 'Admin' : index % 2 == 0 ? 'Cajero' : 'Vendedor',
-    'status': index % 5 == 0 ? 'Inactivo' : 'Activo',
-    'joinDate': '${index + 1}/01/2026',
-  });
+  List<Map<String, dynamic>> users = List.generate(
+    15,
+    (index) => {
+      'id': 'user_$index',
+      'name': 'Usuario ${index + 1}',
+      'email': 'usuario${index + 1}@pv26.com',
+      'role': index % 3 == 0
+          ? 'Admin'
+          : index % 2 == 0
+          ? 'Cajero'
+          : 'Vendedor',
+      'status': index % 5 == 0 ? 'Inactivo' : 'Activo',
+      'joinDate': '${index + 1}/01/2026',
+    },
+  );
 
   void _showUserForm([Map<String, dynamic>? user]) {
     final bool isEditing = user != null;
-    final nameController = TextEditingController(text: isEditing ? user['name'] : '');
-    final emailController = TextEditingController(text: isEditing ? user['email'] : '');
+    final nameController = TextEditingController(
+      text: isEditing ? user['name'] : '',
+    );
+    final emailController = TextEditingController(
+      text: isEditing ? user['email'] : '',
+    );
     String selectedRole = isEditing ? user['role'] : 'Cajero';
 
     showDialog(
@@ -34,71 +45,121 @@ class _UsersScreenState extends State<UsersScreen> {
               backgroundColor: const Color(0xFF1a1a1a),
               title: Text(
                 isEditing ? 'Editar Usuario' : 'Nuevo Usuario',
-                style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      style: GoogleFonts.poppins(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: 'Nombre Completo',
-                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
-                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+              content: SizedBox(
+                width: 500, // Matching the inventory form width
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nameController,
+                        style: GoogleFonts.poppins(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Nombre Completo',
+                          labelStyle: GoogleFonts.poppins(
+                            color: Colors.white70,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.white.withAlpha(51),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Color(0xFF05e265),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      style: GoogleFonts.poppins(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: 'Correo Electrónico',
-                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
-                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: GoogleFonts.poppins(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Correo Electrónico',
+                          labelStyle: GoogleFonts.poppins(
+                            color: Colors.white70,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.white.withAlpha(51),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Color(0xFF05e265),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: selectedRole,
-                      dropdownColor: const Color(0xFF1a1a1a),
-                      style: GoogleFonts.poppins(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: 'Rol',
-                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
-                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedRole,
+                        dropdownColor: const Color(0xFF1a1a1a),
+                        style: GoogleFonts.poppins(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Rol',
+                          labelStyle: GoogleFonts.poppins(
+                            color: Colors.white70,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.white.withAlpha(51),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Color(0xFF05e265),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        items: ['Admin', 'Cajero', 'Vendedor'].map((
+                          String value,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          setModalState(() {
+                            selectedRole = newValue!;
+                          });
+                        },
                       ),
-                      items: ['Admin', 'Cajero', 'Vendedor'].map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        setModalState(() {
-                          selectedRole = newValue!;
-                        });
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+                  child: Text(
+                    'Cancelar',
+                    style: GoogleFonts.poppins(color: Colors.white54),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (nameController.text.isNotEmpty && emailController.text.isNotEmpty) {
+                    if (nameController.text.isNotEmpty &&
+                        emailController.text.isNotEmpty) {
                       setState(() {
                         if (isEditing) {
-                          final int index = users.indexWhere((u) => u['id'] == user['id']);
+                          final int index = users.indexWhere(
+                            (u) => u['id'] == user['id'],
+                          );
                           if (index != -1) {
                             users[index] = {
                               ...users[index],
@@ -109,7 +170,8 @@ class _UsersScreenState extends State<UsersScreen> {
                           }
                         } else {
                           users.insert(0, {
-                            'id': 'user_${DateTime.now().millisecondsSinceEpoch}',
+                            'id':
+                                'user_${DateTime.now().millisecondsSinceEpoch}',
                             'name': nameController.text,
                             'email': emailController.text,
                             'role': selectedRole,
@@ -121,7 +183,11 @@ class _UsersScreenState extends State<UsersScreen> {
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(isEditing ? 'Usuario actualizado' : 'Usuario creado exitosamente'),
+                          content: Text(
+                            isEditing
+                                ? 'Usuario actualizado'
+                                : 'Usuario creado exitosamente',
+                          ),
                           backgroundColor: const Color(0xFF05e265),
                         ),
                       );
@@ -130,7 +196,13 @@ class _UsersScreenState extends State<UsersScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF05e265),
                   ),
-                  child: Text(isEditing ? 'Guardar' : 'Crear', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    isEditing ? 'Guardar' : 'Crear',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -145,12 +217,24 @@ class _UsersScreenState extends State<UsersScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1a1a1a),
-        title: Text('Eliminar Usuario', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: Text('¿Estás seguro de que deseas eliminar este usuario?', style: GoogleFonts.poppins(color: Colors.white70)),
+        title: Text(
+          'Eliminar Usuario',
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          '¿Estás seguro de que deseas eliminar este usuario?',
+          style: GoogleFonts.poppins(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+            child: Text(
+              'Cancelar',
+              style: GoogleFonts.poppins(color: Colors.white54),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -166,7 +250,13 @@ class _UsersScreenState extends State<UsersScreen> {
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: Text('Eliminar', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Eliminar',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -180,9 +270,7 @@ class _UsersScreenState extends State<UsersScreen> {
       appBar: AppBar(
         title: Text(
           'Usuarios',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         backgroundColor: const Color(0xFF000000),
         foregroundColor: Colors.white,
@@ -193,22 +281,22 @@ class _UsersScreenState extends State<UsersScreen> {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showUserForm(),
-          ),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showUserForm();
+        },
+        backgroundColor: const Color(0xFF05e265),
+        foregroundColor: Colors.white,
+        elevation: 8,
+        child: const Icon(Icons.add),
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF000000),
-              const Color(0xFF1a1a1a),
-            ],
+            colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
           ),
         ),
         child: Padding(
@@ -292,11 +380,52 @@ class _UsersScreenState extends State<UsersScreen> {
                           ),
                           child: Row(
                             children: [
-                              Expanded(flex: 2, child: Text('Usuario', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
-                              Expanded(child: Text('Rol', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
-                              Expanded(child: Text('Registro', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
-                              Expanded(child: Text('Estado', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
-                              Expanded(child: Text('Acciones', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600))),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'Usuario',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  'Rol',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  'Registro',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  'Estado',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  'Acciones',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -305,7 +434,14 @@ class _UsersScreenState extends State<UsersScreen> {
                       // Lista de usuarios
                       Expanded(
                         child: users.isEmpty
-                            ? Center(child: Text('No hay usuarios registrados', style: GoogleFonts.poppins(color: Colors.white70)))
+                            ? Center(
+                                child: Text(
+                                  'No hay usuarios registrados',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              )
                             : ListView.builder(
                                 itemCount: users.length,
                                 itemBuilder: (context, index) {
@@ -315,7 +451,9 @@ class _UsersScreenState extends State<UsersScreen> {
                                     email: user['email'],
                                     role: user['role'],
                                     status: user['status'],
-                                    statusColor: user['status'] == 'Inactivo' ? const Color(0xFFE91E63) : const Color(0xFF05e265),
+                                    statusColor: user['status'] == 'Inactivo'
+                                        ? const Color(0xFFE91E63)
+                                        : const Color(0xFF05e265),
                                     joinDate: user['joinDate'],
                                     isMobile: isMobile,
                                     onEdit: () => _showUserForm(user),
@@ -373,10 +511,7 @@ class _UserStatCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             title,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
+            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),
@@ -411,9 +546,7 @@ class _UserRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final actionsMenu = PopupMenuButton<String>(
       color: const Color(0xFF1a1a1a),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (String value) {
         if (value == 'edit') {
           onEdit();
@@ -460,11 +593,7 @@ class _UserRow extends StatelessWidget {
             width: 1,
           ),
         ),
-        child: const Icon(
-          Icons.more_vert,
-          color: Color(0xFF05e265),
-          size: 20,
-        ),
+        child: const Icon(Icons.more_vert, color: Color(0xFF05e265), size: 20),
       ),
     );
 
@@ -472,7 +601,9 @@ class _UserRow extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
+          border: Border(
+            bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+          ),
         ),
         child: Column(
           children: [
@@ -482,7 +613,10 @@ class _UserRow extends StatelessWidget {
                   backgroundColor: statusColor,
                   child: Text(
                     name.substring(0, 1).toUpperCase(),
-                    style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -490,10 +624,28 @@ class _UserRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
-                      Text(email, style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14)),
+                      Text(
+                        name,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        email,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text('Rol: $role', style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12)),
+                      Text(
+                        'Rol: $role',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -504,16 +656,29 @@ class _UserRow extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Registro: $joinDate', style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12)),
+                Text(
+                  'Registro: $joinDate',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white54,
+                    fontSize: 12,
+                  ),
+                ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     status,
-                    style: GoogleFonts.poppins(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(
+                      color: statusColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -526,7 +691,9 @@ class _UserRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
       ),
       child: Row(
         children: [
@@ -539,7 +706,11 @@ class _UserRow extends StatelessWidget {
                   radius: 16,
                   child: Text(
                     name.substring(0, 1).toUpperCase(),
-                    style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -547,16 +718,45 @@ class _UserRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text(email, style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(
+                        name,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        email,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          Expanded(child: Text(role, style: GoogleFonts.poppins(color: Colors.white70, fontWeight: FontWeight.w500))),
-          Expanded(child: Text(joinDate, style: GoogleFonts.poppins(color: Colors.white70))),
+          Expanded(
+            child: Text(
+              role,
+              style: GoogleFonts.poppins(
+                color: Colors.white70,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              joinDate,
+              style: GoogleFonts.poppins(color: Colors.white70),
+            ),
+          ),
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -567,7 +767,11 @@ class _UserRow extends StatelessWidget {
               child: Text(
                 status,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600),
+                style: GoogleFonts.poppins(
+                  color: statusColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),

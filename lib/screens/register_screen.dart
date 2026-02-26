@@ -34,16 +34,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _isLoading = true;
       });
 
-
-
       // Make real API call
       final result = await AuthService.register(
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
       );
-
-
 
       setState(() {
         _isLoading = false;
@@ -61,7 +57,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               duration: const Duration(seconds: 3),
             ),
           );
-          
+
           // Navigate to login screen after successful registration
           Future.delayed(const Duration(seconds: 2), () {
             if (mounted) {
@@ -92,16 +88,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF000000),
-              const Color(0xFF1a1a1a),
-            ],
+            colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
           ),
         ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 32.0,
+                vertical: 24.0,
+              ),
               child: Card(
                 elevation: 20,
                 shadowColor: Colors.black.withOpacity(0.3),
@@ -109,9 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 400,
-                  ),
+                  constraints: const BoxConstraints(maxWidth: 400),
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Form(
@@ -124,7 +118,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             height: 80,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [const Color(0xFF05e265), const Color(0xFF04c457)],
+                                colors: [
+                                  const Color(0xFF05e265),
+                                  const Color(0xFF04c457),
+                                ],
                               ),
                               borderRadius: BorderRadius.circular(20),
                             ),
@@ -135,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           Text(
                             'Crear Cuenta',
                             style: GoogleFonts.poppins(
@@ -145,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          
+
                           Text(
                             'Regístrate para comenzar',
                             style: GoogleFonts.poppins(
@@ -167,11 +164,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF05e265)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF05e265),
+                                ),
                               ),
                             ),
                             validator: (value) {
@@ -196,18 +197,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF05e265)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF05e265),
+                                ),
                               ),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Por favor ingresa tu correo electrónico';
                               }
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                              if (!RegExp(
+                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                              ).hasMatch(value)) {
                                 return 'Por favor ingresa un correo válido';
                               }
                               return null;
@@ -240,11 +247,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF05e265)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF05e265),
+                                ),
                               ),
                             ),
                             validator: (value) {
@@ -275,7 +286,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                                    _isConfirmPasswordVisible =
+                                        !_isConfirmPasswordVisible;
                                   });
                                 },
                               ),
@@ -284,11 +296,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade300),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Color(0xFF05e265)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF05e265),
+                                ),
                               ),
                             ),
                             validator: (value) {
@@ -349,7 +365,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pushReplacementNamed(context, '/login');
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    '/login',
+                                  );
                                 },
                                 child: Text(
                                   'Inicia Sesión',

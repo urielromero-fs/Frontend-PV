@@ -18,37 +18,34 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [  
-        ChangeNotifierProvider(create: (_) => ProductProvider()),
-      ], 
+      providers: [ChangeNotifierProvider(create: (_) => ProductProvider())],
 
-    
       child: MaterialApp(
-      title: 'Punto de Venta',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF05e265),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        title: 'Punto de Venta',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF05e265),
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+          textTheme: GoogleFonts.poppinsTextTheme(),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
-      ),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/forgot-password': (context) => const ForgotPasswordScreen(),
-        '/register': (context) => const RegisterScreen(),
-      },
+        initialRoute: '/login',
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/forgot-password': (context) => const ForgotPasswordScreen(),
+          '/register': (context) => const RegisterScreen(),
+        },
       ),
     );
   }

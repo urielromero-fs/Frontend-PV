@@ -17,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _userName = '';
   String _userEmail = '';
+  String _userRole = 'seller'; // Default restriction
   bool _isSidebarCollapsed = false;
 
   @override
@@ -29,10 +30,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     final userName = prefs.getString('user_name') ?? '';
     final userEmail = prefs.getString('user_email') ?? '';
-    
+    final userRole = prefs.getString('user_role') ?? 'seller';
+
     setState(() {
       _userName = userName;
       _userEmail = userEmail;
+      _userRole = userRole;
     });
   }
 
@@ -52,14 +55,23 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: const Color(0xFF1a1a1a),
           title: Text(
             'Configuración de Perfil',
-            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Actualiza tus datos de acceso.', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12)),
+                Text(
+                  'Actualiza tus datos de acceso.',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: nameController,
@@ -67,8 +79,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: InputDecoration(
                     labelText: 'Nombre Completo',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
-                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: const Color(0xFF05e265)),
+                    ),
                     prefixIcon: const Icon(Icons.person, color: Colors.white70),
                   ),
                 ),
@@ -80,8 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: InputDecoration(
                     labelText: 'Correo Electrónico',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
-                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: const Color(0xFF05e265)),
+                    ),
                     prefixIcon: const Icon(Icons.email, color: Colors.white70),
                   ),
                 ),
@@ -93,8 +113,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: InputDecoration(
                     labelText: 'Nueva Contraseña (opcional)',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withAlpha(51))),
-                    focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF05e265))),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: const Color(0xFF05e265)),
+                    ),
                     prefixIcon: const Icon(Icons.lock, color: Colors.white70),
                   ),
                 ),
@@ -104,7 +128,10 @@ class _HomeScreenState extends State<HomeScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
+              child: Text(
+                'Cancelar',
+                style: GoogleFonts.poppins(color: Colors.white54),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -112,12 +139,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   _userName = nameController.text;
                   _userEmail = emailController.text;
                 });
-                
+
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setString('user_name', _userName);
                 await prefs.setString('user_email', _userEmail);
                 // La contraseña se enviaría al backend en un caso real.
-                
+
                 if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -131,7 +158,13 @@ class _HomeScreenState extends State<HomeScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF05e265),
               ),
-              child: Text('Guardar', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(
+                'Guardar',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -143,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
     final sidebarWidth = _isSidebarCollapsed ? 80.0 : 280.0;
-    
+
     return Scaffold(
       body: Row(
         children: [
@@ -154,10 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF000000),
-                  const Color(0xFF1a1a1a),
-                ],
+                colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
               ),
             ),
             child: Column(
@@ -198,7 +228,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
                                   // Increased visibility: More opaque background
-                                  color: const Color(0xFF05e265).withOpacity(0.3),
+                                  color: const Color(
+                                    0xFF05e265,
+                                  ).withOpacity(0.3),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: const Color(0xFF05e265),
@@ -206,8 +238,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 child: Icon(
-                                  Icons.menu_open, // Shows arrow pointing right to expand
-                                  color: Colors.white, // White icon for better contrast on green bg
+                                  Icons
+                                      .menu_open, // Shows arrow pointing right to expand
+                                  color: Colors
+                                      .white, // White icon for better contrast on green bg
                                   size: 20,
                                 ),
                               ),
@@ -244,13 +278,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      _isSidebarCollapsed = !_isSidebarCollapsed;
+                                      _isSidebarCollapsed =
+                                          !_isSidebarCollapsed;
                                     });
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF05e265).withAlpha(51),
+                                      color: const Color(
+                                        0xFF05e265,
+                                      ).withAlpha(51),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
                                         color: const Color(0xFF05e265),
@@ -258,7 +295,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     child: Icon(
-                                      _isSidebarCollapsed ? Icons.menu_open : Icons.menu,
+                                      _isSidebarCollapsed
+                                          ? Icons.menu_open
+                                          : Icons.menu,
                                       color: const Color(0xFF05e265),
                                       size: 20,
                                     ),
@@ -269,18 +308,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                 ),
-                
+
                 // Navigation Items
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      _NavItem(
-                        icon: Icons.dashboard,
-                        title: 'Dashboard',
-                        isActive: true,
-                        isCollapsed: _isSidebarCollapsed,
-                      ),
+                      if (_userRole == 'admin')
+                        _NavItem(
+                          icon: Icons.dashboard,
+                          title: 'Dashboard',
+                          isActive: true,
+                          isCollapsed: _isSidebarCollapsed,
+                        ),
                       _NavItem(
                         icon: Icons.inventory_2,
                         title: 'Inventario',
@@ -307,45 +347,48 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                         isCollapsed: _isSidebarCollapsed,
                       ),
-                      _NavItem(
-                        icon: Icons.analytics,
-                        title: 'Reportes',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ReportsScreen(),
-                            ),
-                          );
-                        },
-                        isCollapsed: _isSidebarCollapsed,
-                      ),
-                      _NavItem(
-                        icon: Icons.people,
-                        title: 'Usuarios',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const UsersScreen(),
-                            ),
-                          );
-                        },
-                        isCollapsed: _isSidebarCollapsed,
-                      ),
+                      if (_userRole == 'admin') ...[
+                        _NavItem(
+                          icon: Icons.analytics,
+                          title: 'Reportes',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ReportsScreen(),
+                              ),
+                            );
+                          },
+                          isCollapsed: _isSidebarCollapsed,
+                        ),
+                        _NavItem(
+                          icon: Icons.people,
+                          title: 'Usuarios',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const UsersScreen(),
+                              ),
+                            );
+                          },
+                          isCollapsed: _isSidebarCollapsed,
+                        ),
+                      ],
                       const Divider(color: Colors.white24),
-                      _NavItem(
-                        icon: Icons.settings,
-                        title: 'Configuración',
-                        onTap: () {
-                          _showSettingsModal();
-                        },
-                        isCollapsed: _isSidebarCollapsed,
-                      ),
+                      if (_userRole == 'admin')
+                        _NavItem(
+                          icon: Icons.settings,
+                          title: 'Configuración',
+                          onTap: () {
+                            _showSettingsModal();
+                          },
+                          isCollapsed: _isSidebarCollapsed,
+                        ),
                     ],
                   ),
                 ),
-                
+
                 // User Profile
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -358,7 +401,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _isSidebarCollapsed
                       ? Center(
                           child: IconButton(
-                            icon: const Icon(Icons.logout, color: Colors.white70),
+                            icon: const Icon(
+                              Icons.logout,
+                              color: Colors.white70,
+                            ),
                             onPressed: () async {
                               final result = await AuthService.logout();
                               if (context.mounted) {
@@ -373,7 +419,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                         : Colors.red,
                                   ),
                                 );
-                                Navigator.pushReplacementNamed(context, '/login');
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/login',
+                                );
                               }
                             },
                           ),
@@ -410,7 +459,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.logout, color: Colors.white70),
+                              icon: const Icon(
+                                Icons.logout,
+                                color: Colors.white70,
+                              ),
                               onPressed: () async {
                                 final result = await AuthService.logout();
                                 if (context.mounted) {
@@ -425,7 +477,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                           : Colors.red,
                                     ),
                                   );
-                                  Navigator.pushReplacementNamed(context, '/login');
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    '/login',
+                                  );
                                 }
                               },
                             ),
@@ -435,7 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          
+
           // Main Content Area
           // Expanded(
           //   child: Container(
@@ -466,7 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
           //                   ),
           //                 ),
           //               ),
-                        
+
           //               // User Info
           //               Container(
           //                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -512,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
           //             ],
           //           ),
           //         ),
-                  
+
           //         // Dashboard Content
           //         Expanded(
           //           child: Padding(
@@ -538,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen> {
           //                   ),
           //                 ),
           //                 const SizedBox(height: 32),
-                          
+
           //                 // Stats Grid
           //                 // Row(
           //                 //   children: [
@@ -573,7 +628,7 @@ class _HomeScreenState extends State<HomeScreen> {
           //                 //     ),
           //                 //   ],
           //                 // ),
-                        
+
           //                 LayoutBuilder(
           //                   builder: (context, constraints) {
           //                     final isMobile = constraints.maxWidth < 768;
@@ -640,8 +695,7 @@ class _HomeScreenState extends State<HomeScreen> {
           //                           );
           //                   },
           //                 ),
-                        
-                        
+
           //               ],
           //             ),
           //           ),
@@ -650,165 +704,206 @@ class _HomeScreenState extends State<HomeScreen> {
           //     ),
           //   ),
           // ),
-        
+
           // Main Content Area
-Expanded(
-  child: Container(
-    color: const Color(0xFF0a0a0a),
-    child: Column(
-      children: [
-        // Header
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF000000),
-            border: Border(
-              bottom: BorderSide(color: Colors.white.withAlpha(26)),
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Dashboard',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+          if (_userRole == 'admin')
+            Expanded(
+              child: Container(
+                color: const Color(0xFF0a0a0a),
+                child: Column(
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF000000),
+                        border: Border(
+                          bottom: BorderSide(color: Colors.white.withAlpha(26)),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Dashboard',
+                              style: GoogleFonts.poppins(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(13),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.person,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _userName,
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Scrollable Dashboard Content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Welcome
+                            Text(
+                              'Bienvenido, $_userName',
+                              style: GoogleFonts.poppins(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Aquí está el resumen de tu negocio',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white70,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+
+                            // Responsive Stats
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isMobile = constraints.maxWidth < 768;
+
+                                if (isMobile) {
+                                  return Column(
+                                    children: [
+                                      _StatCard(
+                                        title: 'Ventas Hoy',
+                                        value: '\$12,450',
+                                        icon: Icons.trending_up,
+                                        color: const Color(0xFF05e265),
+                                        change: '+12.5%',
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _StatCard(
+                                        title: 'Productos',
+                                        value: '248',
+                                        icon: Icons.inventory,
+                                        color: const Color(0xFF2196F3),
+                                        change: '+5',
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _StatCard(
+                                        title: 'Clientes',
+                                        value: '1,426',
+                                        icon: Icons.people,
+                                        color: const Color(0xFFFF9800),
+                                        change: '+28',
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  children: [
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Ventas Hoy',
+                                        value: '\$12,450',
+                                        icon: Icons.trending_up,
+                                        color: const Color(0xFF05e265),
+                                        change: '+12.5%',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Productos',
+                                        value: '248',
+                                        icon: Icons.inventory,
+                                        color: const Color(0xFF2196F3),
+                                        change: '+5',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _StatCard(
+                                        title: 'Clientes',
+                                        value: '1,426',
+                                        icon: Icons.people,
+                                        color: const Color(0xFFFF9800),
+                                        change: '+28',
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: Container(
+                color: const Color(0xFF0a0a0a),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.storefront,
+                        size: 80,
+                        color: Color(0xFF05e265),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Bienvenido, $_userName',
+                        style: GoogleFonts.poppins(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Selecciona Inventario o Cobros para comenzar.',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(13),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.person, color: Colors.white70, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      _userName,
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Scrollable Dashboard Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Welcome
-                    Text(
-                      'Bienvenido, $_userName',
-                      style: GoogleFonts.poppins(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Aquí está el resumen de tu negocio',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Responsive Stats
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isMobile = constraints.maxWidth < 768;
-
-                        if (isMobile) {
-                          return Column(
-                            children: [
-                              _StatCard(
-                                title: 'Ventas Hoy',
-                                value: '\$12,450',
-                                icon: Icons.trending_up,
-                                color: const Color(0xFF05e265),
-                                change: '+12.5%',
-                              ),
-                              const SizedBox(height: 16),
-                              _StatCard(
-                                title: 'Productos',
-                                value: '248',
-                                icon: Icons.inventory,
-                                color: const Color(0xFF2196F3),
-                                change: '+5',
-                              ),
-                              const SizedBox(height: 16),
-                              _StatCard(
-                                title: 'Clientes',
-                                value: '1,426',
-                                icon: Icons.people,
-                                color: const Color(0xFFFF9800),
-                                change: '+28',
-                              ),
-                            ],
-                          );
-                        }
-
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: _StatCard(
-                                title: 'Ventas Hoy',
-                                value: '\$12,450',
-                                icon: Icons.trending_up,
-                                color: const Color(0xFF05e265),
-                                change: '+12.5%',
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _StatCard(
-                                title: 'Productos',
-                                value: '248',
-                                icon: Icons.inventory,
-                                color: const Color(0xFF2196F3),
-                                change: '+5',
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _StatCard(
-                                title: 'Clientes',
-                                value: '1,426',
-                                icon: Icons.people,
-                                color: const Color(0xFFFF9800),
-                                change: '+28',
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
             ),
-          ],
-        ),
-      ),
-    ),
-        
-        
         ],
       ),
     );
@@ -834,15 +929,15 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final content = Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isCollapsed ? 8 : 16, 
+        horizontal: isCollapsed ? 8 : 16,
         vertical: 12,
       ),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF05e265).withOpacity(0.2) : Colors.transparent,
+        color: isActive
+            ? const Color(0xFF05e265).withOpacity(0.2)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        border: isActive 
-          ? Border.all(color: const Color(0xFF05e265))
-          : null,
+        border: isActive ? Border.all(color: const Color(0xFF05e265)) : null,
       ),
       child: isCollapsed
           ? Icon(
@@ -862,8 +957,12 @@ class _NavItem extends StatelessWidget {
                   child: Text(
                     title,
                     style: GoogleFonts.poppins(
-                      color: isActive ? const Color(0xFF05e265) : Colors.white70,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                      color: isActive
+                          ? const Color(0xFF05e265)
+                          : Colors.white70,
+                      fontWeight: isActive
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
@@ -951,10 +1050,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             title,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
+            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 4),
           Text(
@@ -1009,11 +1105,7 @@ class _DashboardCard extends StatelessWidget {
                   color: color,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 32,
-                ),
+                child: Icon(icon, color: Colors.white, size: 32),
               ),
               const SizedBox(height: 20),
               Text(
@@ -1027,14 +1119,14 @@ class _DashboardCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 subtitle,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.white70,
-                ),
+                style: GoogleFonts.poppins(fontSize: 14, color: Colors.white70),
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),

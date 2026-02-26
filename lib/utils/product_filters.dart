@@ -1,5 +1,3 @@
-
-
 List<dynamic> filterProducts({
   required List<dynamic> products,
   String searchQuery = '',
@@ -7,7 +5,6 @@ List<dynamic> filterProducts({
   bool onlyBulk = false,
   String sortOption = 'Ninguno',
 }) {
-  
   List<dynamic> temp = List.from(products);
 
   // Búsqueda por nombre o barcode
@@ -32,9 +29,13 @@ List<dynamic> filterProducts({
 
   // Ordenamiento
   if (sortOption == 'Precio Ascendente') {
-    temp.sort((a, b) => (a['sellingPrice'] ?? 0).compareTo(b['sellingPrice'] ?? 0));
+    temp.sort(
+      (a, b) => (a['sellingPrice'] ?? 0).compareTo(b['sellingPrice'] ?? 0),
+    );
   } else if (sortOption == 'Precio Descendente') {
-    temp.sort((a, b) => (b['sellingPrice'] ?? 0).compareTo(a['sellingPrice'] ?? 0));
+    temp.sort(
+      (a, b) => (b['sellingPrice'] ?? 0).compareTo(a['sellingPrice'] ?? 0),
+    );
   }
 
   return temp;
