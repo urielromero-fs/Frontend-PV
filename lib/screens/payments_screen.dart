@@ -108,9 +108,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
       Future<void> _checkOpenSession() async {
             final result = await CashSessionService.getOpenSession();
 
-            if (!result['success']) {
-              // error real de backend
-              print("Error obteniendo sesión: ${result['message']}");
+            if (!result['success']) {            
               return;
             }
 
@@ -155,7 +153,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
       };
     }).toList();
 
-    print(productsPayload);
+    
 
     //Llamar al servicio
     final result = await SaleService.createSale(products: productsPayload);
@@ -165,6 +163,10 @@ class _PaymentsScreenState extends State<PaymentsScreen> with TickerProviderStat
 
     if (result['success']) {
       // Actualizar contadores locales para el reporte diario
+
+        //Actualizar inventario 
+        await Provider.of<ProductProvider>(context, listen: false)
+            .fetchProducts();
       
 
         setState(() {
@@ -239,7 +241,7 @@ void _showSuccessDialog(String message) {
           TextButton(
             onPressed: () {
                Navigator.pop(context);
-               Navigator.pop(context); // Return to previous screen if cancelled
+               Navigator.pop(context); 
             },
             child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.white54)),
           ),
@@ -309,7 +311,7 @@ void _showSuccessDialog(String message) {
                     setState(() => _isLoadingSession = true);
 
 
-                    print(_currentSessionId);  
+                    
 
                     final result =
                         await CashSessionService.closeSession(_currentSessionId.toString());
@@ -329,7 +331,7 @@ void _showSuccessDialog(String message) {
                       
                       await _showDailyReportDialog();
                        
-                     // 2️⃣ Redirigir al dashboard
+                      
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -836,15 +838,31 @@ void _showSuccessDialog(String message) {
                                       return _CartItemWidget(
                                         item: currentTicket.items[index],
                                         onQuantityChanged: (quantity) {
-                                          setState(() {
-                                            if (quantity == 0) {
-                                              currentTicket.items.removeAt(index);
-                                            } else {
-                                              currentTicket.items[index].quantity = quantity;
+                                            final item = currentTicket.items[index];
+
+                                            if (quantity > item.units) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text('No hay suficiente stock disponible'),
+                                                ),
+                                              );
+                                              return;
                                             }
-                                            _calculateTotals();
-                                          });
-                                        },
+
+                                            if (quantity <= 0) {
+                                              setState(() {
+                                                currentTicket.items.removeAt(index);
+                                                _calculateTotals();
+                                              });
+                                              return;
+                                            }
+
+                                            setState(() {
+                                              item.quantity = quantity;
+                                              _calculateTotals();
+                                            });
+                                          },
+
                                         onRemove: () {
                                           setState(() {
                                             currentTicket.items.removeAt(index);
@@ -1184,16 +1202,30 @@ void _showSuccessDialog(String message) {
                                         return _CartItemWidget(
                                           item: currentTicket.items[index],
                                           onQuantityChanged: (quantity) {
-                                            setModalState(() {
-                                              if (quantity == 0) {
-                                                currentTicket.items.removeAt(index);
-                                              } else {
-                                                currentTicket.items[index].quantity = quantity;
-                                              }
-                                              _calculateTotals();
-                                            });
-                                            setState(() {});
-                                          },
+                                                final item = currentTicket.items[index];
+
+                                                if (quantity > item.units) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text('No hay suficiente stock disponible'),
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
+
+                                                if (quantity <= 0) {
+                                                  setState(() {
+                                                    currentTicket.items.removeAt(index);
+                                                    _calculateTotals();
+                                                  });
+                                                  return;
+                                                }
+
+                                                setState(() {
+                                                  item.quantity = quantity;
+                                                  _calculateTotals();
+                                                });
+                                              }, 
                                           onRemove: () {
                                             setModalState(() {
                                               currentTicket.items.removeAt(index);
@@ -1348,6 +1380,7 @@ void _showSuccessDialog(String message) {
   void _addToCart(Map<String, dynamic> product) async {
     //double price = product['price'];
     double price = (product['sellingPrice'] as num?)?.toDouble() ?? 0.0;
+    double units = (product['units'] as num?)?.toDouble() ?? 0.0;
     double quantity = 1;
     bool isBulk = product['isBulk'] ?? false;
 
@@ -1373,15 +1406,34 @@ void _showSuccessDialog(String message) {
 
     setState(() {
       final existingIndex = currentTicket.items.indexWhere((item) => item.name == product['name']);
+
+      double alreadyInCart = 0;
+
+      if (existingIndex != -1) {
+         alreadyInCart = currentTicket.items[existingIndex].quantity;
+      }
+      
+      if (alreadyInCart + quantity > units) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Stock insuficiente. Disponible: ${units   - alreadyInCart}',
+            ),
+          ),
+        );
+        return;
+      }
+
       if (existingIndex != -1) {
         currentTicket.items[existingIndex].quantity += quantity;
-      } else {
+      }else {
         currentTicket.items.add(CartItem(
           id: product['_id'],
           name: product['name'],
           price: price,
           quantity: quantity,
           isBulk: isBulk,
+          units: units 
         ));
       }
       _calculateTotals();
@@ -1739,12 +1791,15 @@ class CartItem {
   double price;
   double quantity;
   bool isBulk;
+  double units; 
+  
 
   CartItem({
     required this.id,      
     required this.name,
     required this.price,
     required this.quantity,
+    required this.units,
     this.isBulk = false,
   });
 }
@@ -1896,6 +1951,8 @@ class _CartItemWidget extends StatelessWidget {
                 ),
               ),
               _QtyBtn(icon: Icons.add, onTap: () => onQuantityChanged(item.quantity + (item.isBulk ? 0.1 : 1))),
+            
+            
             ],
           ),
           
