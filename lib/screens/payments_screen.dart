@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +23,7 @@ class Ticket {
   double discount;
   double total;
   double? amountTendered;
+  String paymentMethod;
   DateTime createdAt;
 
   Ticket({
@@ -31,6 +33,7 @@ class Ticket {
     this.discount = 0.0,
     this.total = 0.0,
     this.amountTendered,
+    this.paymentMethod = 'Efectivo',
     DateTime? createdAt,
   }) : items = items ?? [],
        createdAt = createdAt ?? DateTime.now();
@@ -152,7 +155,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       
 
       //Llamar al servicio
-      final result = await SaleService.createSale(products: productsPayload);
+      final result = await SaleService.createSale(
+          products: productsPayload,
+          paymentMethod: currentTicket.paymentMethod,
+      );
 
       // Quitar diálogo de carga
       Navigator.pop(context);
@@ -172,6 +178,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           currentTicket.items.clear();
           currentTicket.amountTendered = null;
           currentTicket.discount = 0.0;
+          currentTicket.paymentMethod = 'Efectivo';
           _calculateTotals();
         });
 
@@ -246,6 +253,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'^\d+\.?\d{0,2}'),
+                ),
+              ],
               style: GoogleFonts.poppins(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Monto inicial',
@@ -1857,88 +1869,178 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
   Future<void> _showPaymentDialog({StateSetter? setModalState}) async {
     final amountController = TextEditingController();
+    String localPaymentMethod = currentTicket.paymentMethod;
+
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
-        title: Text(
-          'Cobrar - \$${currentTicket.total.toStringAsFixed(2)}',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1a1a1a),
+            title: Text(
+              'Cobrar - \$${currentTicket.total.toStringAsFixed(2)}',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Método de Pago:',
+                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildPaymentMethodOption(
+                      icon: Icons.money,
+                      label: 'Efectivo',
+                      isActive: localPaymentMethod == 'Efectivo',
+                      onTap: () {
+                        setDialogState(() => localPaymentMethod = 'Efectivo');
+                      },
+                    ),
+                    _buildPaymentMethodOption(
+                      icon: Icons.credit_card,
+                      label: 'Tarjeta',
+                      isActive: localPaymentMethod == 'Tarjeta',
+                      onTap: () {
+                        setDialogState(() => localPaymentMethod = 'Tarjeta');
+                      },
+                    ),
+                    _buildPaymentMethodOption(
+                      icon: Icons.account_balance,
+                      label: 'Transfer',
+                      isActive: localPaymentMethod == 'Transferencia',
+                      onTap: () {
+                        setDialogState(() => localPaymentMethod = 'Transferencia');
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Cantidad con la que paga el cliente:',
+                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: amountController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d+\.?\d{0,2}'),
+                    ),
+                  ],
+                  style: GoogleFonts.poppins(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Monto recibido',
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    prefixText: '\$ ',
+                    prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cancelar',
+                  style: GoogleFonts.poppins(color: Colors.white54),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final double amount =
+                      double.tryParse(amountController.text) ?? 0.0;
+                  if (amount >= currentTicket.total) {
+                    if (setModalState != null) {
+                      setModalState(() {
+                        currentTicket.amountTendered = amount;
+                        currentTicket.paymentMethod = localPaymentMethod;
+                      });
+                    }
+                    setState(() {
+                      currentTicket.amountTendered = amount;
+                      currentTicket.paymentMethod = localPaymentMethod;
+                    });
+                    Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'El monto recibido debe ser mayor o igual al total',
+                        ),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF05e265),
+                ),
+                child: Text(
+                  'Aceptar',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethodOption({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: 85,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF05e265).withOpacity(0.2) : Colors.white.withAlpha(13),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActive ? const Color(0xFF05e265) : Colors.white.withAlpha(26),
+            width: 2,
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Column(
           children: [
-            Text(
-              'Cantidad con la que paga el cliente:',
-              style: GoogleFonts.poppins(color: Colors.white70),
+            Icon(
+              icon,
+              color: isActive ? const Color(0xFF05e265) : Colors.white70,
+              size: 24,
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              style: GoogleFonts.poppins(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Monto recibido',
-                labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                prefixText: '\$ ',
-                prefixStyle: GoogleFonts.poppins(color: Colors.white),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                color: isActive ? Colors.white : Colors.white70,
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancelar',
-              style: GoogleFonts.poppins(color: Colors.white54),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final double amount =
-                  double.tryParse(amountController.text) ?? 0.0;
-              if (amount >= currentTicket.total) {
-                if (setModalState != null) {
-                  setModalState(() {
-                    currentTicket.amountTendered = amount;
-                  });
-                }
-                setState(() {
-                  currentTicket.amountTendered = amount;
-                });
-                Navigator.pop(context);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'El monto recibido debe ser mayor o igual al total',
-                    ),
-                    backgroundColor: Colors.redAccent,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF05e265),
-            ),
-            child: Text(
-              'Aceptar',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1992,6 +2094,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'^\d+\.?\d{0,2}'),
+                ),
+              ],
               style: GoogleFonts.poppins(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Monto de descuento',
@@ -2091,6 +2198,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'^\d+\.?\d{0,2}'),
+                ),
+              ],
               style: GoogleFonts.poppins(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Monto a retirar',
@@ -2389,7 +2501,7 @@ class _CartItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // Determine quantity display format
     String quantityText = item.isBulk
-        ? '${item.quantity.toStringAsFixed(3)} kg'
+        ? '${item.quantity.toStringAsFixed(3)} kilogramos compra total'
         : item.quantity.toInt().toString();
 
     return Container(
@@ -2418,7 +2530,7 @@ class _CartItemWidget extends StatelessWidget {
                 ),
                 Text(
                   item.isBulk
-                      ? '\$${item.price.toStringAsFixed(2)} / kg'
+                      ? '\$${item.price.toStringAsFixed(2)} / kilogramo compra total'
                       : '\$${item.price.toStringAsFixed(2)} c/u',
                   style: GoogleFonts.poppins(
                     color: Colors.white54,
@@ -2536,7 +2648,7 @@ class _BulkProductDialogState extends State<_BulkProductDialog> {
             children: [
               Expanded(
                 child: _TypeButton(
-                  label: 'Por Peso (kg)',
+                  label: 'Por Peso (Kilogramos compra total)',
                   isSelected: _inputType == 0,
                   onTap: () => setState(() => _inputType = 0),
                 ),
@@ -2555,13 +2667,18 @@ class _BulkProductDialogState extends State<_BulkProductDialog> {
           TextField(
             controller: _controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(
+                RegExp(_inputType == 0 ? r'^\d+\.?\d{0,3}' : r'^\d+\.?\d{0,2}'),
+              ),
+            ],
             style: GoogleFonts.poppins(color: Colors.white, fontSize: 24),
             textAlign: TextAlign.center,
             decoration: InputDecoration(
               hintText: '0.00',
               hintStyle: GoogleFonts.poppins(color: Colors.white30),
               prefixText: _inputType == 1 ? '\$ ' : '',
-              suffixText: _inputType == 0 ? ' kg' : '',
+              suffixText: _inputType == 0 ? ' kilogramos compra total' : '',
               prefixStyle: GoogleFonts.poppins(
                 color: const Color(0xFF05e265),
                 fontSize: 24,
@@ -2581,7 +2698,7 @@ class _BulkProductDialogState extends State<_BulkProductDialog> {
           ),
           const SizedBox(height: 8),
           Text(
-            widget.pricePerKg.toStringAsFixed(2) + ' /kg',
+            widget.pricePerKg.toStringAsFixed(2) + ' /kilogramo compra total',
             style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12),
           ),
         ],

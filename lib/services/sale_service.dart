@@ -18,6 +18,7 @@ class SaleService {
   // Create sale with real API call
   static Future<Map<String, dynamic>> createSale({
     required List<Map<String, dynamic>> products,
+    String? paymentMethod,
   }) async {
     try {
       final headers = await _getHeaders();
@@ -25,7 +26,10 @@ class SaleService {
       final response = await http.post(
         Uri.parse('$_baseUrl/sale'),
         headers: headers,
-        body: jsonEncode({'products': products}),
+        body: jsonEncode({
+          'products': products,
+          if (paymentMethod != null) 'paymentMethod': paymentMethod,
+        }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

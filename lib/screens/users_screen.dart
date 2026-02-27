@@ -125,7 +125,7 @@ class _UsersScreenState extends State<UsersScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        items: ['Admin', 'Cajero', 'Vendedor'].map((
+                        items: ['Admin', 'Cajero'].map((
                           String value,
                         ) {
                           return DropdownMenuItem<String>(

@@ -371,6 +371,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     category:
                                         product['category'] ?? 'Sin categoría',
                                     stock: (product['units'] ?? 0).toString(),
+                                    isBulk: product['isBulk'] ?? false,
                                     price: '\$${product['sellingPrice'] ?? 0}',
                                     status: (product['units'] ?? 0) == 0
                                         ? 'Sin Stock'
@@ -631,6 +632,7 @@ class _ProductRow extends StatelessWidget {
   final String status;
   final Color statusColor;
   final String userRole;
+  final bool isBulk;
 
   //Acciones
   final VoidCallback onDelete;
@@ -641,12 +643,13 @@ class _ProductRow extends StatelessWidget {
     required this.name,
     required this.category,
     required this.stock,
-    required this.price,
     required this.status,
     required this.statusColor,
     required this.userRole,
+    required this.isBulk,
     required this.onDelete,
     required this.onEdit,
+    required this.price,
   });
 
   @override
@@ -771,7 +774,7 @@ class _ProductRow extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Stock: $stock',
+                  '${isBulk ? 'Kilogramos compra total' : 'Stock'}: $stock',
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.w500,
@@ -817,7 +820,7 @@ class _ProductRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              stock,
+              '$stock ${isBulk ? 'Kilogramos compra total' : 'Uds'}',
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.w500,
@@ -1027,6 +1030,9 @@ class _AddProductDialogState extends State<AddProductDialog> {
                     Expanded(
                       child: TextField(
                         controller: barcodeController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
                         decoration: InputDecoration(
                           labelText: 'CB (Código de Barras)',
                           labelStyle: GoogleFonts.poppins(
@@ -1149,7 +1155,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   ),
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Unidades',
+                    labelText: isBulk ? 'Kilogramos compra total' : 'Unidades',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.white.withAlpha(51)),
@@ -1177,7 +1183,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   ],
                   decoration: InputDecoration(
                     labelText: isBulk
-                        ? 'Precio de Compra (por 1 Kg)'
+                        ? 'Precio de Compra (por 1 Kilogramo compra total)'
                         : 'Precio de Compra',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
@@ -1206,7 +1212,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   ],
                   decoration: InputDecoration(
                     labelText: isBulk
-                        ? 'Precio de Venta (por 1 Kg)'
+                        ? 'Precio de Venta (por 1 Kilogramo compra total)'
                         : 'Precio de Venta',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
@@ -1492,6 +1498,9 @@ class _EditProductDialogState extends State<EditProductDialog> {
                     Expanded(
                       child: TextField(
                         controller: barcodeController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
                         decoration: InputDecoration(
                           labelText: 'CB (Código de Barras)',
                           labelStyle: GoogleFonts.poppins(
@@ -1614,7 +1623,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   ),
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: 'Unidades',
+                    labelText: isBulk ? 'Kilogramos compra total' : 'Unidades',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.white.withAlpha(51)),
@@ -1642,7 +1651,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   ],
                   decoration: InputDecoration(
                     labelText: isBulk
-                        ? 'Precio de Compra (por 1 Kg)'
+                        ? 'Precio de Compra (por 1 Kilogramo compra total)'
                         : 'Precio de Compra',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
@@ -1671,7 +1680,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   ],
                   decoration: InputDecoration(
                     labelText: isBulk
-                        ? 'Precio de Venta (por 1 Kg)'
+                        ? 'Precio de Venta (por 1 Kilogramo compra total)'
                         : 'Precio de Venta',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
