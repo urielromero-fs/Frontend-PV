@@ -1477,68 +1477,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       },
                                     ),
                             ),
-                          //   // Summary
-                          //   Container(
-                          //     padding: const EdgeInsets.all(16),
-                          //     decoration: BoxDecoration(
-                          //       color: Colors.white.withAlpha(13),
-                          //       borderRadius: BorderRadius.circular(12),
-                          //       border: Border.all(color: Colors.white.withAlpha(26)),
-                          //     ),
-                          //     child: Column(
-                          //       children: [
-                          //         if (currentTicket.discount > 0) ...[
-                          //           Row(
-                          //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          //             children: [
-                          //               Icon(
-                          //                 Icons.shopping_cart_outlined,
-                          //                 color: Colors.white.withAlpha(51),
-                          //                 size: 48,
-                          //               ),
-                          //               const SizedBox(height: 12),
-                          //               Text(
-                          //                 'Ticket vacío',
-                          //                 style: GoogleFonts.poppins(
-                          //                   color: Colors.white70,
-                          //                   fontSize: 14,
-                          //                 ),
-                          //               ),
-                          //             ],
-                          //           ),
-                          //         )
-                          //       : ListView.builder(
-                          //           itemCount: currentTicket.items.length,
-                          //           itemBuilder: (context, index) {
-                          //             return _CartItemWidget(
-                          //               item: currentTicket.items[index],
-                          //               onQuantityChanged: (quantity) {
-                          //                 setModalState(() {
-                          //                   if (quantity == 0) {
-                          //                     currentTicket.items.removeAt(
-                          //                       index,
-                          //                     );
-                          //                   } else {
-                          //                     currentTicket
-                          //                             .items[index]
-                          //                             .quantity =
-                          //                         quantity;
-                          //                   }
-                          //                   _calculateTotals();
-                          //                 });
-                          //                 setState(() {});
-                          //               },
-                          //               onRemove: () {
-                          //                 setModalState(() {
-                          //                   currentTicket.items.removeAt(index);
-                          //                   _calculateTotals();
-                          //                 });
-                          //                 setState(() {});
-                          //               },
-                          //             );
-                          //           },
-                          //         ),
-                          // ),
+                          
                           // Summary
                           Container(
                             padding: const EdgeInsets.all(16),
@@ -2501,7 +2440,7 @@ class _CartItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // Determine quantity display format
     String quantityText = item.isBulk
-        ? '${item.quantity.toStringAsFixed(3)} kilogramos compra total'
+        ? '${item.quantity.toStringAsFixed(3)} KG'
         : item.quantity.toInt().toString();
 
     return Container(
@@ -2530,7 +2469,7 @@ class _CartItemWidget extends StatelessWidget {
                 ),
                 Text(
                   item.isBulk
-                      ? '\$${item.price.toStringAsFixed(2)} / kilogramo compra total'
+                      ? '\$${item.price.toStringAsFixed(2)} / kg'
                       : '\$${item.price.toStringAsFixed(2)} c/u',
                   style: GoogleFonts.poppins(
                     color: Colors.white54,
