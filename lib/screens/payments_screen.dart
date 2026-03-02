@@ -1454,17 +1454,19 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                 }
 
                                                 if (quantity <= 0) {
-                                                  setState(() {
-                                                    currentTicket.items.removeAt(index);
-                                                    _calculateTotals();
-                                                  });
-                                                  return;
-                                                }
+                                                    setModalState(() {
+                                                      currentTicket.items.removeAt(index);
+                                                      _calculateTotals();
+                                                    });
+                                                    setState(() {}); 
+                                                    return;
+                                                  }
 
-                                                setState(() {
-                                                  item.quantity = quantity;
-                                                  _calculateTotals();
-                                                });
+                                                setModalState(() {
+                                                      item.quantity = quantity;
+                                                      _calculateTotals();
+                                                    });
+                                                    setState(() {}); 
                                               }, 
                                           onRemove: () {
                                             setModalState(() {
