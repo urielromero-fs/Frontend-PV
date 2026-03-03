@@ -1,40 +1,24 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'auth_service.dart';
+import 'api_helper.dart';
 
 class SaleService {
-  static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
-
-  // Get authorization headers
-  static Future<Map<String, String>> _getHeaders() async {
-    final token = await AuthService.getAccessToken();
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
-
-  // Create sale with real API call
+  // Create sale with automatic token refresh
   static Future<Map<String, dynamic>> createSale({
     required List<Map<String, dynamic>> products,
     String? paymentMethod,
   }) async {
     try {
-      final headers = await _getHeaders();
-
-      final response = await http.post(
-        Uri.parse('$_baseUrl/sale'),
-        headers: headers,
-        body: jsonEncode({
+      final response = await ApiHelper.request(
+        method: 'POST',
+        path: '/sale',
+        body: {
           'products': products,
           if (paymentMethod != null) 'paymentMethod': paymentMethod,
-        }),
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-
         return {
           'success': true,
           'message': 'Venta creada exitosamente',

@@ -1,34 +1,18 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'auth_service.dart';
+import 'api_helper.dart';
 
 class CashSessionService {
-  static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
-
-  // Get authorization headers
-  static Future<Map<String, String>> _getHeaders() async {
-    final token = await AuthService.getAccessToken();
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
-
-  //Open cash session
+  // Open cash session
   static Future<Map<String, dynamic>> startSession(double openingAmount) async {
     try {
-      final headers = await _getHeaders();
-
-      final response = await http.post(
-        Uri.parse('$_baseUrl/cash-sessions/open'),
-        headers: headers,
-        body: jsonEncode({'openingAmount': openingAmount}),
+      final response = await ApiHelper.request(
+        method: 'POST',
+        path: '/cash-sessions/open',
+        body: {'openingAmount': openingAmount},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-
         return {
           'success': true,
           'message': 'Sesión iniciada exitosamente',
@@ -46,22 +30,18 @@ class CashSessionService {
     }
   }
 
-  //Close cash session
-
+  // Close cash session
   static Future<Map<String, dynamic>> closeSession(String sessionId) async {
     try {
-      final headers = await _getHeaders();
-
-      final response = await http.post(
-        Uri.parse('$_baseUrl/cash-sessions/close/$sessionId'),
-        headers: headers,
+      final response = await ApiHelper.request(
+        method: 'POST',
+        path: '/cash-sessions/close/$sessionId',
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.body.isNotEmpty
             ? jsonDecode(response.body)
             : {};
-
         return {
           'success': true,
           'message': 'Sesión cerrada exitosamente',
@@ -81,19 +61,16 @@ class CashSessionService {
     }
   }
 
-  //Get current session or open session
+  // Get current open session
   static Future<Map<String, dynamic>> getOpenSession() async {
     try {
-      final headers = await _getHeaders();
-
-      final response = await http.get(
-        headers: headers,
-        Uri.parse('$_baseUrl/cash-sessions/open'),
+      final response = await ApiHelper.request(
+        method: 'GET',
+        path: '/cash-sessions/open',
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-
         return {
           'success': true,
           'message': 'Sesión obtenida exitosamente',

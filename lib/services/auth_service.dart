@@ -94,7 +94,7 @@ class AuthService {
         final userName = userData['userName'] ?? '';
         final userEmail = userData['email'] ?? email;
         final userRole =
-            userData['role'] ?? 'seller'; // Default a seller si no viene
+            userData['role'] ?? 'cajero'; // Default a cajero si no viene
 
         // Store tokens and user data
         final prefs = await SharedPreferences.getInstance();
@@ -296,7 +296,7 @@ class AuthService {
       }
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/auth/refresh'),
+        Uri.parse('$_baseUrl/auth/refresh-token'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

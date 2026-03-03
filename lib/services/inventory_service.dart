@@ -1,21 +1,8 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'auth_service.dart';
+import 'api_helper.dart';
 
 class InventoryService {
-  static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
-
-  // Get authorization headers
-  static Future<Map<String, String>> _getHeaders() async {
-    final token = await AuthService.getAccessToken();
-    return {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
-
-  // Create product with real API call
+  // Create product using ApiHelper (handles refresh)
   static Future<Map<String, dynamic>> createProduct({
     required String name,
     required String barcode,
@@ -31,12 +18,10 @@ class InventoryService {
     required int wholesaleUnits,
   }) async {
     try {
-      final headers = await _getHeaders();
-
-      final response = await http.post(
-        Uri.parse('$_baseUrl/products'),
-        headers: headers,
-        body: jsonEncode({
+      final response = await ApiHelper.request(
+        method: 'POST',
+        path: '/products',
+        body: {
           'name': name,
           'barcode': barcode,
           'isBulk': isBulk,
@@ -49,39 +34,21 @@ class InventoryService {
           'hasWholesalePrice': hasWholesalePrice,
           'wholesalePrice': wholesalePrice,
           'wholesaleUnits': wholesaleUnits,
-        }),
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-
         return {
           'success': true,
           'message': 'Producto creado exitosamente',
           'data': responseData,
         };
-      } else if (response.statusCode == 400) {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Datos inválidos',
-        };
-      } else if (response.statusCode == 401) {
-        return {
-          'success': false,
-          'message': 'No autorizado - Inicia sesión nuevamente',
-        };
-      } else if (response.statusCode == 422) {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Error de validación',
-        };
       } else {
         final errorData = jsonDecode(response.body);
         return {
           'success': false,
-          'message': errorData['message'] ?? 'Error en el servidor',
+          'message': errorData['message'] ?? 'Error en el servidor (${response.statusCode})',
         };
       }
     } catch (e) {
@@ -92,19 +59,16 @@ class InventoryService {
     }
   }
 
-  // Get all products
+  // Get all products using ApiHelper
   static Future<Map<String, dynamic>> getProducts() async {
     try {
-      final headers = await _getHeaders();
-
-      final response = await http.get(
-        Uri.parse('$_baseUrl/products'),
-        headers: headers,
+      final response = await ApiHelper.request(
+        method: 'GET',
+        path: '/products',
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-
         return {
           'success': true,
           'message': 'Productos obtenidos exitosamente',
@@ -125,7 +89,7 @@ class InventoryService {
     }
   }
 
-  // Update product
+  // Update product using ApiHelper
   static Future<Map<String, dynamic>> updateProduct({
     required String id,
     required String name,
@@ -142,12 +106,10 @@ class InventoryService {
     required int wholesaleUnits,
   }) async {
     try {
-      final headers = await _getHeaders();
-
-      final response = await http.put(
-        Uri.parse('$_baseUrl/products/$id'),
-        headers: headers,
-        body: jsonEncode({
+      final response = await ApiHelper.request(
+        method: 'PUT',
+        path: '/products/$id',
+        body: {
           'name': name,
           'barcode': barcode,
           'isBulk': isBulk,
@@ -160,12 +122,11 @@ class InventoryService {
           'hasWholesalePrice': hasWholesalePrice,
           'wholesalePrice': wholesalePrice,
           'wholesaleUnits': wholesaleUnits,
-        }),
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-
         return {
           'success': true,
           'message': 'Producto actualizado exitosamente',
@@ -186,14 +147,12 @@ class InventoryService {
     }
   }
 
-  // Delete product
+  // Delete product using ApiHelper
   static Future<Map<String, dynamic>> deleteProduct(String id) async {
     try {
-      final headers = await _getHeaders();
-
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/products/$id'),
-        headers: headers,
+      final response = await ApiHelper.request(
+        method: 'DELETE',
+        path: '/products/$id',
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {

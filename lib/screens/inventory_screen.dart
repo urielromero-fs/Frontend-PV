@@ -21,14 +21,21 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   bool isLoading = false;
   String errorMessage = '';
-  String _userRole = 'seller'; // Default restriction
+  String _userRole = 'cajero'; // Default restriction
 
   // Filtros locales
   String searchQuery = '';
   String selectedCategoryFilter = 'Todas';
   String selectedSortOption = 'Ninguno';
+  String selectedStockFilter = 'Todos';
   bool filterBulkOnly = false;
   final TextEditingController searchController = TextEditingController();
+
+  final List<String> stockFilters = [
+    'Todos',
+    'Bajo Stock',
+    'Sin Stock',
+  ];
 
   final List<String> categoryFilters = [
     'Todas',
@@ -70,7 +77,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Future<void> _loadUserRole() async {
     final role = await AuthService.getCurrentUserRole();
     setState(() {
-      _userRole = role ?? 'seller';
+      _userRole = role ?? 'cajero';
     });
   }
 
@@ -87,6 +94,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       category: selectedCategoryFilter,
       onlyBulk: filterBulkOnly,
       sortOption: selectedSortOption,
+      stockStatus: selectedStockFilter,
     );
 
     return Scaffold(
@@ -318,20 +326,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ),
                               ),
                               Expanded(
-                                child: Text(
-                                  'Estado',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
+                                child: Center(
+                                  child: Text(
+                                    'Estado',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
                               Expanded(
-                                child: Text(
-                                  'Acciones',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
+                                child: Center(
+                                  child: Text(
+                                    'Acciones',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -689,6 +701,29 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
                   const SizedBox(height: 16),
 
+                  // Stock
+                  DropdownButtonFormField<String>(
+                    value: selectedStockFilter,
+                    dropdownColor: const Color(0xFF1a1a1a),
+                    items: stockFilters.map((stock) {
+                      return DropdownMenuItem(
+                        value: stock,
+                        child: Text(
+                          stock,
+                          style: GoogleFonts.poppins(color: Colors.white),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedStockFilter = value!;
+                      });
+                    },
+                    decoration: const InputDecoration(labelText: 'Estado de Stock'),
+                  ),
+
+                  const SizedBox(height: 16),
+
                   // Granel
                   Row(
                     children: [
@@ -717,6 +752,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 setState(() {
                   selectedCategoryFilter = 'Todas';
                   selectedSortOption = 'Ninguno';
+                  selectedStockFilter = 'Todos';
                   filterBulkOnly = false;
                 });
                 //applyFilters();
@@ -935,7 +971,7 @@ class _ProductRow extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (userRole == 'admin') ...[
+                if (userRole == 'admin' || userRole == 'administrador') ...[
                   const SizedBox(width: 8),
                   actionsMenu,
                 ],
@@ -1074,25 +1110,27 @@ class _ProductRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withAlpha(51),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                status,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  color: statusColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withAlpha(51),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  status,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    color: statusColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
           ),
-          if (userRole == 'admin')
-            Expanded(child: actionsMenu)
+          if (userRole == 'admin' || userRole == 'administrador')
+            Expanded(child: Center(child: actionsMenu))
           else
             const Spacer(),
         ],

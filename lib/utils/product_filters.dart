@@ -4,8 +4,16 @@ List<dynamic> filterProducts({
   String category = 'Todas',
   bool onlyBulk = false,
   String sortOption = 'Ninguno',
+  String stockStatus = 'Todos',
 }) {
   List<dynamic> temp = List.from(products);
+
+  // Filtro por Stock
+  if (stockStatus == 'Bajo Stock') {
+    temp = temp.where((p) => (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0).toList();
+  } else if (stockStatus == 'Sin Stock') {
+    temp = temp.where((p) => (p['units'] ?? 0) == 0).toList();
+  }
 
   // Búsqueda por nombre o barcode
   if (searchQuery.isNotEmpty) {

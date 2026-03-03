@@ -2645,6 +2645,39 @@ class _BulkProductDialog extends StatefulWidget {
 class _BulkProductDialogState extends State<_BulkProductDialog> {
   int _inputType = 0; // 0 = Weight (kg), 1 = Price ($)
   final TextEditingController _controller = TextEditingController();
+  double _convertedValue = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_updateConversion);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_updateConversion);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _updateConversion() {
+    final text = _controller.text;
+    if (text.isEmpty) {
+      setState(() => _convertedValue = 0.0);
+      return;
+    }
+
+    final value = double.tryParse(text) ?? 0.0;
+    setState(() {
+      if (_inputType == 0) {
+        // From Weight to Price
+        _convertedValue = value * widget.pricePerKg;
+      } else {
+        // From Price to Weight
+        _convertedValue = value / widget.pricePerKg;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2652,7 +2685,7 @@ class _BulkProductDialogState extends State<_BulkProductDialog> {
       backgroundColor: const Color(0xFF1a1a1a),
       title: Text(
         widget.productName,
-        style: GoogleFonts.poppins(color: Colors.white),
+        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -2661,9 +2694,14 @@ class _BulkProductDialogState extends State<_BulkProductDialog> {
             children: [
               Expanded(
                 child: _TypeButton(
-                  label: 'Por Peso (Kilogramos compra total)',
+                  label: 'Por Peso (Kg)',
                   isSelected: _inputType == 0,
-                  onTap: () => setState(() => _inputType = 0),
+                  onTap: () {
+                    setState(() {
+                      _inputType = 0;
+                      _updateConversion();
+                    });
+                  },
                 ),
               ),
               const SizedBox(width: 8),
@@ -2671,12 +2709,17 @@ class _BulkProductDialogState extends State<_BulkProductDialog> {
                 child: _TypeButton(
                   label: 'Por Monto (\$)',
                   isSelected: _inputType == 1,
-                  onTap: () => setState(() => _inputType = 1),
+                  onTap: () {
+                    setState(() {
+                      _inputType = 1;
+                      _updateConversion();
+                    });
+                  },
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           TextField(
             controller: _controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -2685,34 +2728,73 @@ class _BulkProductDialogState extends State<_BulkProductDialog> {
                 RegExp(_inputType == 0 ? r'^\d+\.?\d{0,3}' : r'^\d+\.?\d{0,2}'),
               ),
             ],
-            style: GoogleFonts.poppins(color: Colors.white, fontSize: 24),
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
+            ),
             textAlign: TextAlign.center,
             decoration: InputDecoration(
               hintText: '0.00',
-              hintStyle: GoogleFonts.poppins(color: Colors.white30),
+              hintStyle: GoogleFonts.poppins(color: Colors.white12),
               prefixText: _inputType == 1 ? '\$ ' : '',
-              suffixText: _inputType == 0 ? ' kilogramos compra total' : '',
+              suffixText: _inputType == 0 ? ' Kg' : '',
               prefixStyle: GoogleFonts.poppins(
                 color: const Color(0xFF05e265),
-                fontSize: 24,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
               ),
               suffixStyle: GoogleFonts.poppins(
                 color: Colors.white70,
-                fontSize: 16,
+                fontSize: 18,
               ),
-              enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF05e265)),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                borderRadius: BorderRadius.circular(12),
               ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF05e265), width: 2),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFF05e265), width: 2),
+                borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.05),
             ),
             autofocus: true,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
+          if (_controller.text.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF05e265).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _inputType == 0 ? Icons.currency_exchange : Icons.scale,
+                    size: 16,
+                    color: const Color(0xFF05e265),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _inputType == 0
+                        ? 'Total: \$${_convertedValue.toStringAsFixed(2)}'
+                        : 'Equivale a: ${_convertedValue.toStringAsFixed(3)} Kg',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF05e265),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 12),
           Text(
-            widget.pricePerKg.toStringAsFixed(2) + ' /kilogramo compra total',
-            style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12),
+            'Precio por Kg: \$${widget.pricePerKg.toStringAsFixed(2)}',
+            style: GoogleFonts.poppins(color: Colors.white54, fontSize: 13),
           ),
         ],
       ),

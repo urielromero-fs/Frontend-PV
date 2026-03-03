@@ -15,9 +15,9 @@ class _UsersScreenState extends State<UsersScreen> {
     (index) => {
       'id': 'user_$index',
       'name': 'Usuario ${index + 1}',
-      'email': 'usuario${index + 1}@pv26.com',
+      'email': 'usuario${index + 1}@centli.com',
       'role': index % 3 == 0
-          ? 'Admin'
+          ? 'Administrador'
           : index % 2 == 0
           ? 'Cajero'
           : 'Vendedor',
@@ -25,6 +25,34 @@ class _UsersScreenState extends State<UsersScreen> {
       'joinDate': '${index + 1}/01/2026',
     },
   );
+
+  List<Map<String, dynamic>> _filteredUsers = [];
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredUsers = users;
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _filteredUsers = users.where((user) {
+        final name = user['name'].toString().toLowerCase();
+        final email = user['email'].toString().toLowerCase();
+        final query = _searchController.text.toLowerCase();
+        return name.contains(query) || email.contains(query);
+      }).toList();
+    });
+  }
 
   void _showUserForm([Map<String, dynamic>? user]) {
     final bool isEditing = user != null;
@@ -125,7 +153,7 @@ class _UsersScreenState extends State<UsersScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        items: ['Admin', 'Cajero'].map((
+                        items: ['Administrador', 'Cajero'].map((
                           String value,
                         ) {
                           return DropdownMenuItem<String>(
@@ -240,6 +268,7 @@ class _UsersScreenState extends State<UsersScreen> {
             onPressed: () {
               setState(() {
                 users.removeWhere((u) => u['id'] == id);
+                _onSearchChanged(); // Update filtered list
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -313,6 +342,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
                 child: TextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Buscar usuarios...',
                     hintStyle: GoogleFonts.poppins(color: Colors.white70),
@@ -409,20 +439,24 @@ class _UsersScreenState extends State<UsersScreen> {
                                 ),
                               ),
                               Expanded(
-                                child: Text(
-                                  'Estado',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
+                                child: Center(
+                                  child: Text(
+                                    'Estado',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
                               Expanded(
-                                child: Text(
-                                  'Acciones',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
+                                child: Center(
+                                  child: Text(
+                                    'Acciones',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -433,7 +467,7 @@ class _UsersScreenState extends State<UsersScreen> {
                       ],
                       // Lista de usuarios
                       Expanded(
-                        child: users.isEmpty
+                        child: _filteredUsers.isEmpty
                             ? Center(
                                 child: Text(
                                   'No hay usuarios registrados',
@@ -443,18 +477,15 @@ class _UsersScreenState extends State<UsersScreen> {
                                 ),
                               )
                             : ListView.builder(
-                                itemCount: users.length,
+                                itemCount: _filteredUsers.length,
                                 itemBuilder: (context, index) {
-                                  final user = users[index];
+                                  final user = _filteredUsers[index];
                                   return _UserRow(
                                     name: user['name'],
                                     email: user['email'],
                                     role: user['role'],
-                                    status: user['status'],
-                                    statusColor: user['status'] == 'Inactivo'
-                                        ? const Color(0xFFE91E63)
-                                        : const Color(0xFF05e265),
                                     joinDate: user['joinDate'],
+                                    status: user['status'] ?? 'Activo',
                                     isMobile: isMobile,
                                     onEdit: () => _showUserForm(user),
                                     onDelete: () => _deleteUser(user['id']),
@@ -523,9 +554,8 @@ class _UserRow extends StatelessWidget {
   final String name;
   final String email;
   final String role;
-  final String status;
-  final Color statusColor;
   final String joinDate;
+  final String status;
   final bool isMobile;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -534,9 +564,8 @@ class _UserRow extends StatelessWidget {
     required this.name,
     required this.email,
     required this.role,
-    required this.status,
-    required this.statusColor,
     required this.joinDate,
+    required this.status,
     required this.isMobile,
     required this.onEdit,
     required this.onDelete,
@@ -544,6 +573,8 @@ class _UserRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color statusColor = status == 'Inactivo' ? const Color(0xFFE91E63) : const Color(0xFF05e265);
+
     final actionsMenu = PopupMenuButton<String>(
       color: const Color(0xFF1a1a1a),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -552,9 +583,29 @@ class _UserRow extends StatelessWidget {
           onEdit();
         } else if (value == 'delete') {
           onDelete();
+        } else if (value == 'send_password') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Contraseña enviada a $email'),
+              backgroundColor: const Color(0xFF05e265),
+            ),
+          );
         }
       },
       itemBuilder: (BuildContext context) => [
+        PopupMenuItem<String>(
+          value: 'send_password',
+          child: Row(
+            children: [
+              const Icon(Icons.send_rounded, color: Colors.blueAccent, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                'Enviar contraseña',
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
         PopupMenuItem<String>(
           value: 'edit',
           child: Row(
@@ -610,11 +661,11 @@ class _UserRow extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: statusColor,
+                  backgroundColor: const Color(0xFF05e265).withOpacity(0.2),
                   child: Text(
                     name.substring(0, 1).toUpperCase(),
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: const Color(0xFF05e265),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -702,12 +753,12 @@ class _UserRow extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: statusColor,
+                  backgroundColor: const Color(0xFF05e265).withOpacity(0.2),
                   radius: 16,
                   child: Text(
                     name.substring(0, 1).toUpperCase(),
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: const Color(0xFF05e265),
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -758,24 +809,26 @@ class _UserRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                status,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  color: statusColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  status,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    color: statusColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
           ),
-          Expanded(child: actionsMenu),
+          Expanded(child: Center(child: actionsMenu)),
         ],
       ),
     );

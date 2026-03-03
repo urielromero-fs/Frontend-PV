@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Icon(
-                                Icons.lock_outline,
+                                Icons.eco,
                                 size: 40,
                                 color: Colors.white,
                               ),
@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen>
                             const SizedBox(height: 24),
 
                             Text(
-                              'Bienvenido',
+                              'Centli 🌿',
                               style: GoogleFonts.poppins(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
