@@ -388,6 +388,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                         _deleteProduct(product['_id']),
                                     onEdit: () =>
                                         _showEditProductModal(product),
+                                    onAddStock: () =>
+                                        _showAddStockModal(product),
+                                    hasWholesalePrice:
+                                        product['hasWholesalePrice'] ?? false,
+                                    wholesalePrice:
+                                        '\$${product['wholesalePrice'] ?? 0}',
+                                    wholesaleUnits:
+                                        product['wholesaleUnits'] ?? 0,
                                   );
                                 },
                               ),
@@ -402,6 +410,162 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
     );
   }
+
+  void _showAddStockModal(Map product) {
+    final TextEditingController stockController = TextEditingController();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1a1a1a),
+            title: Text(
+              'Agregar Stock',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Producto: ${product['name']}',
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF05e265),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Stock actual: ${product['units']} ${product['isBulk'] == true ? 'Kg CT' : 'Unidades'}',
+                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: stockController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  autofocus: true,
+                  style: GoogleFonts.poppins(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Cantidad a agregar',
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Color(0xFF05e265)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cancelar',
+                  style: GoogleFonts.poppins(color: Colors.white70),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        final String val = stockController.text.trim();
+                        if (val.isEmpty) return;
+
+                        final int addUnits = int.tryParse(val) ?? 0;
+                        if (addUnits <= 0) return;
+
+                        setModalState(() => isSaving = true);
+
+                        final int currentUnits =
+                            int.tryParse(product['units']?.toString() ?? '0') ??
+                            0;
+                        final int newUnits = currentUnits + addUnits;
+
+                        final result = await InventoryService.updateProduct(
+                          id: product['_id'],
+                          name: product['name'],
+                          barcode: product['barcode'] ?? 'N/A',
+                          isBulk: product['isBulk'] ?? false,
+                          weight: (product['weight'] ?? 0.0).toDouble(),
+                          category: product['category'] ?? 'Sin categoría',
+                          units: newUnits,
+                          buyingPrice:
+                              (product['buyingPrice'] ?? 0.0).toDouble(),
+                          sellingPrice:
+                              (product['sellingPrice'] ?? 0.0).toDouble(),
+                          bulkPrice: (product['bulkPrice'] ?? 0.0).toDouble(),
+                          hasWholesalePrice:
+                              product['hasWholesalePrice'] ?? false,
+                          wholesalePrice:
+                              (product['wholesalePrice'] ?? 0.0).toDouble(),
+                          wholesaleUnits:
+                              (product['wholesaleUnits'] ?? 0) as int,
+                        );
+
+                        if (result['success'] == true) {
+                          if (mounted) {
+                            final provider = Provider.of<ProductProvider>(
+                              context,
+                              listen: false,
+                            );
+                            provider.fetchProducts();
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Stock actualizado correctamente'),
+                                backgroundColor: Color(0xFF05e265),
+                              ),
+                            );
+                          }
+                        } else {
+                          if (mounted) {
+                            setModalState(() => isSaving = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result['message'] ?? 'Error al actualizar',
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF05e265),
+                  foregroundColor: Colors.black,
+                ),
+                child: isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : Text(
+                        'Agregar',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+
 
   void _showAddProductModal() {
     showDialog(
@@ -633,10 +797,14 @@ class _ProductRow extends StatelessWidget {
   final Color statusColor;
   final String userRole;
   final bool isBulk;
+  final bool hasWholesalePrice;
+  final String wholesalePrice;
+  final int wholesaleUnits;
 
   //Acciones
   final VoidCallback onDelete;
   final VoidCallback onEdit;
+  final VoidCallback onAddStock;
 
   const _ProductRow({
     required this.id,
@@ -649,7 +817,11 @@ class _ProductRow extends StatelessWidget {
     required this.isBulk,
     required this.onDelete,
     required this.onEdit,
+    required this.onAddStock,
     required this.price,
+    required this.hasWholesalePrice,
+    required this.wholesalePrice,
+    required this.wholesaleUnits,
   });
 
   @override
@@ -773,12 +945,32 @@ class _ProductRow extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${isBulk ? 'Kilogramos compra total' : 'Stock'}: $stock',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '${isBulk ? 'KG CT' : 'Stock'}: $stock',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: onAddStock,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF05e265).withAlpha(40),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: Color(0xFF05e265),
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
                   price,
@@ -790,6 +982,17 @@ class _ProductRow extends StatelessWidget {
                 ),
               ],
             ),
+            if (hasWholesalePrice) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Mayoreo: $wholesalePrice (desde $wholesaleUnits uds)',
+                style: GoogleFonts.poppins(
+                  color: const Color(0xFF05e265).withAlpha(200),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -819,21 +1022,55 @@ class _ProductRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              '$stock ${isBulk ? 'Kilogramos compra total' : 'Uds'}',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
+            child: Row(
+              children: [
+                Text(
+                  '$stock ${isBulk ? 'Kg CT' : 'Uds'}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: onAddStock,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF05e265).withAlpha(40),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Icon(
+                      Icons.add,
+                      color: Color(0xFF05e265),
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
-            child: Text(
-              price,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  price,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (hasWholesalePrice)
+                  Text(
+                    'Mayoreo: $wholesalePrice ($wholesaleUnits+)',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF05e265),
+                      fontSize: 10,
+                    ),
+                  ),
+              ],
             ),
           ),
           Expanded(
@@ -895,6 +1132,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
   //final categoryController = TextEditingController();
   final unitsController = TextEditingController();
   final mayoreoController = TextEditingController();
+  final mayoreoUnitsController = TextEditingController();
   final barcodeController = TextEditingController();
 
   bool isBulk = false;
@@ -949,6 +1187,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
       bulkPrice: double.tryParse(weightController.text) ?? 0.0,
       hasWholesalePrice: hasMayoreo,
       wholesalePrice: double.tryParse(mayoreoController.text) ?? 0.0,
+      wholesaleUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
     );
 
     setState(() {
@@ -970,6 +1209,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
     //categoryController.dispose();
     unitsController.dispose();
     mayoreoController.dispose();
+    mayoreoUnitsController.dispose();
     barcodeController.dispose();
     super.dispose();
   }
@@ -1155,7 +1395,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   ),
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: isBulk ? 'Kilogramos compra total' : 'Unidades',
+                    labelText: isBulk ? 'KG CT' : 'Unidades',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.white.withAlpha(51)),
@@ -1183,7 +1423,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   ],
                   decoration: InputDecoration(
                     labelText: isBulk
-                        ? 'Precio de Compra (por 1 Kilogramo compra total)'
+                        ? 'Precio de Compra (por 1 KG CT)'
                         : 'Precio de Compra',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
@@ -1212,7 +1452,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   ],
                   decoration: InputDecoration(
                     labelText: isBulk
-                        ? 'Precio de Venta (por 1 Kilogramo compra total)'
+                        ? 'Precio de Venta (por 1 KG CT)'
                         : 'Precio de Venta',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
@@ -1255,31 +1495,60 @@ class _AddProductDialogState extends State<AddProductDialog> {
                 const SizedBox(height: 16),
 
                 if (hasMayoreo) ...[
-                  TextField(
-                    controller: mayoreoController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'^\d+\.?\d{0,2}'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: mayoreoController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+\.?\d{0,2}'),
+                            ),
+                          ],
+                          decoration: InputDecoration(
+                            labelText: 'Precio Mayoreo',
+                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.white.withAlpha(51),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Color(0xFF05e265)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          style: GoogleFonts.poppins(color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: mayoreoUnitsController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            labelText: 'Mínimo Unidades',
+                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.white.withAlpha(51),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Color(0xFF05e265)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          style: GoogleFonts.poppins(color: Colors.white),
+                        ),
                       ),
                     ],
-                    decoration: InputDecoration(
-                      labelText: 'Precio Mayoreo',
-                      labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.white.withAlpha(51),
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Color(0xFF05e265)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    style: GoogleFonts.poppins(color: Colors.white),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -1348,6 +1617,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
   //final categoryController = TextEditingController();
   final unitsController = TextEditingController();
   final mayoreoController = TextEditingController();
+  final mayoreoUnitsController = TextEditingController();
   final barcodeController = TextEditingController();
 
   bool isBulk = false;
@@ -1390,6 +1660,8 @@ class _EditProductDialogState extends State<EditProductDialog> {
         widget.product['category']?.toString() ?? 'Sin categoría';
 
     mayoreoController.text = (widget.product['wholesalePrice'] ?? 0).toString();
+    mayoreoUnitsController.text =
+        (widget.product['wholesaleUnits'] ?? 0).toString();
 
     isBulk = widget.product['isBulk'] ?? false;
     hasMayoreo = widget.product['hasWholesalePrice'] ?? false;
@@ -1431,6 +1703,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
       bulkPrice: double.tryParse(weightController.text) ?? 0.0,
       hasWholesalePrice: hasMayoreo,
       wholesalePrice: double.tryParse(mayoreoController.text) ?? 0.0,
+      wholesaleUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
     );
 
     setState(() {
@@ -1623,7 +1896,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   ),
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
-                    labelText: isBulk ? 'Kilogramos compra total' : 'Unidades',
+                    labelText: isBulk ? 'KG CT' : 'Unidades',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.white.withAlpha(51)),
@@ -1651,7 +1924,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   ],
                   decoration: InputDecoration(
                     labelText: isBulk
-                        ? 'Precio de Compra (por 1 Kilogramo compra total)'
+                        ? 'Precio de Compra (por 1 KG CT)'
                         : 'Precio de Compra',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
@@ -1680,7 +1953,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   ],
                   decoration: InputDecoration(
                     labelText: isBulk
-                        ? 'Precio de Venta (por 1 Kilogramo compra total)'
+                        ? 'Precio de Venta (por 1 KG CT)'
                         : 'Precio de Venta',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
@@ -1723,31 +1996,60 @@ class _EditProductDialogState extends State<EditProductDialog> {
                 const SizedBox(height: 16),
 
                 if (hasMayoreo) ...[
-                  TextField(
-                    controller: mayoreoController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'^\d+\.?\d{0,2}'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: mayoreoController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+\.?\d{0,2}'),
+                            ),
+                          ],
+                          decoration: InputDecoration(
+                            labelText: 'Precio Mayoreo',
+                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.white.withAlpha(51),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Color(0xFF05e265)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          style: GoogleFonts.poppins(color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: mayoreoUnitsController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            labelText: 'Mínimo Unidades',
+                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.white.withAlpha(51),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Color(0xFF05e265)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          style: GoogleFonts.poppins(color: Colors.white),
+                        ),
                       ),
                     ],
-                    decoration: InputDecoration(
-                      labelText: 'Precio Mayoreo',
-                      labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.white.withAlpha(51),
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Color(0xFF05e265)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    style: GoogleFonts.poppins(color: Colors.white),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -1799,6 +2101,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
     //categoryController.dispose();
     unitsController.dispose();
     mayoreoController.dispose();
+    mayoreoUnitsController.dispose();
     barcodeController.dispose();
     super.dispose();
   }

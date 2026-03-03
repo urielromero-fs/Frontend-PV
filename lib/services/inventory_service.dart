@@ -28,6 +28,7 @@ class InventoryService {
     required double bulkPrice,
     required bool hasWholesalePrice,
     required double wholesalePrice,
+    required int wholesaleUnits,
   }) async {
     try {
       final headers = await _getHeaders();
@@ -47,6 +48,7 @@ class InventoryService {
           'bulkPrice': bulkPrice,
           'hasWholesalePrice': hasWholesalePrice,
           'wholesalePrice': wholesalePrice,
+          'wholesaleUnits': wholesaleUnits,
         }),
       );
 
@@ -137,6 +139,7 @@ class InventoryService {
     required double bulkPrice,
     required bool hasWholesalePrice,
     required double wholesalePrice,
+    required int wholesaleUnits,
   }) async {
     try {
       final headers = await _getHeaders();
@@ -156,6 +159,7 @@ class InventoryService {
           'bulkPrice': bulkPrice,
           'hasWholesalePrice': hasWholesalePrice,
           'wholesalePrice': wholesalePrice,
+          'wholesaleUnits': wholesaleUnits,
         }),
       );
 
