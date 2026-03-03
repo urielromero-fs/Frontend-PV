@@ -8,6 +8,7 @@ import '../utils/product_filters.dart';
 import '../services/sale_service.dart';
 import '../services/cashSession_service.dart';
 import 'home_screen.dart';
+import '../services/withdrawal_service.dart';
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
@@ -82,8 +83,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   double _initialCash = 0.0;
   double _totalSales = 0.0;
   double _totalWithdrawals = 0.0;
+  String _withdrawalReason = '';
   bool _isLoadingSession = false;
   String? _currentSessionId;
+  
 
   @override
   void initState() {
@@ -364,8 +367,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                  
 
                   final result = await CashSessionService.closeSession(
-                    _currentSessionId.toString(),
+                    _currentSessionId.toString()                    
                   );
+
+                  
 
                   setState(() => _isLoadingSession = false);
 
@@ -2178,20 +2183,87 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              final double amount =
-                  double.tryParse(amountController.text) ?? 0.0;
-              setState(() {
-                _totalWithdrawals += amount;
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Retiro registrado correctamente'),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            },
+
+            // onPressed: () {
+            //   final double amount =
+            //       double.tryParse(amountController.text) ?? 0.0;
+            //   setState(() {
+            //     _totalWithdrawals += amount;
+            //   });
+            //   Navigator.pop(context);
+            //   ScaffoldMessenger.of(context).showSnackBar(
+            //     const SnackBar(
+            //       content: Text('Retiro registrado correctamente'),
+            //       backgroundColor: Colors.orange,
+            //     ),
+            //   );
+            // },
+
+            onPressed: () async {
+                  final double amount =
+                      double.tryParse(amountController.text) ?? 0.0;
+                  final String reason = reasonController.text.trim();
+
+                  if (amount <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Ingresa un monto válido'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (reason.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Ingresa un motivo'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Mostrar loader mientras se hace la petición
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+
+                  final response = await WithdrawalService.createWithdrawal(
+                    amount: amount,
+                    reason: reason,
+                  );
+
+                  Navigator.pop(context); // cerrar loader
+
+                  if (response['success'] == true) {
+                    setState(() {
+                      _totalWithdrawals += amount;
+                    });
+
+                    Navigator.pop(context); // cerrar dialog principal
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Retiro registrado correctamente'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(response['message'] ?? 'Error inesperado'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+
+
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF05e265),
             ),
