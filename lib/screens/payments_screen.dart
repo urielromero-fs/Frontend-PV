@@ -161,6 +161,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       final result = await SaleService.createSale(
           products: productsPayload,
           paymentMethod: currentTicket.paymentMethod,
+          discount: currentTicket.discount
+          
       );
 
       // Quitar diálogo de carga
@@ -1860,7 +1862,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     ),
                     _buildPaymentMethodOption(
                       icon: Icons.account_balance,
-                      label: 'Transfer',
+                      label: 'Transferencia',
                       isActive: localPaymentMethod == 'Transferencia',
                       onTap: () {
                         setDialogState(() => localPaymentMethod = 'Transferencia');

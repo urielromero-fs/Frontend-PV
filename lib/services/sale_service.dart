@@ -19,6 +19,7 @@ class SaleService {
   static Future<Map<String, dynamic>> createSale({
     required List<Map<String, dynamic>> products,
     String? paymentMethod,
+    double? discount,
   }) async {
     try {
       final headers = await _getHeaders();
@@ -29,6 +30,7 @@ class SaleService {
         body: jsonEncode({
           'products': products,
           if (paymentMethod != null) 'paymentMethod': paymentMethod,
+          if (discount != null) 'discount': discount,
         }),
       );
 
