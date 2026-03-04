@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../utils/product_filters.dart';
 import '../services/sale_service.dart';
+import '../services/inventory_service.dart';
 import '../services/cashSession_service.dart';
 import 'home_screen.dart';
 import '../services/withdrawal_service.dart';
@@ -711,7 +712,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 ), // Padding for the bottom bar
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3, // Less items per row on mobile
-                  childAspectRatio: 1.0, // Square cards for compact layout
+                  childAspectRatio: 1.1, // Larger cards
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
                 ),
@@ -721,10 +722,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   return _ProductCard(
                     name: product['name'],
                     price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
-                    isBulk: product['isBulk'],
-                    onTap: () {
-                      _addToCart(product);
-                    },
+                    isBulk: product['isBulk'] ?? false,
+                    units: (product['units'] as num?)?.toDouble() ?? 0.0,
+                    remainingUnits: ((product['units'] as num?)?.toDouble() ?? 0.0) - 
+                        (currentTicket.items.where((it) => it.name == product['name']).fold(0.0, (sum, it) => sum + it.quantity)),
+                    onTap: () => _addToCart(product),
+                    onAddStock: () => _showAddStockModal(product),
                   );
                 },
               ),
@@ -805,8 +808,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 6,
-                          childAspectRatio:
-                              1.0, // Square cards for compact layout
+                          childAspectRatio: 1.1, // Larger cards
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
@@ -818,10 +820,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         price:
                             (product['sellingPrice'] as num?)?.toDouble() ??
                             0.0,
-                        isBulk: product['isBulk'],
-                        onTap: () {
-                          _addToCart(product);
-                        },
+                        isBulk: product['isBulk'] ?? false,
+                        units: (product['units'] as num?)?.toDouble() ?? 0.0,
+                        remainingUnits: ((product['units'] as num?)?.toDouble() ?? 0.0) - 
+                            (currentTicket.items.where((it) => it.name == product['name']).fold(0.0, (sum, it) => sum + it.quantity)),
+                        onTap: () => _addToCart(product),
+                        onAddStock: () => _showAddStockModal(product),
                       );
                     },
                   ),
@@ -1735,6 +1739,158 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
 
 
+  Future<void> _showAddStockModal(Map product) async {
+    final TextEditingController stockController = TextEditingController();
+    bool isSaving = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1a1a1a),
+            title: Text(
+              'Agregar Stock',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Producto: ${product['name']}',
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF05e265),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Stock actual: ${product['units']} ${product['isBulk'] == true ? 'Kg CT' : 'Unidades'}',
+                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: stockController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  autofocus: true,
+                  style: GoogleFonts.poppins(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Cantidad a agregar',
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Color(0xFF05e265)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cancelar',
+                  style: GoogleFonts.poppins(color: Colors.white70),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        final String val = stockController.text.trim();
+                        if (val.isEmpty) return;
+
+                        final double addUnits = double.tryParse(val) ?? 0;
+                        if (addUnits <= 0) return;
+
+                        setModalState(() => isSaving = true);
+
+                        final double currentUnits =
+                            double.tryParse(product['units']?.toString() ?? '0') ??
+                            0;
+                        final double newUnits = currentUnits + addUnits;
+
+                        final result = await InventoryService.updateProduct(
+                          id: product['_id'],
+                          name: product['name'],
+                          barcode: product['barcode'] ?? 'N/A',
+                          isBulk: product['isBulk'] ?? false,
+                          weight: (product['weight'] ?? 0.0).toDouble(),
+                          category: product['category'] ?? 'Sin categoría',
+                          units: product['isBulk'] == true ? newUnits.toInt() : newUnits.toInt(), // API expects int for units often, but let's send what it needs
+                          buyingPrice:
+                              (product['buyingPrice'] ?? 0.0).toDouble(),
+                          sellingPrice:
+                              (product['sellingPrice'] ?? 0.0).toDouble(),
+                          bulkPrice: (product['bulkPrice'] ?? 0.0).toDouble(),
+                          hasWholesalePrice:
+                              product['hasWholesalePrice'] ?? false,
+                          wholesalePrice:
+                              (product['wholesalePrice'] ?? 0.0).toDouble(),
+                          wholesaleUnits:
+                              (product['wholesaleUnits'] ?? 0) as int,
+                        );
+
+                        if (result['success'] == true) {
+                          if (mounted) {
+                            await Provider.of<ProductProvider>(
+                              context,
+                              listen: false,
+                            ).fetchProducts();
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Stock actualizado correctamente'),
+                                backgroundColor: Color(0xFF05e265),
+                              ),
+                            );
+                          }
+                        } else {
+                          if (mounted) {
+                            setModalState(() => isSaving = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result['message'] ?? 'Error al actualizar',
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF05e265),
+                  foregroundColor: Colors.black,
+                ),
+                child: isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : Text(
+                        'Agregar',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _addToCart(Map<String, dynamic> product) async {
     //double price = product['price'];
     double price = (product['sellingPrice'] as num?)?.toDouble() ?? 0.0;
@@ -2419,82 +2575,144 @@ class _ProductCard extends StatelessWidget {
   final String name;
   final double price;
   final bool isBulk;
+  final double units;
+  final double remainingUnits;
   final VoidCallback onTap;
+  final VoidCallback onAddStock;
 
   const _ProductCard({
     required this.name,
     required this.price,
     required this.isBulk,
+    required this.units,
+    required this.remainingUnits,
     required this.onTap,
+    required this.onAddStock,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool hasStock = remainingUnits > 0;
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: hasStock ? onTap : null,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withAlpha(13),
+          color: Colors.white.withAlpha(hasStock ? 13 : 8),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withAlpha(26)),
+          border: Border.all(
+            color: hasStock 
+                ? Colors.white.withAlpha(26) 
+                : Colors.red.withOpacity(0.2),
+          ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Product Name
-              Text(
-                name,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-
-              // Price and Bulk Indicator
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '\$${price.toStringAsFixed(0)}',
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Opacity(
+                opacity: hasStock ? 1.0 : 0.5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      name,
                       style: GoogleFonts.poppins(
-                        color: const Color(0xFF05e265),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '\$${price.toStringAsFixed(0)}',
+                            style: GoogleFonts.poppins(
+                              color: const Color(0xFF05e265),
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        if (isBulk) ...[
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Granel',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (!hasStock) const SizedBox(height: 22), // Space for labels
+                  ],
+                ),
+              ),
+            ),
+            if (!hasStock)
+              Positioned(
+                bottom: 6,
+                left: 8,
+                right: 8,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'SIN STOCK',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            color: Colors.redAccent,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  if (isBulk) ...[
                     const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      child: Text(
-                        'Granel',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 7,
-                          fontWeight: FontWeight.w600,
+                    GestureDetector(
+                      onTap: onAddStock,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF05e265).withAlpha(40),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFF05e265).withAlpha(100)),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: Color(0xFF05e265),
+                          size: 16,
                         ),
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );

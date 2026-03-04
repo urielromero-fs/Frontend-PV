@@ -15,6 +15,7 @@ class SaleService {
         body: {
           'products': products,
           if (paymentMethod != null) 'paymentMethod': paymentMethod,
+          if (discount != null) 'discount': discount,
         },
       );
 
