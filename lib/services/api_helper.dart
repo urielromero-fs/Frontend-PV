@@ -6,7 +6,9 @@ class ApiHelper {
   static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
 
   static Future<Map<String, String>> _getHeaders() async {
+
     final token = await AuthService.getAccessToken();
+    
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',

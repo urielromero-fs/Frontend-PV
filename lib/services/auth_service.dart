@@ -300,24 +300,33 @@ class AuthService {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-        },
-        body: jsonEncode({'refreshToken': refreshToken}),
+          'Authorization': 'Bearer $refreshToken',
+        }
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+        final newAccessToken = response.headers['x-access-token'];
+
+        if (newAccessToken == null || newAccessToken.isEmpty) {
+          return {
+            'success': false,
+            'message': 'No access token returned in headers'
+          };
+        }
 
         // Update access token
         final prefs = await SharedPreferences.getInstance();
+
         await prefs.setString(
           _accessTokenKey,
-          responseData['accessToken'] ?? '',
+          newAccessToken,
         );
 
         return {
           'success': true,
-          'message': 'Token refreshed successfully',
-          'data': responseData,
+          'message': responseData['message'] ?? 'Token refreshed successfully',
+          'data': newAccessToken,
         };
       } else {
         final errorData = jsonDecode(response.body);

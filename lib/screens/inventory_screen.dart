@@ -53,6 +53,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     "Higiene Personal",
     "Artículos para Bebé",
     "Mascotas",
+    "General",
     "Otros",
   ];
 
@@ -1679,6 +1680,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
     "Higiene Personal",
     "Artículos para Bebé",
     "Mascotas",
+    "General",
     "Otros",
   ];
 

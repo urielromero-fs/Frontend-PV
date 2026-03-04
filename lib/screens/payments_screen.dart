@@ -70,6 +70,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     "Higiene Personal",
     "Artículos para Bebé",
     "Mascotas",
+    "General",
     "Otros",
   ];
 
@@ -84,7 +85,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   double _initialCash = 0.0;
   double _totalSales = 0.0;
   double _totalWithdrawals = 0.0;
-  String _withdrawalReason = '';
   bool _isLoadingSession = false;
   String? _currentSessionId;
   
