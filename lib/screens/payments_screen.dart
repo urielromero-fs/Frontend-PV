@@ -1835,8 +1835,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                               product['hasWholesalePrice'] ?? false,
                           wholesalePrice:
                               (product['wholesalePrice'] ?? 0.0).toDouble(),
-                          wholesaleUnits:
-                              (product['wholesaleUnits'] ?? 0) as int,
+                          wholesaleMinUnits:
+                              (product['wholesaleMinUnits'] ?? 0) as int,
                         );
 
                         if (result['success'] == true) {

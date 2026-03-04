@@ -407,8 +407,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                         product['hasWholesalePrice'] ?? false,
                                     wholesalePrice:
                                         '\$${product['wholesalePrice'] ?? 0}',
-                                    wholesaleUnits:
-                                        product['wholesaleUnits'] ?? 0,
+                                    wholesaleMinUnits:
+                                        product['wholesaleMinUnits'] ?? 0,
                                   );
                                 },
                               ),
@@ -521,8 +521,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                               product['hasWholesalePrice'] ?? false,
                           wholesalePrice:
                               (product['wholesalePrice'] ?? 0.0).toDouble(),
-                          wholesaleUnits:
-                              (product['wholesaleUnits'] ?? 0) as int,
+                          wholesaleMinUnits:
+                              (product['wholesaleMinUnits'] ?? 0) as int,
                         );
 
                         if (result['success'] == true) {
@@ -836,7 +836,7 @@ class _ProductRow extends StatelessWidget {
   final bool isBulk;
   final bool hasWholesalePrice;
   final String wholesalePrice;
-  final int wholesaleUnits;
+  final int wholesaleMinUnits;
 
   //Acciones
   final VoidCallback onDelete;
@@ -858,7 +858,7 @@ class _ProductRow extends StatelessWidget {
     required this.price,
     required this.hasWholesalePrice,
     required this.wholesalePrice,
-    required this.wholesaleUnits,
+    required this.wholesaleMinUnits,
   });
 
   @override
@@ -1022,7 +1022,7 @@ class _ProductRow extends StatelessWidget {
             if (hasWholesalePrice) ...[
               const SizedBox(height: 8),
               Text(
-                'Mayoreo: $wholesalePrice (desde $wholesaleUnits uds)',
+                'Mayoreo: $wholesalePrice (desde $wholesaleMinUnits uds)',
                 style: GoogleFonts.poppins(
                   color: const Color(0xFF05e265).withAlpha(200),
                   fontSize: 12,
@@ -1101,7 +1101,7 @@ class _ProductRow extends StatelessWidget {
                 ),
                 if (hasWholesalePrice)
                   Text(
-                    'Mayoreo: $wholesalePrice ($wholesaleUnits+)',
+                    'Mayoreo: $wholesalePrice ($wholesaleMinUnits+)',
                     style: GoogleFonts.poppins(
                       color: const Color(0xFF05e265),
                       fontSize: 10,
@@ -1226,7 +1226,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
       bulkPrice: double.tryParse(weightController.text) ?? 0.0,
       hasWholesalePrice: hasMayoreo,
       wholesalePrice: double.tryParse(mayoreoController.text) ?? 0.0,
-      wholesaleUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
+      wholesaleMinUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
     );
 
     setState(() {
@@ -1700,8 +1700,9 @@ class _EditProductDialogState extends State<EditProductDialog> {
         widget.product['category']?.toString() ?? 'Sin categoría';
 
     mayoreoController.text = (widget.product['wholesalePrice'] ?? 0).toString();
+
     mayoreoUnitsController.text =
-        (widget.product['wholesaleUnits'] ?? 0).toString();
+        (widget.product['wholesaleMinUnits'] ?? 0).toString();
 
     isBulk = widget.product['isBulk'] ?? false;
     hasMayoreo = widget.product['hasWholesalePrice'] ?? false;
@@ -1743,7 +1744,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
       bulkPrice: double.tryParse(weightController.text) ?? 0.0,
       hasWholesalePrice: hasMayoreo,
       wholesalePrice: double.tryParse(mayoreoController.text) ?? 0.0,
-      wholesaleUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
+      wholesaleMinUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
     );
 
     setState(() {
