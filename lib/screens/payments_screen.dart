@@ -54,6 +54,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   String selectedSortOption = 'Ninguno';
   bool filterBulkOnly = false;
 
+
+  StateSetter? _currentModalSetState;
+
   final List<String> categoryFilters = [
     'Todas',
     "Sin categoría",
@@ -968,6 +971,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
                                
                                         onQuantityChanged: (quantity) {
+
                                             final item = currentTicket.items[index];
 
                                             if (quantity > item.units) {
@@ -989,6 +993,19 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
                                             setState(() {
                                               item.quantity = quantity;
+
+                                              final wholesaleMin = item.wholesaleMinUnits ?? 0;
+                                              final wholesalePrice = item.wholesalePrice ?? 0;
+                                              final normalPrice = item.originalPrice ?? item.price;
+
+                                              if (wholesaleMin > 0 && quantity >= wholesaleMin) {
+                                                item.price = wholesalePrice;
+                                              } else {
+                                                item.price = normalPrice;
+                                              }
+
+
+
                                               _calculateTotals();
                                             });
                                           },
@@ -1320,6 +1337,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+             _currentModalSetState = setModalState;
             return Container(
               height: MediaQuery.of(context).size.height * 0.8,
               decoration: const BoxDecoration(
@@ -1450,9 +1468,15 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                   : ListView.builder(
                                       itemCount: currentTicket.items.length,
                                       itemBuilder: (context, index) {
+                                        
+
                                         return _CartItemWidget(
+                                          
                                           item: currentTicket.items[index],
+
+
                                           onQuantityChanged: (quantity) {
+
                                                 final item = currentTicket.items[index];
 
                                                 if (quantity > item.units) {
@@ -1471,14 +1495,75 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                     });
                                                     setState(() {}); 
                                                     return;
-                                                  }
+                                                }
+
+                                                // final wholesaleMin = item.wholesaleMinUnits ?? 0;
+                                                //       final wholesalePrice = item.wholesalePrice ?? 0;
+                                                //       final normalPrice = item.originalPrice ?? item.price;
+
+                                                // if(quantity >= wholesaleMin && wholesaleMin > 0) {
+                                                //   item.price = wholesalePrice;
+                                                //   setModalState(() {
+                                                //       item.quantity = quantity;
+                                                //       _calculateTotals();
+                                                //     });
+                                                  
+                                                // } else {
+                                                //   item.price = normalPrice;
+                                                //   setModalState(() {
+                                                //       item.quantity = quantity;
+                                                //       _calculateTotals();
+                                                //     });
+                                                // }
+
 
                                                 setModalState(() {
+
+                                                      // item.quantity = quantity;
+
+                                                      // final wholesaleMin = item.wholesaleMinUnits ?? 0;
+                                                      // final wholesalePrice = item.wholesalePrice ?? 0;
+                                                      // final normalPrice = item.originalPrice ?? item.price;
+                                                      
+
+                                                      // if (wholesaleMin > 0 && quantity >= wholesaleMin) {
+                                                      //   item.price = wholesalePrice;
+                                                      // } else {
+                                                      //   item.price = normalPrice;
+                                                      // }
+
+
                                                       item.quantity = quantity;
+
+                                                      final wholesaleMin = item.wholesaleMinUnits ?? 0;
+                                                      final wholesalePrice = item.wholesalePrice ?? 0;
+                                                      final normalPrice = item.originalPrice ?? item.price;
+
+                                                      if (wholesaleMin > 0 && quantity >= wholesaleMin) {
+                                                        item.price = wholesalePrice;
+                                                      } else {
+                                                        item.price = normalPrice;
+                                                      }
+
+
+
+                                             
+
+
+
                                                       _calculateTotals();
-                                                    });
-                                                    setState(() {}); 
+
+
+
+                                                });
+
+                                                setState(() {
+                                                   
+                                                }); 
                                               }, 
+
+
+
                                           onRemove: () {
                                             setModalState(() {
                                               currentTicket.items.removeAt(index);
@@ -1893,7 +1978,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
   void _addToCart(Map<String, dynamic> product) async {
     //double price = product['price'];
+
+    final wholesaleMin = (product['wholesaleMinUnits'] as num?)?.toDouble() ?? 0;
+    final wholesalePrice = (product['wholesalePrice'] as num?)?.toDouble() ?? 0;
+    //final normalPrice = (product['sellingPrice'] as num?)?.toDouble() ?? 0;
+
     double price = (product['sellingPrice'] as num?)?.toDouble() ?? 0.0;
+   // double price = normalPrice;
     double units = (product['units'] as num?)?.toDouble() ?? 0.0;
     double quantity = 1;
     bool isBulk = product['isBulk'] ?? false;
@@ -1942,19 +2033,50 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       }
 
       if (existingIndex != -1) {
-        currentTicket.items[existingIndex].quantity += quantity;
+
+        final item = currentTicket.items[existingIndex];
+        item.quantity += quantity;
+
+        if(wholesaleMin > 0 && item.quantity >= wholesaleMin) {
+          item.price = wholesalePrice;
+        } else {
+          item.price = price;
+        }
+
+
       }else {
+
+
+        // double initialPrice = quantity >= wholesaleMin && wholesaleMin > 0
+        //     ? wholesalePrice
+        //     : normalPrice;
+
+
         currentTicket.items.add(CartItem(
           id: product['_id'],
           name: product['name'],
+          //price: price,
           price: price,
           quantity: quantity,
           isBulk: isBulk,
-          units: units 
+          units: units , 
+          originalPrice: price, 
+          wholesalePrice: wholesalePrice, 
+          wholesaleMinUnits: wholesaleMin, 
+
         ));
       }
       _calculateTotals();
     });
+
+
+        
+      // if (_currentModalSetState != null) {
+      //   _currentModalSetState!(() {}); // reconstruye el modal
+      // }
+
+      
+     
   }
 
   void _calculateTotals() {
@@ -2559,6 +2681,10 @@ class CartItem {
   double quantity;
   bool isBulk;
   double units; 
+
+  double? wholesaleMinUnits;
+  double? wholesalePrice;
+  double? originalPrice;
   
 
   CartItem({
@@ -2568,7 +2694,14 @@ class CartItem {
     required this.quantity,
     required this.units,
     this.isBulk = false,
+    this.wholesaleMinUnits,
+    this.wholesalePrice,
+    this.originalPrice,
   });
+
+  
+
+
 }
 
 class _ProductCard extends StatelessWidget {
@@ -2723,6 +2856,12 @@ class _CartItemWidget extends StatelessWidget {
   final CartItem item;
   final Function(double) onQuantityChanged;
   final VoidCallback onRemove;
+
+  // const _CartItemWidget({
+  //   required this.item,
+  //   required this.onQuantityChanged,
+  //   required this.onRemove,
+  // });
 
   const _CartItemWidget({
     required this.item,
