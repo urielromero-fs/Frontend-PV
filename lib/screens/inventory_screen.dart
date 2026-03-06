@@ -112,21 +112,30 @@ class _InventoryScreenState extends State<InventoryScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          ElevatedButton.icon(
+            onPressed: _showAddProductModal,
+            icon: const Icon(Icons.add, size: 18, color: Colors.black),
+            label: Text(
+              'Agregar producto',
+              style: GoogleFonts.poppins(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF05e265),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => provider.fetchProducts(),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showAddProductModal();
-        },
-        backgroundColor: const Color(0xFF05e265),
-        foregroundColor: Colors.white,
-        elevation: 8,
-        child: const Icon(Icons.add),
-      ),
+      /* Removed FloatingActionButton as requested and moved it to the top */
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -141,14 +150,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(13),
+                  color: Colors.white.withAlpha(15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withAlpha(26)),
+                  border: Border.all(color: Colors.white.withAlpha(30)),
                 ),
                 child: Row(
                   children: [
+                    const Icon(
+                      Icons.search,
+                      color: Colors.white70,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
                         controller: searchController,
@@ -158,63 +173,27 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           });
                         },
                         decoration: InputDecoration(
-                          hintText: 'Buscar por nombre o código...',
-                          hintStyle: GoogleFonts.poppins(color: Colors.white70),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Colors.white70,
+                          hintText: 'Buscar producto...',
+                          hintStyle: GoogleFonts.poppins(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 14,
                           ),
                           border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        style: GoogleFonts.poppins(color: Colors.white),
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF05e265),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: _showFilterDialog,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF05e265),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.filter_list,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Filtrar',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: _showFilterDialog,
+                      icon: const Icon(Icons.filter_list, color: Colors.white, size: 20),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withAlpha(20),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
                   ],
@@ -233,7 +212,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       color: const Color(0xFF05e265),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 24), // Increased from 16
 
                   Expanded(
                     child: _StatCard(
@@ -249,7 +228,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       color: const Color(0xFFFF9800),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 24), // Increased from 16
 
                   Expanded(
                     child: _StatCard(
@@ -795,28 +774,47 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(13),
+        color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withAlpha(26)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

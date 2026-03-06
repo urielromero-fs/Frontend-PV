@@ -301,6 +301,28 @@ class _UsersScreenState extends State<UsersScreen> {
           'Usuarios',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () => _showUserForm(),
+            icon: const Icon(Icons.add, size: 18, color: Colors.black),
+            label: Text(
+              'Agregar usuario',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF05e265),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
         backgroundColor: const Color(0xFF000000),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -311,15 +333,7 @@ class _UsersScreenState extends State<UsersScreen> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showUserForm();
-        },
-        backgroundColor: const Color(0xFF05e265),
-        foregroundColor: Colors.white,
-        elevation: 8,
-        child: const Icon(Icons.add),
-      ),
+      /* Removed FloatingActionButton as requested and moved it to the top */
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -335,21 +349,39 @@ class _UsersScreenState extends State<UsersScreen> {
             children: [
               // Search Bar
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white.withAlpha(15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  border: Border.all(color: Colors.white.withAlpha(30)),
                 ),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar usuarios...',
-                    hintStyle: GoogleFonts.poppins(color: Colors.white70),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                    border: InputBorder.none,
-                  ),
-                  style: GoogleFonts.poppins(color: Colors.white),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.search,
+                      color: Colors.white70,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Buscar usuarios...',
+                          hintStyle: GoogleFonts.poppins(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 14,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -360,26 +392,26 @@ class _UsersScreenState extends State<UsersScreen> {
                   Expanded(
                     child: _UserStatCard(
                       title: 'Total Usuarios',
-                      value: '1,245',
+                      value: users.length.toString(),
                       icon: Icons.people,
                       color: const Color(0xFF05e265),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 24),
                   Expanded(
                     child: _UserStatCard(
                       title: 'Activos Hoy',
-                      value: '89',
+                      value: users.where((u) => u['status'] == 'Activo').length.toString(),
                       icon: Icons.person_pin,
                       color: const Color(0xFF2196F3),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 24),
                   Expanded(
                     child: _UserStatCard(
-                      title: 'Nuevos',
-                      value: '23',
-                      icon: Icons.person_add,
+                      title: 'Inactivos',
+                      value: users.where((u) => u['status'] == 'Inactivo').length.toString(),
+                      icon: Icons.person_off,
                       color: const Color(0xFFFF9800),
                     ),
                   ),
@@ -521,28 +553,47 @@ class _UserStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

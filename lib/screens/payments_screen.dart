@@ -562,8 +562,22 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
     final bool isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Scaffold(
-      appBar: AppBar(
+    return KeyboardListener(
+      focusNode: FocusNode(),
+      autofocus: true,
+      onKeyEvent: (event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.f12) {
+          if (currentTicket.items.isNotEmpty) {
+            if (currentTicket.amountTendered == null) {
+              _showPaymentDialog();
+            } else {
+              _processSale();
+            }
+          }
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
         title: Row(
           children: [
             Text(
@@ -648,8 +662,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           : Row(children: _buildDesktopLayout(filteredProducts)),
       floatingActionButton: isMobile ? _buildMobileCartBottomBar() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMobileLayout(List<dynamic> filteredProducts) {
     return Container(
@@ -677,11 +692,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       border: Border.all(color: Colors.white.withAlpha(26)),
                     ),
                     child: TextField(
+                      controller: searchController,
                       onChanged: (value) {
                         setState(() {
                           searchQuery = value;
                         });
                       },
+                      onSubmitted: (value) => _onSearchSubmitted(value),
                       decoration: InputDecoration(
                         hintText: 'Buscar producto...',
                         hintStyle: GoogleFonts.poppins(color: Colors.white70),
@@ -706,20 +723,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
             // Products Grid
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.only(
-                  bottom: 80,
-                ), // Padding for the bottom bar
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3, // Less items per row on mobile
-                  childAspectRatio: 1.1, // Larger cards
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
+              child: ListView.separated(
+                padding: const EdgeInsets.only(bottom: 80),
                 itemCount: filteredProducts.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final product = filteredProducts[index];
-                  return _ProductCard(
+                  return _ProductListTile(
                     name: product['name'],
                     price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
                     isBulk: product['isBulk'] ?? false,
@@ -742,7 +752,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     return [
       // Left Panel - Product Search/Add
       Expanded(
-        flex: 3,
+        flex: 2,
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -768,11 +778,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                           border: Border.all(color: Colors.white.withAlpha(26)),
                         ),
                         child: TextField(
+                          controller: searchController,
                           onChanged: (value) {
                             setState(() {
                               searchQuery = value;
                             });
                           },
+                          onSubmitted: (value) => _onSearchSubmitted(value),
                           decoration: InputDecoration(
                             hintText: 'Buscar producto...',
                             hintStyle: GoogleFonts.poppins(
@@ -804,31 +816,25 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
                 // Products Grid
                 Expanded(
-                  child: GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 6,
-                          childAspectRatio: 1.1, // Larger cards
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                        ),
-                    itemCount: filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = filteredProducts[index];
-                      return _ProductCard(
-                        name: product['name'],
-                        price:
-                            (product['sellingPrice'] as num?)?.toDouble() ??
-                            0.0,
-                        isBulk: product['isBulk'] ?? false,
-                        units: (product['units'] as num?)?.toDouble() ?? 0.0,
-                        remainingUnits: ((product['units'] as num?)?.toDouble() ?? 0.0) - 
-                            (currentTicket.items.where((it) => it.name == product['name']).fold(0.0, (sum, it) => sum + it.quantity)),
-                        onTap: () => _addToCart(product),
-                        onAddStock: () => _showAddStockModal(product),
-                      );
-                    },
-                  ),
+                child: ListView.separated(
+                  itemCount: filteredProducts.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final product = filteredProducts[index];
+                    return _ProductListTile(
+                      name: product['name'],
+                      price:
+                          (product['sellingPrice'] as num?)?.toDouble() ??
+                          0.0,
+                      isBulk: product['isBulk'] ?? false,
+                      units: (product['units'] as num?)?.toDouble() ?? 0.0,
+                      remainingUnits: ((product['units'] as num?)?.toDouble() ?? 0.0) - 
+                          (currentTicket.items.where((it) => it.name == product['name']).fold(0.0, (sum, it) => sum + it.quantity)),
+                      onTap: () => _addToCart(product),
+                      onAddStock: () => _showAddStockModal(product),
+                    );
+                  },
+                ),
                 ),
               ],
             ),
@@ -841,7 +847,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
       // Right Panel - Tickets & Cart
       Expanded(
-        flex: 2,
+        flex: 3,
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -1088,7 +1094,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       'Total',
                                       style: GoogleFonts.poppins(
                                         color: Colors.white,
-                                        fontSize: 18,
+                                        fontSize: 22,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -1141,7 +1147,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                   '\$${currentTicket.total.toStringAsFixed(2)}',
                                   style: GoogleFonts.poppins(
                                     color: const Color(0xFF05e265),
-                                    fontSize: 24,
+                                    fontSize: 32,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -1575,7 +1581,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                           'Total',
                                           style: GoogleFonts.poppins(
                                             color: Colors.white,
-                                            fontSize: 18,
+                                            fontSize: 22,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -1629,7 +1635,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       '\$${currentTicket.total.toStringAsFixed(2)}',
                                       style: GoogleFonts.poppins(
                                         color: const Color(0xFF05e265),
-                                        fontSize: 24,
+                                        fontSize: 32,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -1998,7 +2004,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 ),
                 const SizedBox(height: 12),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildPaymentMethodOption(
                       icon: Icons.money,
@@ -2008,6 +2014,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         setDialogState(() => localPaymentMethod = 'Efectivo');
                       },
                     ),
+                    const SizedBox(width: 12),
                     _buildPaymentMethodOption(
                       icon: Icons.credit_card,
                       label: 'Tarjeta',
@@ -2016,6 +2023,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         setDialogState(() => localPaymentMethod = 'Tarjeta');
                       },
                     ),
+                    const SizedBox(width: 12),
                     _buildPaymentMethodOption(
                       icon: Icons.account_balance,
                       label: 'Transferencia',
@@ -2052,6 +2060,22 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
                     ),
                   ),
+                  onSubmitted: (_) {
+                    final double amount = double.tryParse(amountController.text) ?? 0.0;
+                    if (amount >= currentTicket.total) {
+                      if (setModalState != null) {
+                        setModalState(() {
+                          currentTicket.amountTendered = amount;
+                          currentTicket.paymentMethod = localPaymentMethod;
+                        });
+                      }
+                      setState(() {
+                        currentTicket.amountTendered = amount;
+                        currentTicket.paymentMethod = localPaymentMethod;
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
                 ),
               ],
             ),
@@ -2117,7 +2141,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     return InkWell(
       onTap: onTap,
       child: Container(
-        width: 85,
+        width: 100, // Increased from 85 to 100
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isActive ? const Color(0xFF05e265).withOpacity(0.2) : Colors.white.withAlpha(13),
@@ -2132,7 +2156,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             Icon(
               icon,
               color: isActive ? const Color(0xFF05e265) : Colors.white70,
-              size: 24,
+              size: 28, // Increased from 24
             ),
             const SizedBox(height: 8),
             Text(
@@ -2147,6 +2171,28 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         ),
       ),
     );
+  }
+
+  void _onSearchSubmitted(String value) {
+    if (value.isEmpty) return;
+
+    final provider = Provider.of<ProductProvider>(context, listen: false);
+    final allProducts = provider.allProducts;
+
+    // Buscar coincidencia exacta por código de barras primero
+    final product = allProducts.firstWhere(
+      (p) => p['barcode']?.toString() == value,
+      orElse: () => null,
+    );
+
+    if (product != null) {
+      _addToCart(product);
+      // Limpiar búsqueda
+      searchController.clear();
+      setState(() {
+        searchQuery = '';
+      });
+    }
   }
 
   void _processPayment() {
@@ -2571,7 +2617,7 @@ class CartItem {
   });
 }
 
-class _ProductCard extends StatelessWidget {
+class _ProductListTile extends StatelessWidget {
   final String name;
   final double price;
   final bool isBulk;
@@ -2580,7 +2626,7 @@ class _ProductCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onAddStock;
 
-  const _ProductCard({
+  const _ProductListTile({
     required this.name,
     required this.price,
     required this.isBulk,
@@ -2597,6 +2643,7 @@ class _ProductCard extends StatelessWidget {
     return GestureDetector(
       onTap: hasStock ? onTap : null,
       child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white.withAlpha(hasStock ? 13 : 8),
           borderRadius: BorderRadius.circular(12),
@@ -2606,54 +2653,64 @@ class _ProductCard extends StatelessWidget {
                 : Colors.red.withOpacity(0.2),
           ),
         ),
-        child: Stack(
+        child: Row(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            // Icon / Indicator
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: (hasStock ? const Color(0xFF05e265) : Colors.red).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                isBulk ? Icons.scale : Icons.inventory_2,
+                color: hasStock ? const Color(0xFF05e265) : Colors.redAccent,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            
+            // Product Info
+            Expanded(
               child: Opacity(
                 opacity: hasStock ? 1.0 : 0.5,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       name,
                       style: GoogleFonts.poppins(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
                     Row(
                       children: [
-                        Expanded(
-                          child: Text(
-                            '\$${price.toStringAsFixed(0)}',
-                            style: GoogleFonts.poppins(
-                              color: const Color(0xFF05e265),
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        Text(
+                          '\$${price.toStringAsFixed(2)}',
+                          style: GoogleFonts.poppins(
+                            color: const Color(0xFF05e265),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         if (isBulk) ...[
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                             decoration: BoxDecoration(
-                              color: Colors.orange,
+                              color: Colors.orange.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.orange.withOpacity(0.5)),
                             ),
                             child: Text(
                               'Granel',
                               style: GoogleFonts.poppins(
-                                color: Colors.white,
+                                color: Colors.orange,
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -2662,55 +2719,51 @@ class _ProductCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    if (!hasStock) const SizedBox(height: 22), // Space for labels
                   ],
                 ),
               ),
             ),
-            if (!hasStock)
-              Positioned(
-                bottom: 6,
-                left: 8,
-                right: 8,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'SIN STOCK',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            color: Colors.redAccent,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: onAddStock,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF05e265).withAlpha(40),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: const Color(0xFF05e265).withAlpha(100)),
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Color(0xFF05e265),
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ],
+
+            // Stock Status / Add Stock Button
+            if (!hasStock) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
                 ),
+                child: Text(
+                  'SIN STOCK',
+                  style: GoogleFonts.poppins(
+                    color: Colors.redAccent,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: onAddStock,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF05e265).withAlpha(40),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF05e265).withAlpha(100)),
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    color: Color(0xFF05e265),
+                    size: 18,
+                  ),
+                ),
+              ),
+            ] else 
+              Icon(
+                Icons.add_circle_outline,
+                color: Colors.white.withOpacity(0.3),
+                size: 24,
               ),
           ],
         ),
@@ -2863,40 +2916,80 @@ class _BulkProductDialog extends StatefulWidget {
 }
 
 class _BulkProductDialogState extends State<_BulkProductDialog> {
-  int _inputType = 0; // 0 = Weight (kg), 1 = Price ($)
-  final TextEditingController _controller = TextEditingController();
-  double _convertedValue = 0.0;
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+  final FocusNode _weightFocus = FocusNode();
+  final FocusNode _amountFocus = FocusNode();
+  bool _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(_updateConversion);
+    _weightController.addListener(_onWeightChanged);
+    _amountController.addListener(_onAmountChanged);
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_updateConversion);
-    _controller.dispose();
+    _weightController.removeListener(_onWeightChanged);
+    _amountController.removeListener(_onAmountChanged);
+    _weightController.dispose();
+    _amountController.dispose();
+    _weightFocus.dispose();
+    _amountFocus.dispose();
     super.dispose();
   }
 
-  void _updateConversion() {
-    final text = _controller.text;
+  void _onWeightChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+    final text = _weightController.text;
     if (text.isEmpty) {
-      setState(() => _convertedValue = 0.0);
-      return;
+      _amountController.clear();
+    } else {
+      final val = double.tryParse(text) ?? 0.0;
+      _amountController.text = (val * widget.pricePerKg).toStringAsFixed(2);
     }
+    _isUpdating = false;
+  }
 
-    final value = double.tryParse(text) ?? 0.0;
-    setState(() {
-      if (_inputType == 0) {
-        // From Weight to Price
-        _convertedValue = value * widget.pricePerKg;
-      } else {
-        // From Price to Weight
-        _convertedValue = value / widget.pricePerKg;
+  void _onAmountChanged() {
+    if (_isUpdating) return;
+    _isUpdating = true;
+    final text = _amountController.text;
+    if (text.isEmpty) {
+      _weightController.clear();
+    } else {
+      final val = double.tryParse(text) ?? 0.0;
+      _weightController.text = (val / widget.pricePerKg).toStringAsFixed(3);
+    }
+    _isUpdating = false;
+  }
+
+  void _submit() {
+    final qty = double.tryParse(_weightController.text);
+    if (qty != null && qty >= 0) {
+      Navigator.pop(context, {
+        'type': 0.0,
+        'value': qty,
+      });
+    }
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
+          event.logicalKey == LogicalKeyboardKey.arrowDown) {
+        if (_weightFocus.hasFocus) {
+          _amountFocus.requestFocus();
+        }
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+                 event.logicalKey == LogicalKeyboardKey.arrowUp) {
+        if (_amountFocus.hasFocus) {
+          _weightFocus.requestFocus();
+        }
       }
-    });
+    }
   }
 
   @override
@@ -2907,118 +3000,102 @@ class _BulkProductDialogState extends State<_BulkProductDialog> {
         widget.productName,
         style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+      content: KeyboardListener(
+        focusNode: FocusNode(),
+        onKeyEvent: _handleKeyEvent,
+        child: Container(
+          width: 450,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: _TypeButton(
-                  label: 'Por Peso (Kg)',
-                  isSelected: _inputType == 0,
-                  onTap: () {
-                    setState(() {
-                      _inputType = 0;
-                      _updateConversion();
-                    });
-                  },
+            Row(
+              children: [
+                // Weight Field
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Peso (Kg)', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _weightController,
+                        focusNode: _weightFocus,
+                        autofocus: true,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,3}')),
+                        ],
+                        style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
+                        textAlign: TextAlign.center,
+                        decoration: InputDecoration(
+                          hintText: '0.000',
+                          hintStyle: GoogleFonts.poppins(color: Colors.white12),
+                          suffixText: 'Kg',
+                          suffixStyle: GoogleFonts.poppins(color: Colors.white38, fontSize: 14),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.05),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF02e3b2), width: 1.5)),
+                        ),
+                        onSubmitted: (_) => _submit(),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _TypeButton(
-                  label: 'Por Monto (\$)',
-                  isSelected: _inputType == 1,
-                  onTap: () {
-                    setState(() {
-                      _inputType = 1;
-                      _updateConversion();
-                    });
-                  },
+                const SizedBox(width: 16),
+                // Icon in middle
+                const Icon(Icons.sync, color: Colors.white24, size: 20),
+                const SizedBox(width: 16),
+                // Price/Amount Field
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Monto (\$)', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _amountController,
+                        focusNode: _amountFocus,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                        ],
+                        style: GoogleFonts.poppins(color: const Color(0xFF05e265), fontSize: 22, fontWeight: FontWeight.w600),
+                        textAlign: TextAlign.center,
+                        decoration: InputDecoration(
+                          hintText: '0.00',
+                          hintStyle: GoogleFonts.poppins(color: Colors.white12),
+                          prefixText: '\$ ',
+                          prefixStyle: GoogleFonts.poppins(color: const Color(0xFF05e265), fontSize: 18),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.05),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF05e265), width: 1.5)),
+                        ),
+                        onSubmitted: (_) => _submit(),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: _controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(
-                RegExp(_inputType == 0 ? r'^\d+\.?\d{0,3}' : r'^\d+\.?\d{0,2}'),
-              ),
-            ],
-            style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
+              ],
             ),
-            textAlign: TextAlign.center,
-            decoration: InputDecoration(
-              hintText: '0.00',
-              hintStyle: GoogleFonts.poppins(color: Colors.white12),
-              prefixText: _inputType == 1 ? '\$ ' : '',
-              suffixText: _inputType == 0 ? ' Kg' : '',
-              prefixStyle: GoogleFonts.poppins(
-                color: const Color(0xFF05e265),
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-              suffixStyle: GoogleFonts.poppins(
-                color: Colors.white70,
-                fontSize: 18,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Color(0xFF05e265), width: 2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.05),
-            ),
-            autofocus: true,
-          ),
-          const SizedBox(height: 16),
-          if (_controller.text.isNotEmpty)
+            const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF05e265).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _inputType == 0 ? Icons.currency_exchange : Icons.scale,
-                    size: 16,
-                    color: const Color(0xFF05e265),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _inputType == 0
-                        ? 'Total: \$${_convertedValue.toStringAsFixed(2)}'
-                        : 'Equivale a: ${_convertedValue.toStringAsFixed(3)} Kg',
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF05e265),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
+              child: Text(
+                'Precio por Kg: \$${widget.pricePerKg.toStringAsFixed(2)}',
+                style: GoogleFonts.poppins(color: Colors.white54, fontSize: 13),
               ),
             ),
-          const SizedBox(height: 12),
-          Text(
-            'Precio por Kg: \$${widget.pricePerKg.toStringAsFixed(2)}',
-            style: GoogleFonts.poppins(color: Colors.white54, fontSize: 13),
-          ),
-        ],
+          ],
+        ),
       ),
-      actions: [
+    ),
+    actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
@@ -3027,15 +3104,7 @@ class _BulkProductDialogState extends State<_BulkProductDialog> {
           ),
         ),
         ElevatedButton(
-          onPressed: () {
-            double? value = double.tryParse(_controller.text);
-            if (value != null && value > 0) {
-              Navigator.pop(context, {
-                'type': _inputType.toDouble(),
-                'value': value,
-              });
-            }
-          },
+          onPressed: _submit,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF05e265),
           ),
