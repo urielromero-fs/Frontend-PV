@@ -1231,6 +1231,25 @@ class _AddProductDialogState extends State<AddProductDialog> {
       isLoading = false;
     });
 
+
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          // Verifica si el mensaje contiene "barcode already exists"
+          (result['message'] != null &&
+                  result['message'].toString().toLowerCase().contains('barcode already exists'))
+              ? 'El código de barras ya existe'
+              : // Si no, usa el mensaje del backend o los mensajes por defecto
+              (result['message'] ??
+                  (result['success'] == true
+                      ? 'Producto añadido correctamente'
+                      : 'Error al añadir producto')),
+        ),
+        backgroundColor: result['success'] == true ? Colors.green : Colors.red,
+      ),
+    );
+
     if (result['success'] == true) {
       widget.onProductAdded();
       Navigator.pop(context);
