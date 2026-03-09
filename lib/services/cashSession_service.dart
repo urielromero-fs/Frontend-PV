@@ -33,10 +33,13 @@ class CashSessionService {
   // Close cash session
   static Future<Map<String, dynamic>> closeSession(String sessionId) async {
     try {
+
+     
       final response = await ApiHelper.request(
         method: 'POST',
         path: '/cash-sessions/close/$sessionId',
       );
+
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.body.isNotEmpty

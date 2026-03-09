@@ -1,3 +1,12 @@
+import 'package:diacritic/diacritic.dart';
+
+bool containsAccent(String s) {
+  
+  final accents = 'áàäâãéèëêíìïîóòöôõúùüûñÁÀÄÂÃÉÈËÊÍÌÏÎÓÒÖÔÕÚÙÜÛÑ';
+  return s.split('').any((c) => accents.contains(c));
+}
+
+
 List<dynamic> filterProducts({
   required List<dynamic> products,
   String searchQuery = '',
@@ -17,11 +26,28 @@ List<dynamic> filterProducts({
 
   // Búsqueda por nombre o barcode
   if (searchQuery.isNotEmpty) {
+
+
+    final queryHasAccent = containsAccent(searchQuery);
     final q = searchQuery.toLowerCase();
+    
     temp = temp.where((p) {
+
       final name = (p['name'] ?? '').toString().toLowerCase();
       final barcode = (p['barcode'] ?? '').toString().toLowerCase();
-      return name.contains(q) || barcode.contains(q);
+
+
+      if (queryHasAccent) {
+       
+        return name.contains(q) || barcode.contains(q);
+      } else {
+        
+        final nameNormalized = removeDiacritics(name);
+        final barcodeNormalized = removeDiacritics(barcode);
+        final qNormalized = removeDiacritics(q);
+        return nameNormalized.contains(qNormalized) || barcodeNormalized.contains(qNormalized);
+      }
+      
     }).toList();
   }
 
