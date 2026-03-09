@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'api_helper.dart';
+import 'package:pv26/core/network/api_helper.dart';
 
 class InventoryService {
   // Create product using ApiHelper (handles refresh)

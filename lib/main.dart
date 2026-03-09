@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/forgot_password_screen.dart';
-import 'screens/register_screen.dart';
-import 'providers/product_provider.dart';
+import 'features/auth/screens/login_screen.dart';
+import 'features/home/screens/home_screen.dart';
+import 'features/auth/screens/forgot_password_screen.dart';
+import 'features/auth/screens/register_screen.dart';
+import 'features/inventory/providers/product_provider.dart';
 
 void main() {
   runApp(const MyApp());

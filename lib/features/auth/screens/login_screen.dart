@@ -4,7 +4,7 @@ import '../services/auth_service.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import 'package:provider/provider.dart';
-import '../providers/product_provider.dart';
+import 'package:pv26/features/inventory/providers/product_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/inventory_service.dart';
 import 'barcode_scanner.dart';
-import '../utils/product_filters.dart';
+import 'package:pv26/core/utils/product_filters.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
-import '../services/auth_service.dart';
+import 'package:pv26/features/auth/services/auth_service.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});

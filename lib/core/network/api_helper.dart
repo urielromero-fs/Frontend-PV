@@ -1,6 +1,6 @@
   import 'dart:convert';
   import 'package:http/http.dart' as http;
-  import 'auth_service.dart';
+  import 'package:pv26/features/auth/services/auth_service.dart';
 
   class ApiHelper {
     static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';

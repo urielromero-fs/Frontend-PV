@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'inventory_screen.dart';
-import 'payments_screen.dart';
-import 'reports_screen.dart';
-import 'users_screen.dart';
-import '../services/auth_service.dart';
+import 'package:pv26/features/inventory/screens/inventory_screen.dart';
+import 'package:pv26/features/sales/screens/payments_screen.dart';
+import 'package:pv26/features/reports/screens/reports_screen.dart';
+import 'package:pv26/features/users/screens/users_screen.dart';
+import 'package:pv26/features/auth/services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
