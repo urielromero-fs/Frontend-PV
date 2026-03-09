@@ -1916,7 +1916,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                           isBulk: product['isBulk'] ?? false,
                           weight: (product['weight'] ?? 0.0).toDouble(),
                           category: product['category'] ?? 'Sin categoría',
-                          units: product['isBulk'] == true ? newUnits.toInt() : newUnits.toInt(), // API expects int for units often, but let's send what it needs
+                          units: product['isBulk'] == true ? newUnits.toDouble() : newUnits.toDouble(), // API expects int for units often, but let's send what it needs
                           buyingPrice:
                               (product['buyingPrice'] ?? 0.0).toDouble(),
                           sellingPrice:

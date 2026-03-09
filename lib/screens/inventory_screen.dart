@@ -473,15 +473,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         final String val = stockController.text.trim();
                         if (val.isEmpty) return;
 
-                        final int addUnits = int.tryParse(val) ?? 0;
+                        final double addUnits = double.tryParse(val) ?? 0;
                         if (addUnits <= 0) return;
 
                         setModalState(() => isSaving = true);
 
-                        final int currentUnits =
-                            int.tryParse(product['units']?.toString() ?? '0') ??
+                        final double currentUnits =
+                            double.tryParse(product['units']?.toString() ?? '0') ??
                             0;
-                        final int newUnits = currentUnits + addUnits;
+                        final double newUnits = currentUnits + addUnits;
 
                         final result = await InventoryService.updateProduct(
                           id: product['_id'],
@@ -1218,7 +1218,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
 
       category: selectedCategory,
 
-      units: int.tryParse(unitsController.text) ?? 0,
+      units: double.tryParse(unitsController.text) ?? 0,
       buyingPrice: double.tryParse(purchasePriceController.text) ?? 0.0,
       sellingPrice: double.tryParse(salePriceController.text) ?? 0.0,
       bulkPrice: double.tryParse(weightController.text) ?? 0.0,
@@ -1446,10 +1446,18 @@ class _AddProductDialogState extends State<AddProductDialog> {
                 // Units
                 TextField(
                   controller: unitsController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: false,
-                  ),
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  keyboardType: TextInputType.numberWithOptions(
+                      decimal: isBulk, // True permite decimales, false solo enteros
+                    ),
+                  inputFormatters: isBulk
+                        ? [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+\.?\d{0,2}'), // Permite números decimales
+                            ),
+                          ]
+                        : [
+                            FilteringTextInputFormatter.digitsOnly, // Solo enteros
+                          ],
                   decoration: InputDecoration(
                     labelText: isBulk ? 'KG CT' : 'Unidades',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
@@ -1755,7 +1763,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
 
       category: selectedCategory,
 
-      units: int.tryParse(unitsController.text) ?? 0,
+      units: double.tryParse(unitsController.text) ?? 0,
       buyingPrice: double.tryParse(purchasePriceController.text) ?? 0.0,
       sellingPrice: double.tryParse(salePriceController.text) ?? 0.0,
       bulkPrice: double.tryParse(weightController.text) ?? 0.0,
@@ -1949,10 +1957,18 @@ class _EditProductDialogState extends State<EditProductDialog> {
                 // Units
                 TextField(
                   controller: unitsController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: false,
-                  ),
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  keyboardType: TextInputType.numberWithOptions(
+                      decimal: isBulk, // True permite decimales, false solo enteros
+                    ),
+                  inputFormatters: isBulk
+                        ? [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+\.?\d{0,2}'), // Permite números decimales
+                            ),
+                          ]
+                        : [
+                            FilteringTextInputFormatter.digitsOnly, // Solo enteros
+                          ],
                   decoration: InputDecoration(
                     labelText: isBulk ? 'KG CT' : 'Unidades',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70),
