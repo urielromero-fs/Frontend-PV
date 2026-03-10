@@ -90,4 +90,34 @@ class CashSessionService {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  //Get session history
+  static Future<Map<String, dynamic>> getSessionHistory(String sessionId) async {
+    try {
+      final response = await ApiHelper.request(
+        method: 'GET',
+        path: '/cash-sessions/history/$sessionId'
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Historial de sesión obtenido exitosamente',
+          'data': responseData,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error desconocido',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+
+    }
+  }
+
+
 }

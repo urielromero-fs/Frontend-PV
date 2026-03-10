@@ -358,14 +358,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             ),
           ),
           ElevatedButton(
-            onPressed: //() {
-                //   setState(() {
-                //     _isRegisterOpen = false;
-                //   });
-                //   Navigator.pop(context); // Close the confirmation dialog
-                //   _showDailyReportDialog(); // Open the report dialog
-                // },
-                () async {
+            onPressed:   () async {
                   if (_currentSessionId == null) return;
 
                   setState(() => _isLoadingSession = true);
@@ -1836,15 +1829,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   }
 
 
-
-
-
-
-
-
-
-
-
   Future<void> _showAddStockModal(Map product) async {
     final TextEditingController stockController = TextEditingController();
     bool isSaving = false;
@@ -2339,7 +2323,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           width: 600,
           height: 500,
           child: FutureBuilder<Map<String, dynamic>>(
-            future: SaleService.getSales(),
+            future: CashSessionService.getSessionHistory(_currentSessionId.toString()), // Replace 'session_id' with the actual session ID
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
@@ -2389,8 +2373,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   final String saleId = sale['_id'];
                   final List items = sale['products'] ?? [];
                   final String itemsSummary = items.isNotEmpty 
-                      ? items.take(2).map((i) => i['name']).join(', ') + (items.length > 2 ? '...' : '')
+                      ? items.take(2).map((i) => i['productId']['name']).join(', ') + (items.length > 2 ? '...' : '')
                       : 'Sin detalles';
+
+                  print(items); 
 
                   return Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
@@ -3154,11 +3140,6 @@ class _CartItemWidget extends StatelessWidget {
   final Function(double) onQuantityChanged;
   final VoidCallback onRemove;
 
-  // const _CartItemWidget({
-  //   required this.item,
-  //   required this.onQuantityChanged,
-  //   required this.onRemove,
-  // });
 
   const _CartItemWidget({
     required this.item,
