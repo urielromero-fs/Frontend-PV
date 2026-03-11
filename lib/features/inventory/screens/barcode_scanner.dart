@@ -15,7 +15,7 @@ class _BarcodeScannerModalState extends State<BarcodeScannerModal> {
   bool scanned = false;
   late MobileScannerController controller;
 
-  bool showOptions = true; // <- controla si mostramos selector
+  bool showOptions = true; 
   bool useHardwareScanner = false;
 
   final FocusNode _hardwareFocusNode = FocusNode();

@@ -10,6 +10,55 @@ class ProductProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
+
+  //Initial load
+
+  Future<void> fetchInitialProducts() async {
+
+      _isLoading = true;
+      _errorMessage = '';
+      notifyListeners();
+
+      try{
+        final result = await InventoryService.getFirstProducts();
+
+        
+        if(result['success'] == true){
+          _allProducts = result['data'];
+
+          
+        } else {
+          _errorMessage = result['message'] ?? 'Error desconocido';
+        }
+      }catch(e){
+        _errorMessage = e.toString();
+      } 
+
+      _isLoading = false;
+      notifyListeners(); 
+
+      //Start load of all products in background
+       _fetchAllProductsInBackground();
+
+  }
+
+
+  // Background load of all products
+  Future<void> _fetchAllProductsInBackground() async {
+    try {
+      final result = await InventoryService.getProducts();
+      if (result['success'] == true) {
+        _allProducts = result['data'];
+        notifyListeners();
+      }
+    } catch (e) {
+      // No need to set error message for background load
+    }
+  }
+
+
+
+
   // Fetch global
   Future<void> fetchProducts() async {
     _isLoading = true;

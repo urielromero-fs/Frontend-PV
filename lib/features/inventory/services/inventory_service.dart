@@ -89,6 +89,37 @@ class InventoryService {
     }
   }
 
+
+  static Future<Map<String, dynamic>> getFirstProducts() async {
+    try {
+      final response = await ApiHelper.request(
+        method: 'GET',
+        path: '/products/search?page=1&limit=20',
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Producto obtenido exitosamente',
+          'data': responseData,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error al obtener producto',
+        };
+      }
+
+    } catch (e) {
+        return {
+          'success': false,
+          'message': 'Error de conexión: ${e.toString()}',
+        };
+    }
+  }
+
   // Update product using ApiHelper
   static Future<Map<String, dynamic>> updateProduct({
     required String id,

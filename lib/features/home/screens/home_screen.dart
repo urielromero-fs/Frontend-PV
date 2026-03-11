@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'package:pv26/features/inventory/screens/inventory_screen.dart';
 import 'package:pv26/features/sales/screens/payments_screen.dart';
 import 'package:pv26/features/reports/screens/reports_screen.dart';
 import 'package:pv26/features/users/screens/users_screen.dart';
 import 'package:pv26/features/auth/services/auth_service.dart';
+import 'package:pv26/features/inventory/providers/product_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +30,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+      // Carga inicial de productos
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<ProductProvider>(context, listen: false); 
+      if (provider.allProducts.isEmpty) {
+        provider.fetchInitialProducts();
+      }
+    });
   }
 
   Future<void> _loadUserData() async {
