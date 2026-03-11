@@ -12,31 +12,28 @@ import 'package:pv26/features/home/screens/home_screen.dart';
 import '../services/withdrawal_service.dart';
 import '../services/print_service.dart';
 import '../models/sales_models.dart';
+import 'package:pv26/features/sales/widgets/product_list_tile.dart';
+import 'package:pv26/features/sales/widgets/cart_item_widget.dart';
+import 'package:pv26/features/sales/widgets/bulk_product_dialog.dart';
+import 'package:pv26/core/utils/currency_formatter.dart';
 
+String _f(double value) => CurrencyFormatter.format(value);
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
-
   @override
   State<PaymentsScreen> createState() => _PaymentsScreenState();
 }
-
-
 class _PaymentsScreenState extends State<PaymentsScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
   List<Ticket> _tickets = [];
-
   final TextEditingController searchController = TextEditingController();
-
   //Filtro
   String searchQuery = '';
   String selectedCategoryFilter = 'Todas';
   String selectedSortOption = 'Ninguno';
   bool filterBulkOnly = false;
-
-
   StateSetter? _currentModalSetState;
-
   final List<String> categoryFilters = [
     'Todas',
     "Sin categoría",
@@ -56,13 +53,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     "General",
     "Otros",
   ];
-
   final List<String> sortOptions = [
     'Ninguno',
     'Precio Ascendente',
     'Precio Descendente',
   ];
-
   //Cash session
   bool _isRegisterOpen = false;
   double _initialCash = 0.0;
@@ -70,35 +65,25 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   double _totalWithdrawals = 0.0;
   bool _isLoadingSession = false;
   String? _currentSessionId;
-  
-
   @override
   void initState() {
     super.initState();
     _addNewTicket();
     _initCashSession();
   }
-
   Future<void> _initCashSession() async {
     await _checkOpenSession();
-
     // Solo mostrar diálogo si no hay sesión abierta
     if (!_isRegisterOpen) {
       _showOpenRegisterDialog();
     }
   }
-
   Future<void> _checkOpenSession() async {
     final result = await CashSessionService.getOpenSession();
-
-
-
             if (!result['success']) {            
               return;
             }
-
             final data = result['data'];
-
             if (data == null) {
               setState(() {
                 _isRegisterOpen = false;
@@ -106,7 +91,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               });
               return;
             }
-
             // 
             if (data is Map<String, dynamic>) {
               setState(() {
@@ -116,7 +100,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               });
             }
           }
-
   Future<void> _processSale() async {
     //Mostrar diálogo de carga
     showDialog(
@@ -126,10 +109,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         child: CircularProgressIndicator(color: Color(0xFF05e265)),
       ),
     );
-
     try {
       // Mapear items al formato del endpoint
-
       final List<Map<String, dynamic>> productsPayload = currentTicket.items
           .map((item) {
             return {
@@ -138,37 +119,25 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             };
           })
           .toList();
-
-      
-
       //Llamar al servicio
       final result = await SaleService.createSale(
           products: productsPayload,
           paymentMethod: currentTicket.paymentMethod,
           discount: currentTicket.discount
-          
       );
-
       // Quitar diálogo de carga
       Navigator.pop(context);
-
-
-
     if (result['success']) {
       // Actualizar contadores locales para el reporte diario
-
         //Actualizar inventario 
         await Provider.of<ProductProvider>(context, listen: false)
             .fetchProducts();
-      
-
         // Guardar copia de los datos antes de limpiar para el ticket
         final ticketItems = List<CartItem>.from(currentTicket.items);
         final ticketTotal = currentTicket.total;
         final ticketReceived = currentTicket.amountTendered ?? 0.0;
         final ticketChange = ticketReceived - ticketTotal;
         final ticketPaymentMethod = currentTicket.paymentMethod;
-
         setState(() {
           _totalSales += currentTicket.total;
           currentTicket.items.clear();
@@ -177,7 +146,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           currentTicket.paymentMethod = 'Efectivo';
           _calculateTotals();
         });
-
         _showSuccessDialog(
           result['message'],
           ticketData: {
@@ -196,13 +164,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       _showErrorSnackBar('Error de conexión: $e');
     }
   }
-
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(backgroundColor: Colors.redAccent, content: Text(message)),
     );
   }
-
   void _showSuccessDialog(String message, {Map<String, dynamic>? ticketData}) {
     showDialog(
       context: context,
@@ -255,7 +221,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   Future<void> _showOpenRegisterDialog() async {
     final amountController = TextEditingController();
     await showDialog(
@@ -283,16 +248,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                  RegExp(r'^\d+\.?\d{0,2}'),
-                ),
-              ],
+              inputFormatters: [CurrencyInputFormatter()],
               style: GoogleFonts.poppins(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Monto inicial',
                 labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                prefixText: '\$ ',
+                prefixText: r'$ ',
                 prefixStyle: GoogleFonts.poppins(color: Colors.white),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
@@ -314,23 +275,17 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           ),
           ElevatedButton(
             onPressed: () async {
-              final amount = double.tryParse(amountController.text) ?? 0.0;
-
+              final amount = double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
               setState(() => _isLoadingSession = true);
-
               final result = await CashSessionService.startSession(amount);
-
               setState(() => _isLoadingSession = false);
-
               if (result['success']) {
                 final data = result['data'];
-
                 setState(() {
                   _initialCash = amount;
                   _isRegisterOpen = true;
                   _currentSessionId = data?['_id'];
                 });
-
                 Navigator.pop(context);
               } else {
                 ScaffoldMessenger.of(
@@ -353,7 +308,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   Future<void> _showCloseRegisterDialog() async {
     await showDialog(
       context: context,
@@ -381,32 +335,18 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           ElevatedButton(
             onPressed:   () async {
                   if (_currentSessionId == null) return;
-
                   setState(() => _isLoadingSession = true);
-
-                 
-
                   final result = await CashSessionService.closeSession(
                     _currentSessionId.toString()                    
                   );
-
-                  
-
                   setState(() => _isLoadingSession = false);
-
                   if (result['success']) {
                     setState(() {
                       _isRegisterOpen = false;
                       _currentSessionId = null;
                     });
-
                     Navigator.pop(context);
-
                     await _showDailyReportDialog();
-
-                       
-                      
-                      
                     //Redirigir al dashboard
                     Navigator.pushAndRemoveUntil(
                       context,
@@ -419,7 +359,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     ).showSnackBar(SnackBar(content: Text(result['message'])));
                   }
                 },
-
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
             child: Text(
               'Cerrar Caja',
@@ -433,10 +372,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   Future<void> _showDailyReportDialog() async {
     final double endCash = _initialCash + _totalSales - _totalWithdrawals;
-
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -455,18 +392,18 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           children: [
             _buildReportRow(
               'Fondo Inicial:',
-              '\$${_initialCash.toStringAsFixed(2)}',
+              _f(_initialCash),
             ),
             const SizedBox(height: 8),
             _buildReportRow(
               'Total Vendido:',
-              '\$${_totalSales.toStringAsFixed(2)}',
+              _f(_totalSales),
               color: const Color(0xFF05e265),
             ),
             const SizedBox(height: 8),
             _buildReportRow(
               'Salidas de Efectivo:',
-              '-\$${_totalWithdrawals.toStringAsFixed(2)}',
+              '-\$${NumberFormat("#,###.00").format(_totalWithdrawals)}',
               color: Colors.redAccent,
             ),
             const Padding(
@@ -475,7 +412,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             ),
             _buildReportRow(
               'Total en Caja:',
-              '\$${endCash.toStringAsFixed(2)}',
+              _f(endCash),
               isBold: true,
             ),
           ],
@@ -506,7 +443,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   Widget _buildReportRow(
     String label,
     String value, {
@@ -534,41 +470,33 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ],
     );
   }
-
   void _addNewTicket() {
     setState(() {
       _tickets.add(Ticket(id: 'Ticket ${_tickets.length + 1}'));
       _updateTabController();
     });
   }
-
   void _closeTicket(int index) {
     if (_tickets.length <= 1) return; // Don't close the last ticket
-
     setState(() {
       _tickets.removeAt(index);
       _updateTabController();
     });
   }
-
   void _updateTabController() {
     _tabController = TabController(length: _tickets.length, vsync: this);
     _tabController.animateTo(_tickets.length - 1); // Switch to new ticket
   }
-
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
   }
-
   Ticket get currentTicket => _tickets[_tabController.index];
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductProvider>(context);
     final allProducts = provider.allProducts;
-
     final filteredProducts = filterProducts(
       products: provider.allProducts,
       searchQuery: searchQuery,
@@ -576,9 +504,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       onlyBulk: filterBulkOnly,
       sortOption: selectedSortOption,
     );
-
     final bool isMobile = MediaQuery.of(context).size.width < 600;
-
     return KeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
@@ -697,7 +623,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     ),
   );
 }
-
   Widget _buildMobileLayout(List<dynamic> filteredProducts) {
     return Container(
       decoration: BoxDecoration(
@@ -745,14 +670,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 // Category Filter Buttons (Example)
                 IconButton(
                   onPressed: _showFilterDialog,
-
                   icon: const Icon(Icons.filter_list, color: Colors.white70),
                   tooltip: 'Filtrar',
                 ),
               ],
             ),
             const SizedBox(height: 16),
-
             // Products Grid
             Expanded(
               child: ListView.separated(
@@ -761,7 +684,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final product = filteredProducts[index];
-                  return _ProductListTile(
+                  return ProductListTile(
                     name: product['name'],
                     price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
                     isBulk: product['isBulk'] ?? false,
@@ -779,7 +702,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   List<Widget> _buildDesktopLayout(List<dynamic> filteredProducts) {
     return [
       // Left Panel - Product Search/Add
@@ -845,7 +767,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   ],
                 ),
                 const SizedBox(height: 16),
-
                 // Products Grid
                 Expanded(
                 child: ListView.separated(
@@ -853,7 +774,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   separatorBuilder: (context, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final product = filteredProducts[index];
-                    return _ProductListTile(
+                    return ProductListTile(
                       name: product['name'],
                       price:
                           (product['sellingPrice'] as num?)?.toDouble() ??
@@ -873,10 +794,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           ),
         ),
       ),
-
       // Divider
       Container(width: 1, color: Colors.white.withAlpha(26)),
-
       // Right Panel - Tickets & Cart
       Expanded(
         flex: 3,
@@ -937,7 +856,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   ],
                 ),
               ),
-
               // Cart Content for Current Ticket
               Expanded(
                 child: Padding(
@@ -972,7 +890,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         ],
                       ),
                       const SizedBox(height: 12),
-
                       // Cart Items List
                       Expanded(
                         child: currentTicket.items.isEmpty
@@ -999,16 +916,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                             : ListView.builder(
                                 itemCount: currentTicket.items.length,
                                 itemBuilder: (context, index) {
-                                  return _CartItemWidget(
+                                  return CartItemWidget(
                                     item: currentTicket.items[index],
-
-
-
-                               
                                         onQuantityChanged: (quantity) {
-
                                             final item = currentTicket.items[index];
-
                                             if (quantity > item.units) {
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 const SnackBar(
@@ -1017,7 +928,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                               );
                                               return;
                                             }
-
                                             if (quantity <= 0) {
                                               setState(() {
                                                 currentTicket.items.removeAt(index);
@@ -1025,30 +935,19 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                               });
                                               return;
                                             }
-
                                             setState(() {
                                               item.quantity = quantity;
-
                                               final wholesaleMin = item.wholesaleMinUnits ?? 0;
                                               final wholesalePrice = item.wholesalePrice ?? 0;
                                               final normalPrice = item.originalPrice ?? item.price;
-
                                               if (wholesaleMin > 0 && quantity >= wholesaleMin) {
                                                 item.price = wholesalePrice;
                                               } else {
                                                 item.price = normalPrice;
                                               }
-
-
-
                                               _calculateTotals();
                                             });
                                           },
-
-                                      
-
-
-
                                     onRemove: () {
                                       setState(() {
                                         currentTicket.items.removeAt(index);
@@ -1059,7 +958,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                 },
                               ),
                       ),
-
                       // Summary
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -1082,9 +980,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       fontSize: 16,
                                     ),
                                   ),
-                                
                                   Text(
-                                    '\$${currentTicket.subtotal.toStringAsFixed(2)}',
+                                    _f(currentTicket.subtotal),
                                     style: GoogleFonts.poppins(
                                       color: Colors.white70,
                                       fontSize: 16,
@@ -1107,7 +1004,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                   Row(
                                     children: [
                                       Text(
-                                        '-\$${currentTicket.discount.toStringAsFixed(2)}',
+                                        '-' + _f(currentTicket.discount),
                                         style: GoogleFonts.poppins(
                                           color: Colors.orange,
                                           fontSize: 16,
@@ -1190,7 +1087,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                   ],
                                 ),
                                 Text(
-                                  '\$${currentTicket.total.toStringAsFixed(2)}',
+                                  _f(currentTicket.total),
                                   style: GoogleFonts.poppins(
                                     color: const Color(0xFF05e265),
                                     fontSize: 32,
@@ -1213,7 +1110,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       ),
                                     ),
                                     Text(
-                                      '\$${currentTicket.amountTendered!.toStringAsFixed(2)}',
+                                      _f(currentTicket.amountTendered!),
                                       style: GoogleFonts.poppins(
                                         color: Colors.white,
                                         fontSize: 18,
@@ -1235,7 +1132,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       ),
                                     ),
                                     Text(
-                                      '\$${(currentTicket.amountTendered! - currentTicket.total).toStringAsFixed(2)}',
+                                      _f(currentTicket.amountTendered! - currentTicket.total),
                                       style: GoogleFonts.poppins(
                                         color: Colors.orange,
                                         fontWeight: FontWeight.bold,
@@ -1318,13 +1215,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     ];
   }
-
   Widget _buildMobileCartBottomBar() {
     int totalItems = currentTicket.items.fold(
       0,
       (sum, item) => sum + item.quantity.toInt(),
     );
-
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -1382,7 +1277,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             ),
             const SizedBox(width: 16),
             Text(
-              '\$${currentTicket.total.toStringAsFixed(2)}',
+              _f(currentTicket.total),
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -1394,7 +1289,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   void _showMobileCartBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -1534,17 +1428,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                   : ListView.builder(
                                       itemCount: currentTicket.items.length,
                                       itemBuilder: (context, index) {
-                                        
-
-                                        return _CartItemWidget(
-                                          
+                                        return CartItemWidget(
                                           item: currentTicket.items[index],
-
-
                                           onQuantityChanged: (quantity) {
-
                                                 final item = currentTicket.items[index];
-
                                                 if (quantity > item.units) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     const SnackBar(
@@ -1553,7 +1440,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                   );
                                                   return;
                                                 }
-
                                                 if (quantity <= 0) {
                                                     setModalState(() {
                                                       currentTicket.items.removeAt(index);
@@ -1562,18 +1448,15 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                     setState(() {}); 
                                                     return;
                                                 }
-
                                                 // final wholesaleMin = item.wholesaleMinUnits ?? 0;
                                                 //       final wholesalePrice = item.wholesalePrice ?? 0;
                                                 //       final normalPrice = item.originalPrice ?? item.price;
-
                                                 // if(quantity >= wholesaleMin && wholesaleMin > 0) {
                                                 //   item.price = wholesalePrice;
                                                 //   setModalState(() {
                                                 //       item.quantity = quantity;
                                                 //       _calculateTotals();
                                                 //     });
-                                                  
                                                 // } else {
                                                 //   item.price = normalPrice;
                                                 //   setModalState(() {
@@ -1581,55 +1464,30 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                 //       _calculateTotals();
                                                 //     });
                                                 // }
-
-
                                                 setModalState(() {
-
                                                       // item.quantity = quantity;
-
                                                       // final wholesaleMin = item.wholesaleMinUnits ?? 0;
                                                       // final wholesalePrice = item.wholesalePrice ?? 0;
                                                       // final normalPrice = item.originalPrice ?? item.price;
-                                                      
-
                                                       // if (wholesaleMin > 0 && quantity >= wholesaleMin) {
                                                       //   item.price = wholesalePrice;
                                                       // } else {
                                                       //   item.price = normalPrice;
                                                       // }
-
-
                                                       item.quantity = quantity;
-
                                                       final wholesaleMin = item.wholesaleMinUnits ?? 0;
                                                       final wholesalePrice = item.wholesalePrice ?? 0;
                                                       final normalPrice = item.originalPrice ?? item.price;
-
                                                       if (wholesaleMin > 0 && quantity >= wholesaleMin) {
                                                         item.price = wholesalePrice;
                                                       } else {
                                                         item.price = normalPrice;
                                                       }
-
-
-
-                                             
-
-
-
                                                       _calculateTotals();
-
-
-
                                                 });
-
                                                 setState(() {
-                                                   
                                                 }); 
                                               }, 
-
-
-
                                           onRemove: () {
                                             setModalState(() {
                                               currentTicket.items.removeAt(index);
@@ -1641,7 +1499,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       },
                                     ),
                             ),
-                          
                           // Summary
                           Container(
                             padding: const EdgeInsets.all(16),
@@ -1667,7 +1524,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         ),
                                       ),
                                       Text(
-                                        '\$${currentTicket.subtotal.toStringAsFixed(2)}',
+                                        _f(currentTicket.subtotal),
                                         style: GoogleFonts.poppins(
                                           color: Colors.white70,
                                           fontSize: 16,
@@ -1690,7 +1547,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       Row(
                                         children: [
                                           Text(
-                                            '-\$${currentTicket.discount.toStringAsFixed(2)}',
+                                            '-\$${NumberFormat("#,###.00").format(currentTicket.discount)}',
                                             style: GoogleFonts.poppins(
                                               color: Colors.orange,
                                               fontSize: 16,
@@ -1777,7 +1634,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       ],
                                     ),
                                     Text(
-                                      '\$${currentTicket.total.toStringAsFixed(2)}',
+                                      _f(currentTicket.total),
                                       style: GoogleFonts.poppins(
                                         color: const Color(0xFF05e265),
                                         fontSize: 32,
@@ -1800,7 +1657,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         ),
                                       ),
                                       Text(
-                                        '\$${currentTicket.amountTendered!.toStringAsFixed(2)}',
+                                        _f(currentTicket.amountTendered!),
                                         style: GoogleFonts.poppins(
                                           color: Colors.white,
                                           fontSize: 18,
@@ -1822,7 +1679,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         ),
                                       ),
                                       Text(
-                                        '\$${(currentTicket.amountTendered! - currentTicket.total).toStringAsFixed(2)}',
+                                        _f(currentTicket.amountTendered! - currentTicket.total),
                                         style: GoogleFonts.poppins(
                                           color: Colors.orange,
                                           fontWeight: FontWeight.bold,
@@ -1910,12 +1767,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       },
     );
   }
-
-
   Future<void> _showAddStockModal(Map product) async {
     final TextEditingController stockController = TextEditingController();
     bool isSaving = false;
-
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -1980,17 +1834,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     : () async {
                         final String val = stockController.text.trim();
                         if (val.isEmpty) return;
-
                         final double addUnits = double.tryParse(val) ?? 0;
                         if (addUnits <= 0) return;
-
                         setModalState(() => isSaving = true);
-
                         final double currentUnits =
                             double.tryParse(product['units']?.toString() ?? '0') ??
                             0;
                         final double newUnits = currentUnits + addUnits;
-
                         final result = await InventoryService.updateProduct(
                           id: product['_id'],
                           name: product['name'],
@@ -2011,7 +1861,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                           wholesaleMinUnits:
                               (product['wholesaleMinUnits'] ?? 0) as int,
                         );
-
                         if (result['success'] == true) {
                           if (mounted) {
                             await Provider.of<ProductProvider>(
@@ -2063,27 +1912,22 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   void _addToCart(Map<String, dynamic> product) async {
     //double price = product['price'];
-
     final wholesaleMin = (product['wholesaleMinUnits'] as num?)?.toDouble() ?? 0;
     final wholesalePrice = (product['wholesalePrice'] as num?)?.toDouble() ?? 0;
     //final normalPrice = (product['sellingPrice'] as num?)?.toDouble() ?? 0;
-
     double price = (product['sellingPrice'] as num?)?.toDouble() ?? 0.0;
    // double price = normalPrice;
     double units = (product['units'] as num?)?.toDouble() ?? 0.0;
     double quantity = 1;
     bool isBulk = product['isBulk'] ?? false;
-
     if (isBulk) {
       final result = await showDialog<Map<String, double>>(
         context: context,
         builder: (context) =>
-            _BulkProductDialog(productName: product['name'], pricePerKg: price),
+            BulkProductDialog(productName: product['name'], pricePerKg: price),
       );
-
       if (result != null) {
         // Recalculate based on input type
         if (result['type'] == 1) {
@@ -2099,16 +1943,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         return; // Cancelled
       }
     }
-
     setState(() {
       final existingIndex = currentTicket.items.indexWhere((item) => item.name == product['name']);
-
       double alreadyInCart = 0;
-
       if (existingIndex != -1) {
          alreadyInCart = currentTicket.items[existingIndex].quantity;
       }
-      
       if (alreadyInCart + quantity > units) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2119,27 +1959,18 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         );
         return;
       }
-
       if (existingIndex != -1) {
-
         final item = currentTicket.items[existingIndex];
         item.quantity += quantity;
-
         if(wholesaleMin > 0 && item.quantity >= wholesaleMin) {
           item.price = wholesalePrice;
         } else {
           item.price = price;
         }
-
-
       }else {
-
-
         // double initialPrice = quantity >= wholesaleMin && wholesaleMin > 0
         //     ? wholesalePrice
         //     : normalPrice;
-
-
         currentTicket.items.add(CartItem(
           id: product['_id'],
           name: product['name'],
@@ -2151,22 +1982,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           originalPrice: price, 
           wholesalePrice: wholesalePrice, 
           wholesaleMinUnits: wholesaleMin, 
-
         ));
       }
       _calculateTotals();
     });
-
-
-        
       // if (_currentModalSetState != null) {
       //   _currentModalSetState!(() {}); // reconstruye el modal
       // }
-
-      
-     
   }
-
   void _calculateTotals() {
     currentTicket.subtotal = currentTicket.items.fold(
       0.0,
@@ -2174,17 +1997,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     );
     currentTicket.total = currentTicket.subtotal - currentTicket.discount;
     if (currentTicket.total < 0) currentTicket.total = 0.0;
-
     if (currentTicket.amountTendered != null &&
         currentTicket.amountTendered! < currentTicket.total) {
       currentTicket.amountTendered = null;
     }
   }
-
   Future<void> _showPaymentDialog({StateSetter? setModalState}) async {
     final amountController = TextEditingController();
     String localPaymentMethod = currentTicket.paymentMethod;
-
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -2192,7 +2012,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           return AlertDialog(
             backgroundColor: const Color(0xFF1a1a1a),
             title: Text(
-              'Cobrar - \$${currentTicket.total.toStringAsFixed(2)}',
+              'Cobrar - ${_f(currentTicket.total)}',
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -2249,11 +2069,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d+\.?\d{0,2}'),
-                    ),
-                  ],
+                  inputFormatters: [CurrencyInputFormatter()],
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 22,
@@ -2262,7 +2078,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   decoration: InputDecoration(
                     labelText: 'Monto recibido',
                     labelStyle: GoogleFonts.poppins(color: Colors.white70, fontSize: 16),
-                    prefixText: '\$ ',
+                    prefixText: r'$ ',
                     prefixStyle: GoogleFonts.poppins(
                       color: Colors.white,
                       fontSize: 22,
@@ -2273,7 +2089,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     ),
                   ),
                   onSubmitted: (_) {
-                    final double amount = double.tryParse(amountController.text) ?? 0.0;
+                    final double amount = double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
                     if (amount >= currentTicket.total) {
                       if (setModalState != null) {
                         setModalState(() {
@@ -2343,7 +2159,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   Widget _buildPaymentMethodOption({
     required IconData icon,
     required String label,
@@ -2384,8 +2199,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
-
   void _showSalesHistoryDialog() async {
     showDialog(
       context: context,
@@ -2421,12 +2234,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   child: CircularProgressIndicator(color: Color(0xFF05e265)),
                 );
               }
-
               List<dynamic> sales = [];
               if (snapshot.hasData && snapshot.data!['success'] == true) {
                 sales = snapshot.data!['data'] ?? [];
               }
-
               // FORZA datos de prueba para que el usuario pueda ver el diseño
               if (sales.isEmpty) {
                 sales = [
@@ -2452,7 +2263,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   }
                 ];
               }
-
               return ListView.separated(
                 itemCount: sales.length,
                 separatorBuilder: (context, index) => Divider(color: Colors.white.withOpacity(0.05)),
@@ -2466,9 +2276,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   final String itemsSummary = items.isNotEmpty 
                       ? items.take(2).map((i) => i['productId']['name']).join(', ') + (items.length > 2 ? '...' : '')
                       : 'Sin detalles';
-
                   print(items); 
-
                   return Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(12),
@@ -2563,7 +2371,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   void _confirmCancelSale(BuildContext context, String saleId) {
     showDialog(
       context: context,
@@ -2586,7 +2393,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             onPressed: () async {
               Navigator.pop(ctx); // Close confirmation
               final result = await SaleService.cancelSale(saleId);
-              
               if (result['success']) {
                 Navigator.pop(context); // Close history dialog to refresh
                 _showSalesHistoryDialog(); // Re-open history
@@ -2615,19 +2421,15 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   void _onSearchSubmitted(String value) {
     if (value.isEmpty) return;
-
     final provider = Provider.of<ProductProvider>(context, listen: false);
     final allProducts = provider.allProducts;
-
     // Buscar coincidencia exacta por código de barras primero
     final product = allProducts.firstWhere(
       (p) => p['barcode']?.toString() == value,
       orElse: () => null,
     );
-
     if (product != null) {
       _addToCart(product);
       // Limpiar búsqueda
@@ -2637,17 +2439,15 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       });
     }
   }
-
   void _processPayment() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Procesando pago del Ticket... \$${currentTicket.total.toStringAsFixed(2)}',
+          'Procesando pago del Ticket... ${_f(currentTicket.total)}',
         ),
         backgroundColor: const Color(0xFF05e265),
       ),
     );
-
     setState(() {
       _totalSales += currentTicket.total;
       currentTicket.items.clear();
@@ -2656,7 +2456,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       _calculateTotals();
     });
   }
-
   Future<void> _showDiscountDialog({StateSetter? setModalState}) async {
     final discountController = TextEditingController(
       text: currentTicket.discount > 0
@@ -2687,16 +2486,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                  RegExp(r'^\d+\.?\d{0,2}'),
-                ),
-              ],
+              inputFormatters: [CurrencyInputFormatter()],
               style: GoogleFonts.poppins(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Monto de descuento',
                 labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                prefixText: '\$ ',
+                prefixText: r'$ ',
                 prefixStyle: GoogleFonts.poppins(color: Colors.white),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
@@ -2737,7 +2532,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           ElevatedButton(
             onPressed: () {
               final double discount =
-                  double.tryParse(discountController.text) ?? 0.0;
+                  double.tryParse(discountController.text.replaceAll(",", "")) ?? 0.0;
               if (discount >= 0) {
                 if (setModalState != null) {
                   setModalState(() {
@@ -2767,11 +2562,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   Future<void> _showWithdrawalDialog() async {
     final amountController = TextEditingController();
     final reasonController = TextEditingController();
-
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -2791,16 +2584,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(
-                  RegExp(r'^\d+\.?\d{0,2}'),
-                ),
-              ],
+              inputFormatters: [CurrencyInputFormatter()],
               style: GoogleFonts.poppins(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Monto a retirar',
                 labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                prefixText: '\$ ',
+                prefixText: r'$ ',
                 prefixStyle: GoogleFonts.poppins(color: Colors.white),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
@@ -2830,7 +2619,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             ),
           ),
           ElevatedButton(
-
             // onPressed: () {
             //   final double amount =
             //       double.tryParse(amountController.text) ?? 0.0;
@@ -2845,12 +2633,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             //     ),
             //   );
             // },
-
             onPressed: () async {
                   final double amount =
-                      double.tryParse(amountController.text) ?? 0.0;
+                      double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
                   final String reason = reasonController.text.trim();
-
                   if (amount <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -2860,7 +2646,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     );
                     return;
                   }
-
                   if (reason.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -2870,7 +2655,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     );
                     return;
                   }
-
                   // Mostrar loader mientras se hace la petición
                   showDialog(
                     context: context,
@@ -2879,21 +2663,16 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       child: CircularProgressIndicator(),
                     ),
                   );
-
                   final response = await WithdrawalService.createWithdrawal(
                     amount: amount,
                     reason: reason,
                   );
-
                   Navigator.pop(context); // cerrar loader
-
                   if (response['success'] == true) {
                     setState(() {
                       _totalWithdrawals += amount;
                     });
-
                     Navigator.pop(context); // cerrar dialog principal
-
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Retiro registrado correctamente'),
@@ -2909,8 +2688,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     );
                   }
                 },
-
-
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF05e265),
             ),
@@ -2923,7 +2700,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -2962,9 +2738,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     },
                     decoration: const InputDecoration(labelText: 'Categoría'),
                   ),
-
                   const SizedBox(height: 16),
-
                   // Ordenamiento
                   DropdownButtonFormField<String>(
                     value: selectedSortOption,
@@ -2985,9 +2759,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     },
                     decoration: const InputDecoration(labelText: 'Ordenar por'),
                   ),
-
                   const SizedBox(height: 16),
-
                   // Granel
                   Row(
                     children: [
@@ -3037,547 +2809,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           ],
         );
       },
-    );
-  }
-}
-
-
-class _ProductListTile extends StatelessWidget {
-  final String name;
-  final double price;
-  final bool isBulk;
-  final double units;
-  final double remainingUnits;
-  final VoidCallback onTap;
-  final VoidCallback onAddStock;
-
-  const _ProductListTile({
-    required this.name,
-    required this.price,
-    required this.isBulk,
-    required this.units,
-    required this.remainingUnits,
-    required this.onTap,
-    required this.onAddStock,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool hasStock = remainingUnits > 0;
-
-    return GestureDetector(
-      onTap: hasStock ? onTap : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white.withAlpha(hasStock ? 13 : 8),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: hasStock 
-                ? Colors.white.withAlpha(26) 
-                : Colors.red.withOpacity(0.2),
-          ),
-        ),
-        child: Row(
-          children: [
-            // Icon / Indicator
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: (hasStock ? const Color(0xFF05e265) : Colors.red).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                isBulk ? Icons.scale : Icons.inventory_2,
-                color: hasStock ? const Color(0xFF05e265) : Colors.redAccent,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 16),
-            
-            // Product Info
-            Expanded(
-              child: Opacity(
-                opacity: hasStock ? 1.0 : 0.5,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          '\$${price.toStringAsFixed(2)}',
-                          style: GoogleFonts.poppins(
-                            color: const Color(0xFF05e265),
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (isBulk) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.orange.withOpacity(0.5)),
-                            ),
-                            child: Text(
-                              'Granel',
-                              style: GoogleFonts.poppins(
-                                color: Colors.orange,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Stock Status / Add Stock Button
-            if (!hasStock) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'SIN STOCK',
-                  style: GoogleFonts.poppins(
-                    color: Colors.redAccent,
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: onAddStock,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF05e265).withAlpha(40),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF05e265).withAlpha(100)),
-                  ),
-                  child: const Icon(
-                    Icons.add,
-                    color: Color(0xFF05e265),
-                    size: 18,
-                  ),
-                ),
-              ),
-            ] else 
-              Icon(
-                Icons.add_circle_outline,
-                color: Colors.white.withOpacity(0.3),
-                size: 24,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CartItemWidget extends StatelessWidget {
-  final CartItem item;
-  final Function(double) onQuantityChanged;
-  final VoidCallback onRemove;
-
-
-  const _CartItemWidget({
-    required this.item,
-    required this.onQuantityChanged,
-    required this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Determine quantity display format
-    String quantityText = item.isBulk
-        ? '${item.quantity.toStringAsFixed(3)} KG'
-        : item.quantity.toInt().toString();
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(13),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withAlpha(15)),
-      ),
-      child: Row(
-        children: [
-          // Product Info
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  item.isBulk
-                      ? '\$${item.price.toStringAsFixed(2)} / kg'
-                      : '\$${item.price.toStringAsFixed(2)} c/u',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white54,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Quantity Controls
-          Row(
-            children: [
-              _QtyBtn(
-                icon: Icons.remove,
-                onTap: () =>
-                    onQuantityChanged(item.quantity - (item.isBulk ? 0.1 : 1)),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  quantityText,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              _QtyBtn(icon: Icons.add, onTap: () => onQuantityChanged(item.quantity + (item.isBulk ? 0.1 : 1))),
-            
-            
-            ],
-          ),
-
-          const SizedBox(width: 12),
-
-          // Item Total
-          SizedBox(
-            width: 70,
-            child: Text(
-              '\$${(item.price * item.quantity).toStringAsFixed(2)}',
-              textAlign: TextAlign.right,
-              style: GoogleFonts.poppins(
-                color: const Color(0xFF05e265),
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-
-          IconButton(
-            icon: Icon(Icons.close, color: Colors.red.withAlpha(150), size: 16),
-            onPressed: onRemove,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            splashRadius: 20,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QtyBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _QtyBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Colors.white.withAlpha(20),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Icon(icon, size: 14, color: Colors.white),
-      ),
-    );
-  }
-}
-
-class _BulkProductDialog extends StatefulWidget {
-  final String productName;
-  final double pricePerKg;
-
-  const _BulkProductDialog({
-    required this.productName,
-    required this.pricePerKg,
-  });
-
-  @override
-  State<_BulkProductDialog> createState() => _BulkProductDialogState();
-}
-
-class _BulkProductDialogState extends State<_BulkProductDialog> {
-  final TextEditingController _weightController = TextEditingController();
-  final TextEditingController _amountController = TextEditingController();
-  final FocusNode _weightFocus = FocusNode();
-  final FocusNode _amountFocus = FocusNode();
-  bool _isUpdating = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _weightController.addListener(_onWeightChanged);
-    _amountController.addListener(_onAmountChanged);
-  }
-
-  @override
-  void dispose() {
-    _weightController.removeListener(_onWeightChanged);
-    _amountController.removeListener(_onAmountChanged);
-    _weightController.dispose();
-    _amountController.dispose();
-    _weightFocus.dispose();
-    _amountFocus.dispose();
-    super.dispose();
-  }
-
-  void _onWeightChanged() {
-    if (_isUpdating) return;
-    _isUpdating = true;
-    final text = _weightController.text;
-    if (text.isEmpty) {
-      _amountController.clear();
-    } else {
-      final val = double.tryParse(text) ?? 0.0;
-      _amountController.text = (val * widget.pricePerKg).toStringAsFixed(2);
-    }
-    _isUpdating = false;
-  }
-
-  void _onAmountChanged() {
-    if (_isUpdating) return;
-    _isUpdating = true;
-    final text = _amountController.text;
-    if (text.isEmpty) {
-      _weightController.clear();
-    } else {
-      final val = double.tryParse(text) ?? 0.0;
-      _weightController.text = (val / widget.pricePerKg).toStringAsFixed(3);
-    }
-    _isUpdating = false;
-  }
-
-  void _submit() {
-    final qty = double.tryParse(_weightController.text);
-    if (qty != null && qty >= 0) {
-      Navigator.pop(context, {
-        'type': 0.0,
-        'value': qty,
-      });
-    }
-  }
-
-  void _handleKeyEvent(KeyEvent event) {
-    if (event is KeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
-          event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        if (_weightFocus.hasFocus) {
-          _amountFocus.requestFocus();
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
-                 event.logicalKey == LogicalKeyboardKey.arrowUp) {
-        if (_amountFocus.hasFocus) {
-          _weightFocus.requestFocus();
-        }
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF1a1a1a),
-      title: Text(
-        widget.productName,
-        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
-      ),
-      content: KeyboardListener(
-        focusNode: FocusNode(),
-        onKeyEvent: _handleKeyEvent,
-        child: Container(
-          width: 450,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-            Row(
-              children: [
-                // Weight Field
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Peso (Kg)', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _weightController,
-                        focusNode: _weightFocus,
-                        autofocus: true,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,3}')),
-                        ],
-                        style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          hintText: '0.000',
-                          hintStyle: GoogleFonts.poppins(color: Colors.white12),
-                          suffixText: 'Kg',
-                          suffixStyle: GoogleFonts.poppins(color: Colors.white38, fontSize: 14),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.05),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF02e3b2), width: 1.5)),
-                        ),
-                        onSubmitted: (_) => _submit(),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Icon in middle
-                const Icon(Icons.sync, color: Colors.white24, size: 20),
-                const SizedBox(width: 16),
-                // Price/Amount Field
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Monto (\$)', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _amountController,
-                        focusNode: _amountFocus,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                        ],
-                        style: GoogleFonts.poppins(color: const Color(0xFF05e265), fontSize: 22, fontWeight: FontWeight.w600),
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          hintText: '0.00',
-                          hintStyle: GoogleFonts.poppins(color: Colors.white12),
-                          prefixText: '\$ ',
-                          prefixStyle: GoogleFonts.poppins(color: const Color(0xFF05e265), fontSize: 18),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.05),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF05e265), width: 1.5)),
-                        ),
-                        onSubmitted: (_) => _submit(),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Precio por Kg: \$${widget.pricePerKg.toStringAsFixed(2)}',
-                style: GoogleFonts.poppins(color: Colors.white54, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-    actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Cancelar',
-            style: GoogleFonts.poppins(color: Colors.white54),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: _submit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF05e265),
-          ),
-          child: Text(
-            'Agregar',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TypeButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TypeButton({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF05e265) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF05e265) : Colors.white24,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              color: isSelected ? Colors.white : Colors.white70,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

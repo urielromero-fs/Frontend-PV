@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../services/inventory_service.dart';
 import 'barcode_scanner.dart';
 import 'package:pv26/core/utils/product_filters.dart';
-import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import 'package:pv26/features/auth/services/auth_service.dart';
-
+import '../widgets/stat_card.dart';
+import '../widgets/product_list_item.dart';
+import '../widgets/add_product_dialog.dart';
+import '../widgets/edit_product_dialog.dart';
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
-
   @override
   State<InventoryScreen> createState() => _InventoryScreenState();
 }
-
 class _InventoryScreenState extends State<InventoryScreen> {
   List<dynamic> allProducts = []; //Original list
   List<dynamic> filteredProducts = []; //Filtered list for search
-
   bool isLoading = false;
   String errorMessage = '';
   String _userRole = 'cajero'; // Default restriction
-
   // Filtros locales
   String searchQuery = '';
   String selectedCategoryFilter = 'Todas';
@@ -30,13 +30,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
   String selectedStockFilter = 'Todos';
   bool filterBulkOnly = false;
   final TextEditingController searchController = TextEditingController();
-
   final List<String> stockFilters = [
     'Todos',
     'Bajo Stock',
     'Sin Stock',
   ];
-
   final List<String> categoryFilters = [
     'Todas',
     "Sin categoría",
@@ -56,39 +54,32 @@ class _InventoryScreenState extends State<InventoryScreen> {
     "General",
     "Otros",
   ];
-
   final List<String> sortOptions = [
     'Ninguno',
     'Precio Ascendente',
     'Precio Descendente',
   ];
-
   @override
   void initState() {
     super.initState();
-
     // final provider = Provider.of<ProductProvider>(context, listen: false);
     // if (provider.allProducts.isEmpty) {
     //   //provider.fetchProducts();
     //   provider.fetchInitialProducts(); 
     // }
-
     _loadUserRole();
   }
-
   Future<void> _loadUserRole() async {
     final role = await AuthService.getCurrentUserRole();
     setState(() {
       _userRole = role ?? 'cajero';
     });
   }
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductProvider>(context);
     final allProducts = provider.allProducts;
     final bool isMobile = MediaQuery.of(context).size.width < 600;
-
     // Aplicar filtros
     final filteredProducts = filterProducts(
       products: allProducts,
@@ -98,7 +89,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       sortOption: selectedSortOption,
       stockStatus: selectedStockFilter,
     );
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -201,12 +191,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
               // Stats dinámicos
               Row(
                 children: [
                   Expanded(
-                    child: _StatCard(
+                    child: StatCard(
                       title: 'Total Productos',
                       value: allProducts.length.toString(),
                       icon: Icons.inventory,
@@ -214,9 +203,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     ),
                   ),
                   const SizedBox(width: 24), // Increased from 16
-
                   Expanded(
-                    child: _StatCard(
+                    child: StatCard(
                       title: 'Bajo Stock',
                       value: allProducts
                           .where(
@@ -230,9 +218,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     ),
                   ),
                   const SizedBox(width: 24), // Increased from 16
-
                   Expanded(
-                    child: _StatCard(
+                    child: StatCard(
                       title: 'Sin Stock',
                       value: allProducts
                           .where((p) => (p['units'] ?? 0) == 0)
@@ -245,7 +232,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-
               // Tabla de productos
               Expanded(
                 child: Container(
@@ -333,7 +319,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         ),
                         const Divider(color: Colors.white24),
                       ],
-
                       // Lista de productos
                       Expanded(
                         child: isLoading
@@ -358,7 +343,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 itemCount: filteredProducts.length,
                                 itemBuilder: (context, index) {
                                   final product = filteredProducts[index];
-                                  return _ProductRow(
+                                  return ProductListItem(
                                     id: (product['_id'] ?? '').toString(),
                                     name: product['name'] ?? 'Sin nombre',
                                     category:
@@ -403,11 +388,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
     );
   }
-
   void _showAddStockModal(Map product) {
     final TextEditingController stockController = TextEditingController();
     bool isSaving = false;
-
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -473,17 +456,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     : () async {
                         final String val = stockController.text.trim();
                         if (val.isEmpty) return;
-
                         final double addUnits = double.tryParse(val) ?? 0;
                         if (addUnits <= 0) return;
-
                         setModalState(() => isSaving = true);
-
                         final double currentUnits =
                             double.tryParse(product['units']?.toString() ?? '0') ??
                             0;
                         final double newUnits = currentUnits + addUnits;
-
                         final result = await InventoryService.updateProduct(
                           id: product['_id'],
                           name: product['name'],
@@ -504,7 +483,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           wholesaleMinUnits:
                               (product['wholesaleMinUnits'] ?? 0) as int,
                         );
-
                         if (result['success'] == true) {
                           if (mounted) {
                             final provider = Provider.of<ProductProvider>(
@@ -557,9 +535,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
     );
   }
-
-
-
   void _showAddProductModal() {
     showDialog(
       context: context,
@@ -571,7 +546,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
     );
   }
-
   void _showEditProductModal(Map product) {
     showDialog(
       context: context,
@@ -584,7 +558,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
     );
   }
-
   Future<void> _deleteProduct(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -603,12 +576,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ],
       ),
     );
-
     if (confirm != true) return;
-
     final result = await InventoryService.deleteProduct(id);
     final provider = Provider.of<ProductProvider>(context, listen: false);
-
     if (result['success'] == true) {
       provider.fetchProducts();
     } else {
@@ -617,7 +587,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ).showSnackBar(SnackBar(content: Text(result['message'])));
     }
   }
-
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -656,9 +625,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     },
                     decoration: const InputDecoration(labelText: 'Categoría'),
                   ),
-
                   const SizedBox(height: 16),
-
                   // Ordenamiento
                   DropdownButtonFormField<String>(
                     value: selectedSortOption,
@@ -679,9 +646,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     },
                     decoration: const InputDecoration(labelText: 'Ordenar por'),
                   ),
-
                   const SizedBox(height: 16),
-
                   // Stock
                   DropdownButtonFormField<String>(
                     value: selectedStockFilter,
@@ -702,9 +667,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     },
                     decoration: const InputDecoration(labelText: 'Estado de Stock'),
                   ),
-
                   const SizedBox(height: 16),
-
                   // Granel
                   Row(
                     children: [
@@ -756,1445 +719,5 @@ class _InventoryScreenState extends State<InventoryScreen> {
         );
       },
     );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProductRow extends StatelessWidget {
-  final String id;
-  final String name;
-  final String category;
-  final String stock;
-  final String price;
-  final String status;
-  final Color statusColor;
-  final String userRole;
-  final bool isBulk;
-  final bool hasWholesalePrice;
-  final String wholesalePrice;
-  final int wholesaleMinUnits;
-
-  //Acciones
-  final VoidCallback onDelete;
-  final VoidCallback onEdit;
-  final VoidCallback onAddStock;
-
-  const _ProductRow({
-    required this.id,
-    required this.name,
-    required this.category,
-    required this.stock,
-    required this.status,
-    required this.statusColor,
-    required this.userRole,
-    required this.isBulk,
-    required this.onDelete,
-    required this.onEdit,
-    required this.onAddStock,
-    required this.price,
-    required this.hasWholesalePrice,
-    required this.wholesalePrice,
-    required this.wholesaleMinUnits,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 600;
-
-    final actionsMenu = PopupMenuButton<String>(
-      color: const Color(0xFF1a1a1a),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onSelected: (String value) {
-        if (value == 'edit') {
-          onEdit();
-        } else if (value == 'delete') {
-          onDelete();
-        }
-      },
-      itemBuilder: (BuildContext context) => [
-        PopupMenuItem<String>(
-          value: 'edit',
-          child: Row(
-            children: [
-              const Icon(Icons.edit, color: Color(0xFF05e265), size: 20),
-              const SizedBox(width: 12),
-              Text(
-                'Editar',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem<String>(
-          value: 'delete',
-          child: Row(
-            children: [
-              const Icon(Icons.delete, color: Color(0xFFE91E63), size: 20),
-              const SizedBox(width: 12),
-              Text(
-                'Eliminar',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      ],
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: const Color(0xFF05e265).withAlpha(26),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: const Color(0xFF05e265).withAlpha(51),
-            width: 1,
-          ),
-        ),
-        child: const Icon(Icons.more_vert, color: Color(0xFF05e265), size: 20),
-      ),
-    );
-
-    if (isMobile) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white.withAlpha(26))),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        category,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withAlpha(51),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    status,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (userRole == 'admin' || userRole == 'administrador') ...[
-                  const SizedBox(width: 8),
-                  actionsMenu,
-                ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '${isBulk ? 'KG CT' : 'Stock'}: $stock',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: onAddStock,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF05e265).withAlpha(40),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Color(0xFF05e265),
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  price,
-                  style: GoogleFonts.poppins(
-                    color: const Color(0xFF05e265),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            if (hasWholesalePrice) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Mayoreo: $wholesalePrice (desde $wholesaleMinUnits uds)',
-                style: GoogleFonts.poppins(
-                  color: const Color(0xFF05e265).withAlpha(200),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white.withAlpha(26))),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              name,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              category,
-              style: GoogleFonts.poppins(color: Colors.white70),
-            ),
-          ),
-          Expanded(
-            child: Row(
-              children: [
-                Text(
-                  '$stock ${isBulk ? 'Kg CT' : 'Uds'}',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: onAddStock,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF05e265).withAlpha(40),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Icon(
-                      Icons.add,
-                      color: Color(0xFF05e265),
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  price,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (hasWholesalePrice)
-                  Text(
-                    'Mayoreo: $wholesalePrice ($wholesaleMinUnits+)',
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF05e265),
-                      fontSize: 10,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withAlpha(51),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  status,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (userRole == 'admin' || userRole == 'administrador')
-            Expanded(child: Center(child: actionsMenu))
-          else
-            const Spacer(),
-        ],
-      ),
-    );
-  }
-}
-
-class AddProductDialog extends StatefulWidget {
-  final VoidCallback onProductAdded;
-
-  const AddProductDialog({super.key, required this.onProductAdded});
-
-  @override
-  State<AddProductDialog> createState() => _AddProductDialogState();
-}
-
-class EditProductDialog extends StatefulWidget {
-  final Map product;
-  final VoidCallback onProductUpdated;
-
-  const EditProductDialog({
-    super.key,
-    required this.product,
-    required this.onProductUpdated,
-  });
-
-  @override
-  State<EditProductDialog> createState() => _EditProductDialogState();
-}
-
-class _AddProductDialogState extends State<AddProductDialog> {
-  final nameController = TextEditingController();
-  final purchasePriceController = TextEditingController();
-  final salePriceController = TextEditingController();
-  final weightController = TextEditingController();
-  //final categoryController = TextEditingController();
-  final unitsController = TextEditingController();
-  final mayoreoController = TextEditingController();
-  final mayoreoUnitsController = TextEditingController();
-  final barcodeController = TextEditingController();
-
-  bool isBulk = false;
-  bool hasMayoreo = false;
-  bool isLoading = false;
-
-  String selectedCategory = 'Sin categoría';
-
-  final List<String> categories = [
-    "Sin categoría",
-    "Abarrotes",
-    "Básicos",
-    "Botanas",
-    "Enlatados",
-    "Lácteos",
-    "Bebidas",
-    "Carnes",
-    "Panadería",
-    "Frutas y Verduras",
-    "Limpieza",
-    "Higiene Personal",
-    "Artículos para Bebé",
-    "Mascotas",
-    "Otros",
-  ];
-
-  Future<void> saveProduct() async {
-    final name = nameController.text.trim();
-
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Ingresa el nombre')));
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    final result = await InventoryService.createProduct(
-      name: name,
-      barcode: barcodeController.text.isEmpty ? 'N/A' : barcodeController.text,
-      isBulk: isBulk,
-      weight: double.tryParse(weightController.text) ?? 0.0,
-
-      category: selectedCategory,
-
-      units: double.tryParse(unitsController.text) ?? 0,
-      buyingPrice: double.tryParse(purchasePriceController.text) ?? 0.0,
-      sellingPrice: double.tryParse(salePriceController.text) ?? 0.0,
-      bulkPrice: double.tryParse(weightController.text) ?? 0.0,
-      hasWholesalePrice: hasMayoreo,
-      wholesalePrice: double.tryParse(mayoreoController.text) ?? 0.0,
-      wholesaleMinUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
-    );
-
-    setState(() {
-      isLoading = false;
-    });
-
-
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          // Verifica si el mensaje contiene "barcode already exists"
-          (result['message'] != null &&
-                  result['message'].toString().toLowerCase().contains('barcode already exists'))
-              ? 'El código de barras ya existe'
-              : // Si no, usa el mensaje del backend o los mensajes por defecto
-              (result['message'] ??
-                  (result['success'] == true
-                      ? 'Producto añadido correctamente'
-                      : 'Error al añadir producto')),
-        ),
-        backgroundColor: result['success'] == true ? Colors.green : Colors.red,
-      ),
-    );
-
-    if (result['success'] == true) {
-      widget.onProductAdded();
-      Navigator.pop(context);
-    }
-  }
-
-  @override
-  void dispose() {
-    nameController.dispose();
-    purchasePriceController.dispose();
-    salePriceController.dispose();
-    weightController.dispose();
-    //categoryController.dispose();
-    unitsController.dispose();
-    mayoreoController.dispose();
-    mayoreoUnitsController.dispose();
-    barcodeController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF1a1a1a),
-      title: Text(
-        'Añadir Producto',
-        style: GoogleFonts.poppins(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      content: SizedBox(
-        width: 500,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.75,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Product Name
-                // Product Name con margen superior
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0), // <- margen arriba
-                  child: TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Nombre del Producto',
-                      labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                      floatingLabelStyle: GoogleFonts.poppins(
-                        color: Colors.white, // color cuando flota
-                        fontWeight: FontWeight.w500,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.white.withAlpha(51),
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Color(0xFF05e265)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    style: GoogleFonts.poppins(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Barcode Field
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: barcodeController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-
-                        decoration: InputDecoration(
-                          labelText: 'CB (Código de Barras)',
-                          labelStyle: GoogleFonts.poppins(
-                            color: Colors.white70,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.white.withAlpha(51),
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Color(0xFF05e265),
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF05e265),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.qr_code_scanner,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          //_scanBarcode(context, barcodeController);
-                          _scanBarcodeWithOptions(context, barcodeController);
-                        },
-                        tooltip: 'Escanear Código de Barras',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Bulk Option
-                Row(
-                  children: [
-                    Switch(
-                      value: isBulk,
-                      onChanged: (value) {
-                        setState(() {
-                          isBulk = value;
-                          if (isBulk) {
-                            selectedCategory = 'Abarrotes';
-                            weightController.text = '1';
-                          } else {
-                            weightController.clear();
-                          }
-                        });
-                      },
-                      activeThumbColor: const Color(0xFF05e265),
-                      activeTrackColor: const Color(0xFF05e265).withAlpha(77),
-                      inactiveThumbColor: Colors.grey.shade400,
-                      inactiveTrackColor: Colors.grey.shade700,
-                    ),
-                    Text(
-                      '¿Es a granel?',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Weight (only for bulk products) - Eliminado de la vista por petición
-                if (isBulk) ...[const SizedBox(height: 16)],
-
-                //Category Dropdown
-                DropdownButtonFormField<String>(
-                  initialValue: selectedCategory,
-                  items: categories.map((category) {
-                    return DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(
-                        category,
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedCategory = value;
-                      });
-                    }
-                  },
-                  dropdownColor: const Color(0xFF1a1a1a),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Categoría',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Units
-                TextField(
-                  controller: unitsController,
-                  keyboardType: TextInputType.numberWithOptions(
-                      decimal: isBulk, // True permite decimales, false solo enteros
-                    ),
-                  inputFormatters: isBulk
-                        ? [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d+\.?\d{0,2}'), // Permite números decimales
-                            ),
-                          ]
-                        : [
-                            FilteringTextInputFormatter.digitsOnly, // Solo enteros
-                          ],
-                  decoration: InputDecoration(
-                    labelText: isBulk ? 'KG CT' : 'Unidades',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-                const SizedBox(height: 16),
-
-                // Purchase Price
-                TextField(
-                  controller: purchasePriceController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d+\.?\d{0,2}'),
-                    ),
-                  ],
-                  decoration: InputDecoration(
-                    labelText: isBulk
-                        ? 'Precio de Compra (por 1 KG CT)'
-                        : 'Precio de Compra',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-                const SizedBox(height: 16),
-
-                // Sale Price
-                TextField(
-                  controller: salePriceController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d+\.?\d{0,2}'),
-                    ),
-                  ],
-                  decoration: InputDecoration(
-                    labelText: isBulk
-                        ? 'Precio de Venta (por 1 KG CT)'
-                        : 'Precio de Venta',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-                const SizedBox(height: 16),
-
-                // Mayoreo Option
-                Row(
-                  children: [
-                    Switch(
-                      value: hasMayoreo,
-                      onChanged: (value) {
-                        setState(() {
-                          hasMayoreo = value;
-                        });
-                      },
-                      activeThumbColor: const Color(0xFF05e265),
-                      activeTrackColor: const Color(0xFF05e265).withAlpha(77),
-                      inactiveThumbColor: Colors.grey.shade400,
-                      inactiveTrackColor: Colors.grey.shade700,
-                    ),
-                    Text(
-                      '¿Tiene precio mayoreo?',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                if (hasMayoreo) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: mayoreoController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d+\.?\d{0,2}'),
-                            ),
-                          ],
-                          decoration: InputDecoration(
-                            labelText: 'Precio Mayoreo',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.white.withAlpha(51),
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Color(0xFF05e265)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          style: GoogleFonts.poppins(color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: mayoreoUnitsController,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            labelText: 'Mínimo Unidades',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.white.withAlpha(51),
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Color(0xFF05e265)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          style: GoogleFonts.poppins(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: Text(
-            'Cancelar',
-            style: GoogleFonts.poppins(color: Colors.white70),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: isLoading ? null : saveProduct,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF05e265),
-            foregroundColor: Colors.white,
-          ),
-          child: isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(
-                  'Añadir',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _scanBarcodeWithOptions(
-    BuildContext context,
-    TextEditingController controller,
-  ) async {
-    final result = await showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => const BarcodeScannerModal(),
-    );
-
-    if (result != null && mounted) {
-      setState(() {
-        controller.text = result;
-      });
-    }
-  }
-}
-
-class _EditProductDialogState extends State<EditProductDialog> {
-  final nameController = TextEditingController();
-  final purchasePriceController = TextEditingController();
-  final salePriceController = TextEditingController();
-  final weightController = TextEditingController();
-  //final categoryController = TextEditingController();
-  final unitsController = TextEditingController();
-  final mayoreoController = TextEditingController();
-  final mayoreoUnitsController = TextEditingController();
-  final barcodeController = TextEditingController();
-
-  bool isBulk = false;
-  bool hasMayoreo = false;
-  bool isLoading = false;
-
-  String selectedCategory = 'Sin categoría';
-
-  final List<String> categories = [
-    "Sin categoría",
-    "Abarrotes",
-    "Básicos",
-    "Botanas",
-    "Enlatados",
-    "Lácteos",
-    "Bebidas",
-    "Carnes",
-    "Panadería",
-    "Frutas y Verduras",
-    "Limpieza",
-    "Higiene Personal",
-    "Artículos para Bebé",
-    "Mascotas",
-    "General",
-    "Otros",
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-
-    nameController.text = widget.product['name']?.toString() ?? '';
-    barcodeController.text = widget.product['barcode']?.toString() ?? '';
-    unitsController.text = (widget.product['units'] ?? 0).toString();
-    purchasePriceController.text = (widget.product['buyingPrice'] ?? 0)
-        .toString();
-    salePriceController.text = (widget.product['sellingPrice'] ?? 0).toString();
-    weightController.text = (widget.product['weight'] ?? 0).toString();
-
-    selectedCategory =
-        widget.product['category']?.toString() ?? 'Sin categoría';
-
-    mayoreoController.text = (widget.product['wholesalePrice'] ?? 0).toString();
-
-    mayoreoUnitsController.text =
-        (widget.product['wholesaleMinUnits'] ?? 0).toString();
-
-    isBulk = widget.product['isBulk'] ?? false;
-    hasMayoreo = widget.product['hasWholesalePrice'] ?? false;
-  }
-
-  Future<void> updateProduct() async {
-    final id = widget.product['_id']?.toString() ?? '';
-
-    if (id.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('ID inválido')));
-      return;
-    }
-
-    if (nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Ingresa el nombre')));
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    final result = await InventoryService.updateProduct(
-      id: id,
-      name: nameController.text.trim(),
-      barcode: barcodeController.text,
-      isBulk: isBulk,
-      weight: double.tryParse(weightController.text) ?? 0.0,
-
-      category: selectedCategory,
-
-      units: double.tryParse(unitsController.text) ?? 0,
-      buyingPrice: double.tryParse(purchasePriceController.text) ?? 0.0,
-      sellingPrice: double.tryParse(salePriceController.text) ?? 0.0,
-      bulkPrice: double.tryParse(weightController.text) ?? 0.0,
-      hasWholesalePrice: hasMayoreo,
-      wholesalePrice: double.tryParse(mayoreoController.text) ?? 0.0,
-      wholesaleMinUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
-    );
-
-    setState(() {
-      isLoading = false;
-    });
-
-    if (result['success'] == true) {
-      widget.onProductUpdated();
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'] ?? 'Error al actualizar')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF1a1a1a),
-      title: Text(
-        'Actualizar Producto',
-        style: GoogleFonts.poppins(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      content: SizedBox(
-        width: 500,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.75,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Product Name
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0), // <- margen arriba
-                  child: TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Nombre del Producto',
-                      labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.white.withAlpha(51),
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Color(0xFF05e265)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    style: GoogleFonts.poppins(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Barcode Field
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: barcodeController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-
-                        decoration: InputDecoration(
-                          labelText: 'CB (Código de Barras)',
-                          labelStyle: GoogleFonts.poppins(
-                            color: Colors.white70,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.white.withAlpha(51),
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Color(0xFF05e265),
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF05e265),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.qr_code_scanner,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          //_scanBarcode(context, barcodeController);
-                          _scanBarcodeWithOptions(context, barcodeController);
-                        },
-                        tooltip: 'Escanear Código de Barras',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Bulk Option
-                Row(
-                  children: [
-                    Switch(
-                      value: isBulk,
-                      onChanged: (value) {
-                        setState(() {
-                          isBulk = value;
-                          if (isBulk) {
-                            selectedCategory = 'Abarrotes';
-                            weightController.text = '1';
-                          } else {
-                            weightController.clear();
-                          }
-                        });
-                      },
-                      activeThumbColor: const Color(0xFF05e265),
-                      activeTrackColor: const Color(0xFF05e265).withAlpha(77),
-                      inactiveThumbColor: Colors.grey.shade400,
-                      inactiveTrackColor: Colors.grey.shade700,
-                    ),
-                    Text(
-                      '¿Es a granel?',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Weight (only for bulk products) - Eliminado de la vista por petición
-                if (isBulk) ...[const SizedBox(height: 16)],
-
-                //Category Dropdown
-                DropdownButtonFormField<String>(
-                  initialValue: selectedCategory,
-                  items: categories.map((category) {
-                    return DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(
-                        category,
-                        style: GoogleFonts.poppins(color: Colors.white),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedCategory = value;
-                      });
-                    }
-                  },
-                  dropdownColor: const Color(0xFF1a1a1a),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Categoría',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Units
-                TextField(
-                  controller: unitsController,
-                  keyboardType: TextInputType.numberWithOptions(
-                      decimal: isBulk, // True permite decimales, false solo enteros
-                    ),
-                  inputFormatters: isBulk
-                        ? [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d+\.?\d{0,2}'), // Permite números decimales
-                            ),
-                          ]
-                        : [
-                            FilteringTextInputFormatter.digitsOnly, // Solo enteros
-                          ],
-                  decoration: InputDecoration(
-                    labelText: isBulk ? 'KG CT' : 'Unidades',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-                const SizedBox(height: 16),
-
-                // Purchase Price
-                TextField(
-                  controller: purchasePriceController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d+\.?\d{0,2}'),
-                    ),
-                  ],
-                  decoration: InputDecoration(
-                    labelText: isBulk
-                        ? 'Precio de Compra (por 1 KG CT)'
-                        : 'Precio de Compra',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-                const SizedBox(height: 16),
-
-                // Sale Price
-                TextField(
-                  controller: salePriceController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d+\.?\d{0,2}'),
-                    ),
-                  ],
-                  decoration: InputDecoration(
-                    labelText: isBulk
-                        ? 'Precio de Venta (por 1 KG CT)'
-                        : 'Precio de Venta',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-                const SizedBox(height: 16),
-
-                // Mayoreo Option
-                Row(
-                  children: [
-                    Switch(
-                      value: hasMayoreo,
-                      onChanged: (value) {
-                        setState(() {
-                          hasMayoreo = value;
-                        });
-                      },
-                      activeThumbColor: const Color(0xFF05e265),
-                      activeTrackColor: const Color(0xFF05e265).withAlpha(77),
-                      inactiveThumbColor: Colors.grey.shade400,
-                      inactiveTrackColor: Colors.grey.shade700,
-                    ),
-                    Text(
-                      '¿Tiene precio mayoreo?',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                if (hasMayoreo) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: mayoreoController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d+\.?\d{0,2}'),
-                            ),
-                          ],
-                          decoration: InputDecoration(
-                            labelText: 'Precio Mayoreo',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.white.withAlpha(51),
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Color(0xFF05e265)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          style: GoogleFonts.poppins(color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: mayoreoUnitsController,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            labelText: 'Mínimo Unidades',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.white.withAlpha(51),
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Color(0xFF05e265)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          style: GoogleFonts.poppins(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: Text(
-            'Cancelar',
-            style: GoogleFonts.poppins(color: Colors.white70),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: isLoading ? null : updateProduct,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF05e265),
-            foregroundColor: Colors.white,
-          ),
-          child: isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(
-                  'Actualizar',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    nameController.dispose();
-    purchasePriceController.dispose();
-    salePriceController.dispose();
-    weightController.dispose();
-    //categoryController.dispose();
-    unitsController.dispose();
-    mayoreoController.dispose();
-    mayoreoUnitsController.dispose();
-    barcodeController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _scanBarcodeWithOptions(
-    BuildContext context,
-    TextEditingController controller,
-  ) async {
-    final result = await showDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => const BarcodeScannerModal(),
-    );
-
-    if (result != null && mounted) {
-      setState(() {
-        controller.text = result;
-      });
-    }
   }
 }
