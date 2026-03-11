@@ -67,10 +67,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void initState() {
     super.initState();
 
-    final provider = Provider.of<ProductProvider>(context, listen: false);
-    if (provider.allProducts.isEmpty) {
-      provider.fetchProducts();
-    }
+    // final provider = Provider.of<ProductProvider>(context, listen: false);
+    // if (provider.allProducts.isEmpty) {
+    //   //provider.fetchProducts();
+    //   provider.fetchInitialProducts(); 
+    // }
 
     _loadUserRole();
   }

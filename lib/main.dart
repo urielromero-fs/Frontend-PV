@@ -16,9 +16,17 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => ProductProvider())],
+    Widget build(BuildContext context) {
+      return MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) {
+              final provider = ProductProvider();
+              provider.fetchInitialProducts(); 
+              return provider;
+            }
+          )
+        ],
 
       child: MaterialApp(
         title: 'Punto de Venta',
