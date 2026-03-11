@@ -10,6 +10,8 @@ import 'package:pv26/features/inventory/services/inventory_service.dart';
 import '../services/cash_session_service.dart';
 import 'package:pv26/features/home/screens/home_screen.dart';
 import '../services/withdrawal_service.dart';
+import '../services/print_service.dart';
+import '../models/sales_models.dart';
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
@@ -18,28 +20,6 @@ class PaymentsScreen extends StatefulWidget {
   State<PaymentsScreen> createState() => _PaymentsScreenState();
 }
 
-class Ticket {
-  final String id;
-  List<CartItem> items;
-  double subtotal;
-  double discount;
-  double total;
-  double? amountTendered;
-  String paymentMethod;
-  DateTime createdAt;
-
-  Ticket({
-    required this.id,
-    List<CartItem>? items,
-    this.subtotal = 0.0,
-    this.discount = 0.0,
-    this.total = 0.0,
-    this.amountTendered,
-    this.paymentMethod = 'Efectivo',
-    DateTime? createdAt,
-  }) : items = items ?? [],
-       createdAt = createdAt ?? DateTime.now();
-}
 
 class _PaymentsScreenState extends State<PaymentsScreen>
     with TickerProviderStateMixin {
@@ -182,6 +162,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             .fetchProducts();
       
 
+        // Guardar copia de los datos antes de limpiar para el ticket
+        final ticketItems = List<CartItem>.from(currentTicket.items);
+        final ticketTotal = currentTicket.total;
+        final ticketReceived = currentTicket.amountTendered ?? 0.0;
+        final ticketChange = ticketReceived - ticketTotal;
+        final ticketPaymentMethod = currentTicket.paymentMethod;
+
         setState(() {
           _totalSales += currentTicket.total;
           currentTicket.items.clear();
@@ -191,7 +178,16 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           _calculateTotals();
         });
 
-        _showSuccessDialog(result['message']);
+        _showSuccessDialog(
+          result['message'],
+          ticketData: {
+            'items': ticketItems,
+            'total': ticketTotal,
+            'received': ticketReceived,
+            'change': ticketChange,
+            'paymentMethod': ticketPaymentMethod,
+          },
+        );
       } else {
         _showErrorSnackBar(result['message']);
       }
@@ -207,7 +203,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     );
   }
 
-  void _showSuccessDialog(String message) {
+  void _showSuccessDialog(String message, {Map<String, dynamic>? ticketData}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -217,10 +213,35 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           color: Color(0xFF05e265),
           size: 60,
         ),
-        content: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+            if (ticketData != null) ...[
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () {
+                  PrintService.printTicket(
+                    businessName: '', // Título removido a petición del usuario
+                    items: ticketData['items'],
+                    total: ticketData['total'],
+                    received: ticketData['received'],
+                    change: ticketData['change'],
+                    paymentMethod: ticketData['paymentMethod'],
+                  );
+                },
+                icon: const Icon(Icons.print, color: Colors.white),
+                label: const Text('Imprimir Ticket', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF05e265),
+                ),
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(
@@ -1179,47 +1200,78 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                               ],
                             ),
                             const SizedBox(height: 16),
-                            if (currentTicket.amountTendered != null) ...[
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Recibido:',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white70,
+                              if (currentTicket.amountTendered != null) ...[
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Recibido:',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white70,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      '\$${currentTicket.amountTendered!.toStringAsFixed(2)}',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Cambio:',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white70,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      '\$${(currentTicket.amountTendered! - currentTicket.total).toStringAsFixed(2)}',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.orange,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 22,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton.icon(
+                                    onPressed: () {
+                                      PrintService.printTicket(
+                                        businessName: '',
+                                        items: currentTicket.items,
+                                        total: currentTicket.total,
+                                        received: currentTicket.amountTendered!,
+                                        change: currentTicket.amountTendered! - currentTicket.total,
+                                        paymentMethod: currentTicket.paymentMethod,
+                                      );
+                                    },
+                                    icon: const Icon(Icons.print, size: 16, color: Colors.white70),
+                                    label: Text(
+                                      'Imprimir previo',
+                                      style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                     ),
                                   ),
-                                  Text(
-                                    '\$${currentTicket.amountTendered!.toStringAsFixed(2)}',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Cambio:',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                  Text(
-                                    '\$${(currentTicket.amountTendered! - currentTicket.total).toStringAsFixed(2)}',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.orange,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                            ],
+                                ),
+                                const SizedBox(height: 16),
+                              ],
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -1744,12 +1796,15 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         'Recibido:',
                                         style: GoogleFonts.poppins(
                                           color: Colors.white70,
+                                          fontSize: 16,
                                         ),
                                       ),
                                       Text(
                                         '\$${currentTicket.amountTendered!.toStringAsFixed(2)}',
                                         style: GoogleFonts.poppins(
                                           color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ],
@@ -1763,6 +1818,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         'Cambio:',
                                         style: GoogleFonts.poppins(
                                           color: Colors.white70,
+                                          fontSize: 16,
                                         ),
                                       ),
                                       Text(
@@ -1770,9 +1826,36 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         style: GoogleFonts.poppins(
                                           color: Colors.orange,
                                           fontWeight: FontWeight.bold,
+                                          fontSize: 22,
                                         ),
                                       ),
                                     ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton.icon(
+                                      onPressed: () {
+                                        PrintService.printTicket(
+                                          businessName: '',
+                                          items: currentTicket.items,
+                                          total: currentTicket.total,
+                                          received: currentTicket.amountTendered!,
+                                          change: currentTicket.amountTendered! - currentTicket.total,
+                                          paymentMethod: currentTicket.paymentMethod,
+                                        );
+                                      },
+                                      icon: const Icon(Icons.print, size: 16, color: Colors.white70),
+                                      label: Text(
+                                        'Imprimir previo',
+                                        style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+                                      ),
+                                      style: TextButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(height: 16),
                                 ],
@@ -2171,12 +2254,20 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       RegExp(r'^\d+\.?\d{0,2}'),
                     ),
                   ],
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Monto recibido',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70, fontSize: 16),
                     prefixText: '\$ ',
-                    prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                    prefixStyle: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
                     ),
@@ -2950,35 +3041,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   }
 }
 
-class CartItem {
-  String id;
-  String name;
-  double price;
-  double quantity;
-  bool isBulk;
-  double units; 
-
-  double? wholesaleMinUnits;
-  double? wholesalePrice;
-  double? originalPrice;
-  
-
-  CartItem({
-    required this.id,
-    required this.name,
-    required this.price,
-    required this.quantity,
-    required this.units,
-    this.isBulk = false,
-    this.wholesaleMinUnits,
-    this.wholesalePrice,
-    this.originalPrice,
-  });
-
-  
-
-
-}
 
 class _ProductListTile extends StatelessWidget {
   final String name;
