@@ -707,7 +707,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             ElevatedButton(
               onPressed: () {
                 //applyFilters();
-                setState(() {}); // aplica filtros
+                setState(() {}); 
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(

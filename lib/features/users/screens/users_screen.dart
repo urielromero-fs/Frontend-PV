@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/users_service.dart';
+import 'package:intl/intl.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -9,23 +11,10 @@ class UsersScreen extends StatefulWidget {
 }
 
 class _UsersScreenState extends State<UsersScreen> {
-  // Mock data for users (just for presentation)
-  List<Map<String, dynamic>> users = List.generate(
-    15,
-    (index) => {
-      'id': 'user_$index',
-      'name': 'Usuario ${index + 1}',
-      'email': 'usuario${index + 1}@centli.com',
-      'role': index % 3 == 0
-          ? 'Administrador'
-          : index % 2 == 0
-          ? 'Cajero'
-          : 'Vendedor',
-      'status': index % 5 == 0 ? 'Inactivo' : 'Activo',
-      'joinDate': '${index + 1}/01/2026',
-    },
-  );
 
+
+  List<Map<String, dynamic>> users = [];
+  bool isLoading = true;
   List<Map<String, dynamic>> _filteredUsers = [];
   final TextEditingController _searchController = TextEditingController();
 
@@ -34,6 +23,7 @@ class _UsersScreenState extends State<UsersScreen> {
     super.initState();
     _filteredUsers = users;
     _searchController.addListener(_onSearchChanged);
+    _loadUsers(); 
   }
 
   @override
@@ -42,6 +32,69 @@ class _UsersScreenState extends State<UsersScreen> {
     _searchController.dispose();
     super.dispose();
   }
+
+
+  Future<void> _loadUsers() async {
+    final result = await UsersService.getUsers();
+
+    if (result['success']) {
+      
+      final List data = result['data']['users']; 
+
+  
+      setState(() {
+        users = data.map((user) => {
+          'id': user['id'],
+          'name': user['name'],
+          'email': user['email'],
+          'role': user['role'] == 'admin' 
+          ? 'Administrador' 
+          : user['role'] == 'seller' 
+                ? 'Cajero' 
+                : 'Vendedor',
+
+          'status': user['state'] == 'active' ? 'Activo' : 'Inactivo',
+          'joinDate':  user['createdAt'] != null
+              ? DateFormat('dd-MM-yyyy').format(DateTime.parse(user['createdAt']))
+              : 'Desconocida',
+        }).toList();
+
+        _filteredUsers = users;
+        isLoading = false;
+      });
+
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Error al cargar usuarios'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+     
+
+  }
+
+  Future<void> _sendPassword(String email) async {
+
+      final result = await UsersService.sendNewPassword(email: email);
+
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Contraseña enviada a $email'),
+            backgroundColor: const Color(0xFF05e265),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Error al enviar contraseña'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
 
   void _onSearchChanged() {
     setState(() {
@@ -55,6 +108,8 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   void _showUserForm([Map<String, dynamic>? user]) {
+
+
     final bool isEditing = user != null;
     final nameController = TextEditingController(
       text: isEditing ? user['name'] : '',
@@ -180,47 +235,54 @@ class _UsersScreenState extends State<UsersScreen> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    if (nameController.text.isNotEmpty &&
-                        emailController.text.isNotEmpty) {
-                      setState(() {
+                  onPressed: () async {
+                      if (nameController.text.isNotEmpty &&
+                          emailController.text.isNotEmpty) {
+
+                        Map<String, dynamic> result;
+
                         if (isEditing) {
-                          final int index = users.indexWhere(
-                            (u) => u['id'] == user['id'],
+                          // Editar usuario
+                          result = await UsersService.updateUser(
+                            id: user['id'],
+                            name: nameController.text,
+                            email: emailController.text,
+                            role: selectedRole == 'Administrador' ? 'admin' : 'seller',
                           );
-                          if (index != -1) {
-                            users[index] = {
-                              ...users[index],
-                              'name': nameController.text,
-                              'email': emailController.text,
-                              'role': selectedRole,
-                            };
-                          }
                         } else {
-                          users.insert(0, {
-                            'id':
-                                'user_${DateTime.now().millisecondsSinceEpoch}',
-                            'name': nameController.text,
-                            'email': emailController.text,
-                            'role': selectedRole,
-                            'status': 'Activo',
-                            'joinDate': 'Recién',
-                          });
+                          // Crear usuario
+                          result = await UsersService.createUser(
+                            name: nameController.text,
+                            email: emailController.text,
+                            role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+                          );
                         }
-                      });
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isEditing
-                                ? 'Usuario actualizado'
-                                : 'Usuario creado exitosamente',
-                          ),
-                          backgroundColor: const Color(0xFF05e265),
-                        ),
-                      );
-                    }
-                  },
+
+                      
+
+                        if (result['success']) {
+                          await _loadUsers();
+
+                          Navigator.pop(context);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(isEditing
+                                ? 'Usuario actualizado exitosamente'
+                                : 'Usuario creado exitosamente'),
+                              backgroundColor: Color(0xFF05e265),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result['message']),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF05e265),
                   ),
@@ -265,19 +327,30 @@ class _UsersScreenState extends State<UsersScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
-              setState(() {
-                users.removeWhere((u) => u['id'] == id);
-                _onSearchChanged(); // Update filtered list
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Usuario eliminado'),
-                  backgroundColor: Colors.redAccent,
-                ),
-              );
-            },
+              onPressed: () async {
+                final result = await UsersService.deleteUser(id: id);
+
+                if(result['success']){
+                  setState(() {
+                    users.removeWhere((u) => u['id'] == id);
+                    _onSearchChanged();
+                  });
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result['message']),
+                      backgroundColor: const Color.fromARGB(255, 30, 233, 128),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result['message']),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: Text(
               'Eliminar',
@@ -521,6 +594,7 @@ class _UsersScreenState extends State<UsersScreen> {
                                     isMobile: isMobile,
                                     onEdit: () => _showUserForm(user),
                                     onDelete: () => _deleteUser(user['id']),
+                                    onSendPassword: () => _sendPassword(user['email']),
                                   );
                                 },
                               ),
@@ -610,6 +684,7 @@ class _UserRow extends StatelessWidget {
   final bool isMobile;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onSendPassword; 
 
   const _UserRow({
     required this.name,
@@ -620,7 +695,14 @@ class _UserRow extends StatelessWidget {
     required this.isMobile,
     required this.onEdit,
     required this.onDelete,
+    required this.onSendPassword,
   });
+
+
+  
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -635,12 +717,7 @@ class _UserRow extends StatelessWidget {
         } else if (value == 'delete') {
           onDelete();
         } else if (value == 'send_password') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Contraseña enviada a $email'),
-              backgroundColor: const Color(0xFF05e265),
-            ),
-          );
+          onSendPassword();
         }
       },
       itemBuilder: (BuildContext context) => [
