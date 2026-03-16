@@ -46,10 +46,14 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 
-	key>NSCameraUsageDescription</key>
-            <string>Usamos la cámara para escanear códigos de barras</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Usamos la cámara para escanear códigos de barras</string>
 
-
-
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mailto</string>
+		<string>https</string>
+		<string>whatsapp</string>
+	</array>
 </dict>
 </plist>

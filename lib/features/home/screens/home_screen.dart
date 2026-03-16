@@ -8,6 +8,7 @@ import 'package:pv26/features/reports/screens/reports_screen.dart';
 import 'package:pv26/features/users/screens/users_screen.dart';
 import 'package:pv26/features/auth/services/auth_service.dart';
 import 'package:pv26/features/inventory/providers/product_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -184,6 +185,166 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _launchURL(Uri uri) async {
+    try {
+      // Para mailto es mejor usar platformDefault, para WhatsApp externalApplication
+      final LaunchMode mode = uri.scheme == 'mailto' 
+          ? LaunchMode.platformDefault 
+          : LaunchMode.externalApplication;
+
+      final bool launched = await launchUrl(
+        uri,
+        mode: mode,
+      );
+      if (!launched && context.mounted) {
+        throw 'No se pudo abrir';
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se encontró una aplicación compatible'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showSupportModal() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1a1a1a),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.support_agent_rounded, color: Color(0xFF05e265)),
+              const SizedBox(width: 12),
+              Text(
+                'Centro de Ayuda',
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Estamos aquí para apoyarte con cualquier duda o problema técnico.',
+                style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.access_time_rounded, color: Colors.amber, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Horario de Atención',
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Lunes a Viernes: 10:00 AM - 5:00 PM',
+                            style: GoogleFonts.outfit(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.email_outlined, color: Colors.blue, size: 20),
+                ),
+                title: Text(
+                  'Correo Electrónico',
+                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  'uriel.romero@fstack.com.mx',
+                  style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
+                ),
+                onTap: () {
+                  final Uri emailUri = Uri(
+                    scheme: 'mailto',
+                    path: 'uriel.romero@fstack.com.mx',
+                    queryParameters: {
+                      'subject': 'Soporte Centli POS',
+                      'body': 'Hola, necesito ayuda con...',
+                    },
+                  );
+                  _launchURL(emailUri);
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.chat_outlined, color: Colors.green, size: 20),
+                ),
+                title: Text(
+                  'WhatsApp Soporte',
+                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '+52 55 1234 5678',
+                  style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
+                ),
+                onTap: () {
+                  final Uri whatsappUri = Uri.parse('https://wa.me/525512345678?text=Hola,%20necesito%20soporte%20con%20Centli%20POS.');
+                  _launchURL(whatsappUri);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cerrar',
+                style: GoogleFonts.outfit(color: const Color(0xFF05e265)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
@@ -334,6 +495,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: _showSettingsModal,
                       isCollapsed: _isSidebarCollapsed,
                     ),
+                  _NavItem(
+                    icon: Icons.help_outline_rounded,
+                    title: 'Ayuda y Soporte',
+                    onTap: _showSupportModal,
+                    isCollapsed: _isSidebarCollapsed,
+                  ),
                 ],
               ),
             ),
@@ -641,6 +808,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersScreen())),
                                   ),
                                 ],
+                                _DashboardCard(
+                                  title: 'Ayuda y Soporte',
+                                  subtitle: 'Contacta a soporte técnico y consulta horarios',
+                                  icon: Icons.support_agent_rounded,
+                                  color: Colors.amber,
+                                  onTap: _showSupportModal,
+                                ),
                               ],
                             );
                           },
