@@ -52,6 +52,8 @@ dependencies:
   web: ^1.1.1
   diacritic: ^0.1.2
   path_provider: ^2.0.15
+  url_launcher: ^6.3.2
+ 
 
 
 dev_dependencies:
