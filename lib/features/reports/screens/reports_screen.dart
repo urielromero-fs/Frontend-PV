@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/reports_service.dart'; 
+
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -11,39 +13,106 @@ class ReportsScreen extends StatefulWidget {
 class _ReportsScreenState extends State<ReportsScreen> {
   String _selectedPeriod = 'Este Día';
 
-  // Dummy data arrays based on period
-  Map<String, Map<String, String>> metricData = {
-    'Este Día': {
-      'ventas': '\$1,230',
-      'ordenes': '45',
-      'clientes': '12',
-      'ticket': '\$115',
-      'ventas_change': '+5%',
-      'ordenes_change': '+2%',
-      'clientes_change': '+1%',
-      'ticket_change': '+3%',
-    },
-    'Esta Semana': {
-      'ventas': '\$8,450',
-      'ordenes': '150',
-      'clientes': '35',
-      'ticket': '\$122',
-      'ventas_change': '+12%',
-      'ordenes_change': '+8%',
-      'clientes_change': '+5%',
-      'ticket_change': '+4%',
-    },
-    'Este Mes': {
-      'ventas': '\$45,230',
-      'ordenes': '342',
-      'clientes': '67',
-      'ticket': '\$132',
-      'ventas_change': '+23%',
-      'ordenes_change': '+18%',
-      'clientes_change': '+12%',
-      'ticket_change': '+5%',
-    },
-  };
+
+  Map<String, dynamic> metricData = {};
+
+
+  @override
+  void initState() {
+    super.initState();
+   
+    _loadMetrics(_selectedPeriod); 
+  }
+  
+  Future<void> _loadMetrics(String period) async{
+
+
+    final Map days = {
+      'Este Día': 'day', 
+      'Esta Semana': 'week',
+      'Este Mes': 'month',
+    }; 
+
+
+    final result = await ReportsService.getReport(period: days[period]);
+
+
+    if(result['success']){
+
+
+      final data = result['data'];
+      final actualReport = data['actualReport'] ?? {};
+      final growth = data['growth'] ?? {};
+
+      String formatCurrency(dynamic value) {
+        if (value == null) return '\$0';
+        final num number = value is num ? value : num.tryParse(value.toString()) ?? 0;
+        return '\$${number.round()}';
+      }
+
+      String formatNumber(dynamic value) {
+        if (value == null) return '0';
+        final num number = value is num ? value : num.tryParse(value.toString()) ?? 0;
+        return number.round().toString();
+      }
+
+      String formatChange(dynamic value) {
+        if (value == null) return '0%';
+        final num number = value is num ? value : num.tryParse(value.toString()) ?? 0;
+        final int rounded = number.round();
+
+        return rounded >= 0 ? '+$rounded%' : '$rounded%';
+      }
+
+
+           
+      List<Map<String, dynamic>> salesWeekData = [];
+
+      final rawSalesWeek = data['salesWeek'];
+      if (rawSalesWeek != null && rawSalesWeek is List) {
+        salesWeekData = rawSalesWeek.map<Map<String, dynamic>>((e) {
+          final map = e as Map<String, dynamic>? ?? {};
+          return {
+            'day': map['day']?.toString() ?? '',
+            'total': map['total'] ?? 0,
+          };
+        }).toList();
+      }
+
+      Map<String, dynamic> mappedData = {
+        'ventas': formatCurrency(actualReport['totalSales']),
+        'ordenes': formatNumber(actualReport['ordersCount']),
+        'productos': formatNumber(actualReport['productsSold']),
+        'ticket': formatCurrency(actualReport['averageTicket']),
+        'ventas_change': formatChange(growth['salesGrowth']),
+        'ordenes_change': formatChange(growth['ordersGrowth']),
+        'products_change': formatChange(growth['productsGrowth'] ?? 0),
+        'ticket_change': formatChange(growth['ticketGrowth']),
+        'salesWeek': salesWeekData,
+        'categoryCount': actualReport['categoryCount'] ?? {},
+      };
+
+
+
+        setState(() {
+          metricData[period] = mappedData;
+        });
+
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Error al cargar datos'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+
+
+
+
+
+  }
+
 
   void _showPeriodSelector() {
     showModalBottomSheet(
@@ -93,26 +162,47 @@ class _ReportsScreenState extends State<ReportsScreen> {
         textAlign: TextAlign.center,
       ),
       onTap: () {
+
+
+        _loadMetrics(period); 
+        
         setState(() {
           _selectedPeriod = period;
         });
         Navigator.pop(context);
+
+
+
       },
     );
   }
 
-  void _exportReport() {
+  void _exportReport() async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Generando y descargando reporte de $_selectedPeriod...'),
+        content: Text('Generando y descargando reporte'),
         backgroundColor: const Color(0xFF05e265),
       ),
     );
+
+    // Llamar al servicio
+      final result = await ReportsService.downloadSalesExcel();
+
+      // Mostrar mensaje de éxito o error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message']),
+          backgroundColor: result['success'] ? Colors.green : Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentData = metricData[_selectedPeriod]!;
+    final currentData = metricData[_selectedPeriod] ?? {} ;
+
+    
 
     return Scaffold(
       appBar: AppBar(
@@ -211,20 +301,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   Expanded(
                     child: _MetricCard(
                       title: 'Ventas Totales',
-                      value: currentData['ventas']!,
+                      value: currentData['ventas'] ?? '\$0',
                       icon: Icons.trending_up,
                       color: const Color(0xFF05e265),
-                      change: currentData['ventas_change']!,
+                      change: currentData['ventas_change'] ?? '0%',
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: _MetricCard(
                       title: 'Órdenes',
-                      value: currentData['ordenes']!,
+                      value: currentData['ordenes'] ?? '0',
                       icon: Icons.receipt,
                       color: const Color(0xFF2196F3),
-                      change: currentData['ordenes_change']!,
+                      change: currentData['ordenes_change'] ?? '0%',
                     ),
                   ),
                 ],
@@ -234,21 +324,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 children: [
                   Expanded(
                     child: _MetricCard(
-                      title: 'Clientes Nuevos',
-                      value: currentData['clientes']!,
+                      title: 'Productos Vendidos',
+                      value: currentData['productos'] ?? '0',
                       icon: Icons.person_add,
                       color: const Color(0xFFFF9800),
-                      change: currentData['clientes_change']!,
+                      change: currentData['products_change'] ?? '0%',
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: _MetricCard(
                       title: 'Ticket Promedio',
-                      value: currentData['ticket']!,
+                      value: currentData['ticket'] ?? '\$0',
                       icon: Icons.attach_money,
                       color: const Color(0xFF9C27B0),
-                      change: currentData['ticket_change']!,
+                      change: currentData['ticket_change'] ?? '0%',
                     ),
                   ),
                 ],
@@ -289,7 +379,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            Expanded(child: _SalesChart()),
+                            Expanded(
+                              child: _SalesChart(currentData['salesWeek']  ?? []),
+                            ),
                           ],
                         ),
                       ),
@@ -316,7 +408,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            Expanded(child: _CategoryChart()),
+                            Expanded(child: _CategoryChart( categoryData: currentData['categoryCount'])),
                           ],
                         ),
                       ),
@@ -400,88 +492,165 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
+// class _SalesChart extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Column(
+//       mainAxisAlignment: MainAxisAlignment.end,
+//       children: [
+//         // Simple bar chart representation
+//         Row(
+//           mainAxisAlignment: MainAxisAlignment.spaceAround,
+//           crossAxisAlignment: CrossAxisAlignment.end,
+//           children: [
+//             _Bar(height: 0.6, label: 'Lun'),
+//             _Bar(height: 0.8, label: 'Mar'),
+//             _Bar(height: 0.4, label: 'Mie'),
+//             _Bar(height: 0.9, label: 'Jue'),
+//             _Bar(height: 0.7, label: 'Vie'),
+//             _Bar(height: 1.0, label: 'Sab'),
+//             _Bar(height: 0.5, label: 'Dom'),
+//           ],
+//         ),
+//       ],
+//     );
+//   }
+// }
+
+
+
 class _SalesChart extends StatelessWidget {
+  final List<Map<String, dynamic>> salesWeek;
+
+  const _SalesChart(this.salesWeek);
+
+  @override
+  Widget build(BuildContext context) {
+    if (salesWeek.isEmpty) {
+      return Center(
+        child: Text(
+          'No hay datos',
+          style: GoogleFonts.poppins(color: Colors.white70),
+        ),
+      );
+    }
+
+    // Calculamos el valor máximo para normalizar alturas
+    final maxTotal = salesWeek.map((e) => (e['total'] as num).toDouble()).fold<double>(
+          0,
+          (prev, element) => element > prev ? element : prev,
+        );
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: salesWeek.map((e) {
+        final double total = (e['total'] as num).toDouble();
+        final double heightFactor = maxTotal > 0 ? total / maxTotal : 0;
+        return _AnimatedBar(
+          heightFactor: heightFactor,
+          label: e['day'] ?? '',
+          color: const Color(0xFF05e265),
+        );
+      }).toList(),
+    );
+  }
+}
+
+
+class _AnimatedBar extends StatelessWidget {
+  final double heightFactor;
+  final String label;
+  final Color color;
+
+  const _AnimatedBar({
+    required this.heightFactor,
+    required this.label,
+    required this.color,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // Simple bar chart representation
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            _Bar(height: 0.6, label: 'Lun'),
-            _Bar(height: 0.8, label: 'Mar'),
-            _Bar(height: 0.4, label: 'Mie'),
-            _Bar(height: 0.9, label: 'Jue'),
-            _Bar(height: 0.7, label: 'Vie'),
-            _Bar(height: 1.0, label: 'Sab'),
-            _Bar(height: 0.5, label: 'Dom'),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _Bar extends StatelessWidget {
-  final double height;
-  final String label;
-
-  const _Bar({required this.height, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
+        // Animated container para altura
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
           width: 20,
-          height: 100 * height,
+          height: 100 * heightFactor,
           decoration: BoxDecoration(
-            color: const Color(0xFF05e265),
+            color: color,
             borderRadius: BorderRadius.circular(4),
           ),
         ),
         const SizedBox(height: 8),
+        // Label siempre debajo
         Text(
           label,
-          style: GoogleFonts.poppins(color: Colors.white70, fontSize: 10),
+          style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
         ),
       ],
     );
   }
 }
 
+
 class _CategoryChart extends StatelessWidget {
+  final Map<String, dynamic>? categoryData;
+
+  const _CategoryChart({this.categoryData});
+
   @override
   Widget build(BuildContext context) {
+    if (categoryData == null || categoryData!.isEmpty) {
+      return Center(
+        child: Text(
+          'No hay datos',
+          style: GoogleFonts.poppins(color: Colors.white70),
+        ),
+      );
+    }
+
+    // Convertimos el map en lista de pares y tomamos solo las 4 primeras
+    final List<MapEntry<String, dynamic>> topCategories = categoryData!.entries
+        .toList()
+        .take(4)
+        .toList();
+
+    // Calculamos el total para porcentajes
+    final total = topCategories.fold<double>(
+      0,
+      (prev, element) => prev + (element.value is num ? element.value.toDouble() : 0),
+    );
+
+    // Colores predefinidos para hasta 4 categorías
+    final List<Color> colors = [
+      const Color(0xFF05e265),
+      const Color(0xFF2196F3),
+      const Color(0xFFFF9800),
+      const Color(0xFF9C27B0),
+    ];
+
     return Column(
-      children: [
-        _CategoryItem(
-          name: 'Electrónicos',
-          percentage: 35,
-          color: const Color(0xFF05e265),
-        ),
-        const SizedBox(height: 12),
-        _CategoryItem(
-          name: 'Ropa',
-          percentage: 25,
-          color: const Color(0xFF2196F3),
-        ),
-        const SizedBox(height: 12),
-        _CategoryItem(
-          name: 'Alimentos',
-          percentage: 20,
-          color: const Color(0xFFFF9800),
-        ),
-        const SizedBox(height: 12),
-        _CategoryItem(
-          name: 'Otros',
-          percentage: 20,
-          color: const Color(0xFF9C27B0),
-        ),
-      ],
+      children: List.generate(topCategories.length, (index) {
+        final category = topCategories[index];
+        final double rawPercentage =
+            total > 0 ? (category.value is num ? category.value.toDouble() : 0) / total * 100 : 0;
+        final int percentage = rawPercentage.round(); // Convertimos a entero
+
+        return Column(
+          children: [
+            _CategoryItem(
+              name: category.key,
+              percentage: percentage.toDouble(),
+              color: colors[index],
+            ),
+            const SizedBox(height: 12),
+          ],
+        );
+      }),
     );
   }
 }
@@ -541,3 +710,4 @@ class _CategoryItem extends StatelessWidget {
     );
   }
 }
+

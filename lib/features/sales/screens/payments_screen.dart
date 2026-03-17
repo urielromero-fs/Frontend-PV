@@ -2238,31 +2238,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               if (snapshot.hasData && snapshot.data!['success'] == true) {
                 sales = snapshot.data!['data'] ?? [];
               }
-              // FORZA datos de prueba para que el usuario pueda ver el diseño
-              if (sales.isEmpty) {
-                sales = [
-                  {
-                    '_id': 'demo_ticket_123',
-                    'total': 150.50,
-                    'paymentMethod': 'Efectivo',
-                    'createdAt': DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String(),
-                    'products': [
-                      {'name': 'Coca Cola 600ml', 'quantity': 2},
-                      {'name': 'Sabritas Original', 'quantity': 1},
-                    ]
-                  },
-                  {
-                    '_id': 'demo_ticket_456',
-                    'total': 85.00,
-                    'paymentMethod': 'Transferencia',
-                    'createdAt': DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
-                    'products': [
-                      {'name': 'Pan dulce', 'quantity': 5},
-                      {'name': 'Leche 1L', 'quantity': 1},
-                    ]
-                  }
-                ];
-              }
+              
+              
+
+
               return ListView.separated(
                 itemCount: sales.length,
                 separatorBuilder: (context, index) => Divider(color: Colors.white.withOpacity(0.05)),
