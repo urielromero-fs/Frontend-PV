@@ -50,7 +50,7 @@ class CartItemWidget extends StatelessWidget {
                       : '${CurrencyFormatter.format(item.price)} c/u',
                   style: GoogleFonts.poppins(
                     color: Colors.white54,
-                    fontSize: 10,
+                    fontSize: 11, // Aumentado de 10 a 11
                   ),
                 ),
               ],
@@ -65,36 +65,42 @@ class CartItemWidget extends StatelessWidget {
                     onQuantityChanged(item.quantity - (item.isBulk ? 0.1 : 1)),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
                 child: Text(
                   quantityText,
                   style: GoogleFonts.poppins(
                     color: Colors.white,
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              QtyBtn(icon: Icons.add, onTap: () => onQuantityChanged(item.quantity + (item.isBulk ? 0.1 : 1))),
+              if (item.quantity < item.units)
+                QtyBtn(
+                  icon: Icons.add, 
+                  onTap: () => onQuantityChanged(item.quantity + (item.isBulk ? 0.1 : 1)),
+                )
+              else
+                const SizedBox(width: 22),
             ],
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           // Item Total
-          SizedBox(
-            width: 120, // Aumentado para 4-5 dígitos + comas
+          Expanded(
+            flex: 2,
             child: Text(
               CurrencyFormatter.format(item.price * item.quantity),
               textAlign: TextAlign.right,
               style: GoogleFonts.poppins(
                 color: const Color(0xFF05e265),
-                fontSize: 14,
+                fontSize: 16, // Aumentado de 13 a 16
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          const SizedBox(width: 16), // Separación del botón de eliminar
+          const SizedBox(width: 8), // Separación del botón de eliminar
           IconButton(
-            icon: Icon(Icons.close, color: Colors.red.withAlpha(150), size: 16),
+            icon: Icon(Icons.delete_outline, color: Colors.red.withAlpha(200), size: 20),
             onPressed: onRemove,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),

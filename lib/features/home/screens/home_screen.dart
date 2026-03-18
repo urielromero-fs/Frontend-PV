@@ -566,6 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: isMobile
           ? AppBar(
               backgroundColor: Colors.black,
+              iconTheme: const IconThemeData(color: Colors.white),
               elevation: 0,
               title: Row(
                 children: [
@@ -668,6 +669,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               _showSettingsModal();
                             },
                           ),
+                        _NavItem(
+                          icon: Icons.help_outline_rounded,
+                          title: 'Ayuda y Soporte',
+                          onTap: () {
+                            Navigator.pop(context);
+                            _showSupportModal();
+                          },
+                        ),
                       ],
                     ),
                   ),

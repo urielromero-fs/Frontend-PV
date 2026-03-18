@@ -556,11 +556,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
             if (_isRegisterOpen) ...[
-              const SizedBox(width: 16),
+              SizedBox(width: isMobile ? 8 : 16),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 8 : 12,
+                  vertical: isMobile ? 8 : 4,
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF05e265).withOpacity(0.2),
@@ -569,14 +569,16 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     color: const Color(0xFF05e265).withOpacity(0.5),
                   ),
                 ),
-                child: Text(
-                  'Caja Abierta',
-                  style: GoogleFonts.poppins(
-                    color: const Color(0xFF05e265),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: isMobile
+                    ? const Icon(Icons.point_of_sale, color: Color(0xFF05e265), size: 16)
+                    : Text(
+                        'Caja Abierta',
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFF05e265),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ],
           ],
@@ -594,52 +596,84 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           if (_isRegisterOpen)
             Padding(
               padding: EdgeInsets.only(right: isMobile ? 4.0 : 8.0),
-              child: ElevatedButton.icon(
-                onPressed: _showCloseRegisterDialog,
-                icon: const Icon(Icons.lock_outline, size: 16),
-                label: isMobile
-                    ? const Text('')
-                    : const Text('Cerrar Operación'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.withOpacity(0.2),
-                  foregroundColor: Colors.orange,
-                  elevation: 0,
-                  side: BorderSide(color: Colors.orange.withOpacity(0.5)),
-                  padding: isMobile ? const EdgeInsets.all(8) : null,
-                ),
-              ),
+              child: isMobile
+                  ? ElevatedButton(
+                      onPressed: _showCloseRegisterDialog,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange.withOpacity(0.2),
+                        foregroundColor: Colors.orange,
+                        elevation: 0,
+                        side: BorderSide(color: Colors.orange.withOpacity(0.5)),
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(36, 36),
+                      ),
+                      child: const Icon(Icons.lock_outline, size: 18),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: _showCloseRegisterDialog,
+                      icon: const Icon(Icons.lock_outline, size: 16),
+                      label: const Text('Cerrar Operación'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange.withOpacity(0.2),
+                        foregroundColor: Colors.orange,
+                        elevation: 0,
+                        side: BorderSide(color: Colors.orange.withOpacity(0.5)),
+                      ),
+                    ),
             ),
           Padding(
             padding: EdgeInsets.only(right: isMobile ? 4.0 : 8.0),
-            child: ElevatedButton.icon(
-              onPressed: _showSalesHistoryDialog,
-              icon: const Icon(Icons.history, size: 16),
-              label: isMobile ? const Text('') : const Text('Historial'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.withOpacity(0.2),
-                foregroundColor: Colors.blueAccent,
-                elevation: 0,
-                side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
-                padding: isMobile ? const EdgeInsets.all(8) : null,
-              ),
-            ),
+            child: isMobile
+                ? ElevatedButton(
+                    onPressed: _showSalesHistoryDialog,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.withOpacity(0.2),
+                      foregroundColor: Colors.blueAccent,
+                      elevation: 0,
+                      side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(36, 36),
+                    ),
+                    child: const Icon(Icons.history, size: 18),
+                  )
+                : ElevatedButton.icon(
+                    onPressed: _showSalesHistoryDialog,
+                    icon: const Icon(Icons.history, size: 16),
+                    label: const Text('Historial'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.withOpacity(0.2),
+                      foregroundColor: Colors.blueAccent,
+                      elevation: 0,
+                      side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
+                    ),
+                  ),
           ),
           Padding(
             padding: EdgeInsets.only(right: isMobile ? 8.0 : 16.0),
-            child: ElevatedButton.icon(
-              onPressed: _showWithdrawalDialog,
-              icon: const Icon(Icons.money_off, size: 16),
-              label: isMobile
-                  ? const Text('')
-                  : const Text('Salida de efectivo'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.withOpacity(0.2),
-                foregroundColor: Colors.redAccent,
-                elevation: 0,
-                side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
-                padding: isMobile ? const EdgeInsets.all(8) : null,
-              ),
-            ),
+            child: isMobile
+                ? ElevatedButton(
+                    onPressed: _showWithdrawalDialog,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.withOpacity(0.2),
+                      foregroundColor: Colors.redAccent,
+                      elevation: 0,
+                      side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(36, 36),
+                    ),
+                    child: const Icon(Icons.money_off, size: 18),
+                  )
+                : ElevatedButton.icon(
+                    onPressed: _showWithdrawalDialog,
+                    icon: const Icon(Icons.money_off, size: 16),
+                    label: const Text('Salida de efectivo'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.withOpacity(0.2),
+                      foregroundColor: Colors.redAccent,
+                      elevation: 0,
+                      side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -708,7 +742,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             // Products Grid
             Expanded(
               child: ListView.separated(
-                padding: const EdgeInsets.only(bottom: 80),
+                padding: const EdgeInsets.only(bottom: 120),
                 itemCount: filteredProducts.length,
                 separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
@@ -1329,7 +1363,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           builder: (context, setModalState) {
              _currentModalSetState = setModalState;
             return Container(
-              height: MediaQuery.of(context).size.height * 0.8,
+              height: MediaQuery.of(context).size.height * 0.9,
               decoration: const BoxDecoration(
                 color: Color(0xFF1a1a1a),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -1362,12 +1396,28 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: Colors.white70,
-                                ),
-                                onPressed: () => Navigator.pop(context),
+                              Row(
+                                children: [
+                                  if (currentTicket.items.isNotEmpty)
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        setModalState(() {
+                                          currentTicket.items.clear();
+                                          _calculateTotals();
+                                        });
+                                        setState(() {});
+                                      },
+                                      icon: const Icon(Icons.delete_sweep, color: Colors.redAccent, size: 20),
+                                      label: Text('Vaciar', style: GoogleFonts.poppins(color: Colors.redAccent)),
+                                    ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.close,
+                                      color: Colors.white70,
+                                    ),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -2195,36 +2245,41 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: 100, // Increased from 85 to 100
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF05e265).withOpacity(0.2) : Colors.white.withAlpha(13),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isActive ? const Color(0xFF05e265) : Colors.white.withAlpha(26),
-            width: 2,
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+          decoration: BoxDecoration(
+            color: isActive ? const Color(0xFF05e265).withOpacity(0.2) : Colors.white.withAlpha(13),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isActive ? const Color(0xFF05e265) : Colors.white.withAlpha(26),
+              width: 2,
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isActive ? const Color(0xFF05e265) : Colors.white70,
-              size: 28, // Increased from 24
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                color: isActive ? Colors.white : Colors.white70,
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: isActive ? const Color(0xFF05e265) : Colors.white70,
+                size: 24, // reduced slightly to fit smaller screens
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    color: isActive ? Colors.white : Colors.white70,
+                    fontSize: 12,
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

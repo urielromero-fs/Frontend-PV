@@ -192,45 +192,93 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
               const SizedBox(height: 24),
               // Stats dinámicos
-              Row(
-                children: [
-                  Expanded(
-                    child: StatCard(
-                      title: 'Total Productos',
-                      value: allProducts.length.toString(),
-                      icon: Icons.inventory,
-                      color: const Color(0xFF05e265),
+              if (isMobile)
+                Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: StatCard(
+                            title: 'Total Productos',
+                            value: allProducts.length.toString(),
+                            icon: Icons.inventory,
+                            color: const Color(0xFF05e265),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: StatCard(
+                            title: 'Bajo Stock',
+                            value: allProducts
+                                .where((p) => (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0)
+                                .length
+                                .toString(),
+                            icon: Icons.warning,
+                            color: const Color(0xFFFF9800),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 24), // Increased from 16
-                  Expanded(
-                    child: StatCard(
-                      title: 'Bajo Stock',
-                      value: allProducts
-                          .where(
-                            (p) =>
-                                (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0,
-                          )
-                          .length
-                          .toString(),
-                      icon: Icons.warning,
-                      color: const Color(0xFFFF9800),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: StatCard(
+                            title: 'Sin Stock',
+                            value: allProducts
+                                .where((p) => (p['units'] ?? 0) == 0)
+                                .length
+                                .toString(),
+                            icon: Icons.error,
+                            color: const Color(0xFFE91E63),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(child: SizedBox()), // Placeholder to keep proportions
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 24), // Increased from 16
-                  Expanded(
-                    child: StatCard(
-                      title: 'Sin Stock',
-                      value: allProducts
-                          .where((p) => (p['units'] ?? 0) == 0)
-                          .length
-                          .toString(),
-                      icon: Icons.error,
-                      color: const Color(0xFFE91E63),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: StatCard(
+                        title: 'Total Productos',
+                        value: allProducts.length.toString(),
+                        icon: Icons.inventory,
+                        color: const Color(0xFF05e265),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: StatCard(
+                        title: 'Bajo Stock',
+                        value: allProducts
+                            .where(
+                              (p) =>
+                                  (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0,
+                            )
+                            .length
+                            .toString(),
+                        icon: Icons.warning,
+                        color: const Color(0xFFFF9800),
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: StatCard(
+                        title: 'Sin Stock',
+                        value: allProducts
+                            .where((p) => (p['units'] ?? 0) == 0)
+                            .length
+                            .toString(),
+                        icon: Icons.error,
+                        color: const Color(0xFFE91E63),
+                      ),
+                    ),
+                  ],
+                ),
               const SizedBox(height: 24),
               // Tabla de productos
               Expanded(
