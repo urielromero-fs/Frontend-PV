@@ -518,7 +518,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           if (event.logicalKey == LogicalKeyboardKey.f12) {
             if (currentTicket.items.isNotEmpty) {
               if (currentTicket.amountTendered == null) {
-                _showPaymentDialog();
+                _showPaymentDialog().then((success) {
+                  if (success == true) _processSale();
+                });
               } else {
                 _processSale();
               }
@@ -931,7 +933,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Carrito',
+                            currentTicket.items.isEmpty 
+                                ? 'Carrito'
+                                : 'Carrito (${currentTicket.items.fold<double>(0.0, (sum, item) => sum + (item.isBulk ? 1.0 : item.quantity)).toInt()} art.)',
                             style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontSize: 20,
@@ -1241,7 +1245,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                     : () {
                                         if (currentTicket.amountTendered ==
                                             null) {
-                                          _showPaymentDialog();
+                                          _showPaymentDialog().then((success) {
+                                            if (success == true) _processSale();
+                                          });
                                         } else {
                                           _processSale();
                                         }
@@ -1389,7 +1395,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Carrito',
+                                currentTicket.items.isEmpty 
+                                    ? 'Carrito'
+                                    : 'Carrito (${currentTicket.items.fold<double>(0.0, (sum, item) => sum + (item.isBulk ? 1.0 : item.quantity)).toInt()} art.)',
                                 style: GoogleFonts.poppins(
                                   color: Colors.white,
                                   fontSize: 20,
@@ -1806,7 +1814,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                 null) {
                                               _showPaymentDialog(
                                                 setModalState: setModalState,
-                                              );
+                                              ).then((success) {
+                                                if (success == true) {
+                                                  _processSale();
+                                                  Navigator.pop(context);
+                                                }
+                                              });
                                             } else {
                                               _processSale();
                                               Navigator.pop(context);
@@ -2075,6 +2088,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       0.0,
       (sum, item) => sum + (item.price * item.quantity),
     );
+
+    if (currentTicket.items.isEmpty) {
+      currentTicket.discount = 0.0;
+      currentTicket.amountTendered = null;
+      currentTicket.paymentMethod = 'Efectivo';
+    }
+
     currentTicket.total = currentTicket.subtotal - currentTicket.discount;
     if (currentTicket.total < 0) currentTicket.total = 0.0;
     if (currentTicket.amountTendered != null &&
@@ -2082,7 +2102,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       currentTicket.amountTendered = null;
     }
   }
-  Future<void> _showPaymentDialog({StateSetter? setModalState}) async {
+  Future<bool?> _showPaymentDialog({StateSetter? setModalState}) async {
     final amountController = TextEditingController();
     String localPaymentMethod = currentTicket.paymentMethod;
     await showDialog(
@@ -2181,7 +2201,16 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         currentTicket.amountTendered = amount;
                         currentTicket.paymentMethod = localPaymentMethod;
                       });
-                      Navigator.pop(context);
+                      Navigator.pop(context, true);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'El monto recibido debe ser mayor o igual al total',
+                          ),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
                     }
                   },
                 ),
@@ -2198,7 +2227,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               ElevatedButton(
                 onPressed: () {
                   final double amount =
-                      double.tryParse(amountController.text) ?? 0.0;
+                      double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
                   if (amount >= currentTicket.total) {
                     if (setModalState != null) {
                       setModalState(() {
@@ -2210,7 +2239,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       currentTicket.amountTendered = amount;
                       currentTicket.paymentMethod = localPaymentMethod;
                     });
-                    Navigator.pop(context);
+                    Navigator.pop(context, true);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
