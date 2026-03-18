@@ -39,6 +39,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     if(result['success']){
 
+    
+
 
       final data = result['data'];
       final actualReport = data['actualReport'] ?? {};
@@ -202,7 +204,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget build(BuildContext context) {
     final currentData = metricData[_selectedPeriod] ?? {} ;
 
-    
+   
 
     return Scaffold(
       appBar: AppBar(
@@ -326,7 +328,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     child: _MetricCard(
                       title: 'Productos Vendidos',
                       value: currentData['productos'] ?? '0',
-                      icon: Icons.person_add,
+                      icon: Icons.inventory,
                       color: const Color(0xFFFF9800),
                       change: currentData['products_change'] ?? '0%',
                     ),
@@ -379,7 +381,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
+                            
                             Expanded(
+                              
                               child: _SalesChart(currentData['salesWeek']  ?? []),
                             ),
                           ],
@@ -526,6 +530,8 @@ class _SalesChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+   
     if (salesWeek.isEmpty) {
       return Center(
         child: Text(
