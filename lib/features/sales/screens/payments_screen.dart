@@ -28,6 +28,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   late TabController _tabController;
   List<Ticket> _tickets = [];
   final TextEditingController searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  String _barcodeBuffer = '';
+  DateTime? _lastKeyPress;
   //Filtro
   String searchQuery = '';
   String selectedCategoryFilter = 'Todas';
@@ -489,7 +492,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   }
   @override
   void dispose() {
+    searchController.dispose();
     _tabController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
   Ticket get currentTicket => _tickets[_tabController.index];
@@ -509,12 +514,35 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       focusNode: FocusNode(),
       autofocus: true,
       onKeyEvent: (event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.f12) {
-          if (currentTicket.items.isNotEmpty) {
-            if (currentTicket.amountTendered == null) {
-              _showPaymentDialog();
-            } else {
-              _processSale();
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.f12) {
+            if (currentTicket.items.isNotEmpty) {
+              if (currentTicket.amountTendered == null) {
+                _showPaymentDialog();
+              } else {
+                _processSale();
+              }
+            }
+          } else {
+            // Lógica para capturar ráfagas rápidas de caracteres (Escáner de código de barras)
+            final now = DateTime.now();
+            if (_lastKeyPress != null && now.difference(_lastKeyPress!).inMilliseconds > 200) {
+              _barcodeBuffer = ''; // Reiniciar si ha pasado mucho tiempo entre teclas (ej. escribiendo manual)
+            }
+            _lastKeyPress = now;
+            
+            if (event.logicalKey == LogicalKeyboardKey.enter) {
+              if (_barcodeBuffer.isNotEmpty) {
+                final scannedCode = _barcodeBuffer;
+                _barcodeBuffer = '';
+                // Si el input de búsqueda ya está enfocado, él mismo manejará el 'enter'.
+                // Evitamos agregarlo doble.
+                if (!_searchFocusNode.hasFocus) {
+                  _onSearchSubmitted(scannedCode);
+                }
+              }
+            } else if (event.character != null) {
+              _barcodeBuffer += event.character!;
             }
           }
         }
@@ -649,6 +677,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       border: Border.all(color: Colors.white.withAlpha(26)),
                     ),
                     child: TextField(
+                      focusNode: _searchFocusNode,
                       controller: searchController,
                       onChanged: (value) {
                         setState(() {
@@ -732,6 +761,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                           border: Border.all(color: Colors.white.withAlpha(26)),
                         ),
                         child: TextField(
+                          focusNode: _searchFocusNode,
                           controller: searchController,
                           onChanged: (value) {
                             setState(() {
