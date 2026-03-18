@@ -2247,7 +2247,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 separatorBuilder: (context, index) => Divider(color: Colors.white.withOpacity(0.05)),
                 itemBuilder: (context, index) {
                   final sale = sales[index];
-                  final DateTime date = DateTime.parse(sale['createdAt']);
+                  final DateTime date = DateTime.parse(sale['date']);
                   final double total = (sale['total'] as num).toDouble();
                   final String paymentMethod = sale['paymentMethod'] ?? 'Efectivo';
                   final String saleId = sale['_id'];
@@ -2255,7 +2255,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   final String itemsSummary = items.isNotEmpty 
                       ? items.take(2).map((i) => i['productId']['name']).join(', ') + (items.length > 2 ? '...' : '')
                       : 'Sin detalles';
-                  print(items); 
+               
                   return Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(12),

@@ -11,6 +11,7 @@ class SaleService {
     try {
 
       DateTime ahora = DateTime.now();
+
       final response = await ApiHelper.request(
         method: 'POST',
         path: '/sale',
@@ -18,7 +19,7 @@ class SaleService {
           'products': products,
           if (paymentMethod != null) 'paymentMethod': paymentMethod,
           if (discount != null) 'discount': discount,
-          'date': ahora
+          'date': ahora.toString()
         },
       );
 
