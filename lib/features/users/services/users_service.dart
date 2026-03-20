@@ -200,6 +200,45 @@ class UsersService {
 
   }
       
+  // Update user
+  static Future<Map<String, dynamic>> inactivateUser({
+    required String id,
+  }) async {
+
+  
+
+    try {
+      final response = await ApiHelper.request(
+        method: 'GET',
+        path: '/users/inactivate/$id'
+      ); 
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Usuario eliminado',
+          'data': responseData,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor (${response.statusCode})',
+        };
+      }
+
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+
+  }
+
+
+    
 
 
 

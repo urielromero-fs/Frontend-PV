@@ -328,13 +328,16 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
           ElevatedButton(
               onPressed: () async {
-                final result = await UsersService.deleteUser(id: id);
+                final result = await UsersService.inactivateUser(id: id);
 
                 if(result['success']){
-                  setState(() {
-                    users.removeWhere((u) => u['id'] == id);
-                    _onSearchChanged();
-                  });
+                  // setState(() {
+                  //   users.removeWhere((u) => u['id'] == id);
+                  //   _onSearchChanged();
+                  // });
+
+                  print(result); 
+                  await _loadUsers();
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -686,6 +689,9 @@ class _UserRow extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onSendPassword; 
 
+  
+  
+
   const _UserRow({
     required this.name,
     required this.email,
@@ -699,7 +705,6 @@ class _UserRow extends StatelessWidget {
   });
 
 
-  
 
 
 
@@ -707,6 +712,7 @@ class _UserRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color statusColor = status == 'Inactivo' ? const Color(0xFFE91E63) : const Color(0xFF05e265);
+    final bool isInactive = status == 'Inactivo';
 
     final actionsMenu = PopupMenuButton<String>(
       color: const Color(0xFF1a1a1a),
@@ -776,6 +782,15 @@ class _UserRow extends StatelessWidget {
       ),
     );
 
+    final Widget actionsMenuDisabled = Opacity(
+      opacity: isInactive ? 0.4 : 1,
+      child: IgnorePointer(
+        ignoring: isInactive,
+        child: actionsMenu,
+      ),
+    );
+
+
     if (isMobile) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -828,7 +843,7 @@ class _UserRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                actionsMenu,
+                 actionsMenuDisabled,
               ],
             ),
             const SizedBox(height: 12),
@@ -956,7 +971,7 @@ class _UserRow extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(child: Center(child: actionsMenu)),
+          Expanded(child: Center(child: actionsMenuDisabled)),
         ],
       ),
     );

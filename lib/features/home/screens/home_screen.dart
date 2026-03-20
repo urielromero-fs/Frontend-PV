@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Carga inicial de productos
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<ProductProvider>(context, listen: false); 
-          //print(provider.allProducts);
+         
       if (provider.allProducts.isEmpty) {
           provider.fetchInitialProducts();    
       }
@@ -438,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
    final porcentageStock = products.isNotEmpty
     ? ((productsEnStock.length * 100) / products.length).round()
     : 0;
-    print(metricData);
+
 
     Widget buildSidebar() {
       return Container(
