@@ -62,11 +62,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-    // final provider = Provider.of<ProductProvider>(context, listen: false);
-    // if (provider.allProducts.isEmpty) {
-    //   //provider.fetchProducts();
-    //   provider.fetchInitialProducts(); 
-    // }
+
     _loadUserRole();
   }
   Future<void> _loadUserRole() async {

@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(
             create: (_) {
               final provider = ProductProvider();
-              provider.fetchInitialProducts(); 
+              //provider.fetchInitialProducts(); 
               return provider;
             }
           )

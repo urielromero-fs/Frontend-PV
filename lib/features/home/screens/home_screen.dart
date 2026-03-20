@@ -9,6 +9,7 @@ import 'package:pv26/features/users/screens/users_screen.dart';
 import 'package:pv26/features/auth/services/auth_service.dart';
 import 'package:pv26/features/inventory/providers/product_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../reports/services/reports_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool get _isAdmin => _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'administrador';
   bool get _isCajero => _userRole.toLowerCase() == 'seller' || _userRole.toLowerCase() == 'cajero';
 
+   Map<String, dynamic> metricData = {};
 
   @override
   void initState() {
@@ -34,11 +36,84 @@ class _HomeScreenState extends State<HomeScreen> {
       // Carga inicial de productos
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<ProductProvider>(context, listen: false); 
+          //print(provider.allProducts);
       if (provider.allProducts.isEmpty) {
-        provider.fetchInitialProducts();
+          provider.fetchInitialProducts();    
       }
+      
     });
+
+    _loadMetrics(); 
   }
+
+
+   
+
+
+  
+  
+  
+  Future<void> _loadMetrics() async{
+
+
+    final result = await ReportsService.getReport(period: 'day');
+
+
+    if(result['success']){
+
+      final data = result['data'];
+      final actualReport = data['actualReport'] ?? {};
+      final growth = data['growth'] ?? {};
+
+      String formatCurrency(dynamic value) {
+        if (value == null) return '\$0';
+        final num number = value is num ? value : num.tryParse(value.toString()) ?? 0;
+        return '\$${number.round()}';
+      }
+
+      String formatNumber(dynamic value) {
+        if (value == null) return '0';
+        final num number = value is num ? value : num.tryParse(value.toString()) ?? 0;
+        return number.round().toString();
+      }
+
+      String formatChange(dynamic value) {
+        if (value == null) return '0%';
+        final num number = value is num ? value : num.tryParse(value.toString()) ?? 0;
+        final int rounded = number.round();
+
+        return rounded >= 0 ? '+$rounded%' : '$rounded%';
+      }
+
+
+      Map<String, dynamic> mappedData = {
+        'ventas': formatCurrency(actualReport['totalSales']),
+        'productos': formatNumber(actualReport['productsSold']),
+        'ventas_change': formatChange(growth['salesGrowth']),
+        'products_change': formatChange(growth['productsGrowth'] ?? 0),
+     
+      };
+
+
+        setState(() {
+          metricData = mappedData;
+        });
+
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Error al cargar datos'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+
+
+
+
+
+  }
+
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -349,6 +424,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
     final sidebarWidth = _isSidebarCollapsed ? 80.0 : 280.0;
+
+    final provider = Provider.of<ProductProvider>(context); // listen: true por defecto
+    final products = provider.allProducts; // List<dynamic> o List<Object>
+
+
+    
+
+    final productsEnStock = products
+        .where((producto) => (producto as Map<String, dynamic>)['units'] > 5)
+        .toList();
+
+   final porcentageStock = products.isNotEmpty
+    ? ((productsEnStock.length * 100) / products.length).round()
+    : 0;
+    print(metricData);
 
     Widget buildSidebar() {
       return Container(
@@ -740,24 +830,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   _StatCard(
                                     title: 'Ventas del Día',
-                                    value: r'$ 12,450',
+                                    value: (metricData['ventas'] ?? 0).toString(),
                                     icon: Icons.trending_up_rounded,
                                     color: const Color(0xFF05e265),
-                                    change: '+12.5%',
+                                    change: (metricData['ventas_change'] ?? 0).toString(),
                                   ),
                                   _StatCard(
                                     title: 'Productos en Stock',
-                                    value: '1,248',
+                                    value: productsEnStock.length.toString(),
                                     icon: Icons.inventory_2_rounded,
                                     color: const Color(0xFF2196F3),
-                                    change: '+5 hoy',
+                                    change: '%' + porcentageStock.toString(),
                                   ),
                                   _StatCard(
-                                    title: 'Clientes Nuevos',
-                                    value: '24',
+                                    title: 'Productos Vendidos',
+                                    value:  (metricData['productos'] ?? 0).toString(),
                                     icon: Icons.people_alt_rounded,
                                     color: const Color(0xFFFF9800),
-                                    change: '+15%',
+                                    change: (metricData['products_change'] ?? 0).toString(),
                                   ),
                                 ],
                               );
