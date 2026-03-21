@@ -200,7 +200,7 @@ class UsersService {
 
   }
       
-  // Update user
+  //inactivate user
   static Future<Map<String, dynamic>> inactivateUser({
     required String id,
   }) async {
@@ -236,6 +236,57 @@ class UsersService {
     }
 
   }
+
+
+
+  // Update Admin 
+  static Future<Map<String, dynamic>> updateAdminUser({
+    String? name,
+    String? email, 
+    String? password,
+  }) async {
+
+
+
+    try {
+      final response = await ApiHelper.request(
+        method: 'PUT',
+        path: '/users/updateCompanyAdmin',
+        body: {
+          if (name != null) 'name': name,
+          if (email != null) 'email': email,
+          if (password != null) 'password': password,
+        }
+      ); 
+
+
+
+      if (response.statusCode == 200) {
+
+
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Usuario admin actualizado exitosamente',
+          'data': responseData,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor (${response.statusCode})',
+        };
+      }
+
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+
+  }
+
 
 
     
