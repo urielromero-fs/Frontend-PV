@@ -152,15 +152,14 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                             const SizedBox(height: 24),
 
-                            Text(
-                              'Centli 🌿',
-                              style: GoogleFonts.poppins(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                            // Logo
+                            Center(                
+                              child: Image.asset(                   
+                                'assets/images/logo.png',
+                                height: 50,
+                                fit: BoxFit.contain,
                               ),
                             ),
-                            const SizedBox(height: 8),
 
                             Text(
                               'Inicia sesión para continuar',

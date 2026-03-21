@@ -855,26 +855,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   SliverPadding(
                     padding: EdgeInsets.all(isMobile ? 20 : 40),
                     sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        // Welcome Header
-                        Text(
-                          '¡Hola, $_userName!',
-                          style: GoogleFonts.outfit(
-                            fontSize: isMobile ? 28 : 40,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Bienvenido de nuevo a Centli ',
-                          style: GoogleFonts.outfit(
-                            color: Colors.white54,
-                            fontSize: isMobile ? 14 : 18,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
+                     delegate: SliverChildListDelegate([
+                        // Logo 
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                             Center(
+                                child: Container(
+                                  width: isMobile ? 260 : 580,
+                                  height: isMobile ? 60 : 80,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  child: Image.asset(
+                                    'assets/images/logo.png', 
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
 
+                            // Saludo
+                            Text(
+                              '¡Hola, $_userName!',
+                              style: GoogleFonts.outfit(
+                                fontSize: isMobile ? 28 : 40,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Bienvenido de nuevo a Centli',
+                              style: GoogleFonts.outfit(
+                                color: Colors.white54,
+                                fontSize: isMobile ? 14 : 18,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                          ],
+                        ),
                         if (_isAdmin) ...[
                           // Quick Stats Grid
                           LayoutBuilder(

@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
         ],
 
       child: MaterialApp(
-        title: 'Punto de Venta',
+        title: 'Centli',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
