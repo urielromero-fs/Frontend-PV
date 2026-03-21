@@ -214,6 +214,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         ),
         actions: [
           TextButton(
+            autofocus: true,
             onPressed: () => Navigator.pop(context),
             child: const Text(
               'Aceptar',
@@ -1867,7 +1868,67 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
-          return AlertDialog(
+
+          Future<void> saveStock() async {
+            if (isSaving) return;
+            final String val = stockController.text.trim();
+            if (val.isEmpty) return;
+            final double addUnits = double.tryParse(val) ?? 0;
+            if (addUnits <= 0) return;
+
+            setModalState(() => isSaving = true);
+            final double currentUnits = double.tryParse(product['units']?.toString() ?? '0') ?? 0;
+            final double newUnits = currentUnits + addUnits;
+
+            final result = await InventoryService.updateProduct(
+              id: product['_id'],
+              name: product['name'],
+              barcode: product['barcode'] ?? 'N/A',
+              isBulk: product['isBulk'] ?? false,
+              weight: (product['weight'] ?? 0.0).toDouble(),
+              category: product['category'] ?? 'Sin categoría',
+              units: product['isBulk'] == true ? newUnits.toDouble() : newUnits.toDouble(),
+              buyingPrice: (product['buyingPrice'] ?? 0.0).toDouble(),
+              sellingPrice: (product['sellingPrice'] ?? 0.0).toDouble(),
+              bulkPrice: (product['bulkPrice'] ?? 0.0).toDouble(),
+              hasWholesalePrice: product['hasWholesalePrice'] ?? false,
+              wholesalePrice: (product['wholesalePrice'] ?? 0.0).toDouble(),
+              wholesaleMinUnits: (product['wholesaleMinUnits'] ?? 0) as int,
+            );
+
+            if (result['success'] == true) {
+              if (mounted) {
+                await Provider.of<ProductProvider>(context, listen: false).fetchProducts();
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Stock actualizado correctamente'),
+                    backgroundColor: Color(0xFF05e265),
+                  ),
+                );
+              }
+            } else {
+              if (mounted) {
+                setModalState(() => isSaving = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(result['message'] ?? 'Error al actualizar'),
+                  ),
+                );
+              }
+            }
+          }
+
+          return Focus(
+            autofocus: false,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+                saveStock();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: AlertDialog(
             backgroundColor: const Color(0xFF1a1a1a),
             title: Text(
               'Agregar Stock',
@@ -1897,6 +1958,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   controller: stockController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   autofocus: true,
+                  onSubmitted: (_) => saveStock(),
                   style: GoogleFonts.poppins(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Cantidad a agregar',
@@ -1922,65 +1984,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 ),
               ),
               ElevatedButton(
-                onPressed: isSaving
-                    ? null
-                    : () async {
-                        final String val = stockController.text.trim();
-                        if (val.isEmpty) return;
-                        final double addUnits = double.tryParse(val) ?? 0;
-                        if (addUnits <= 0) return;
-                        setModalState(() => isSaving = true);
-                        final double currentUnits =
-                            double.tryParse(product['units']?.toString() ?? '0') ??
-                            0;
-                        final double newUnits = currentUnits + addUnits;
-                        final result = await InventoryService.updateProduct(
-                          id: product['_id'],
-                          name: product['name'],
-                          barcode: product['barcode'] ?? 'N/A',
-                          isBulk: product['isBulk'] ?? false,
-                          weight: (product['weight'] ?? 0.0).toDouble(),
-                          category: product['category'] ?? 'Sin categoría',
-                          units: product['isBulk'] == true ? newUnits.toDouble() : newUnits.toDouble(), // API expects int for units often, but let's send what it needs
-                          buyingPrice:
-                              (product['buyingPrice'] ?? 0.0).toDouble(),
-                          sellingPrice:
-                              (product['sellingPrice'] ?? 0.0).toDouble(),
-                          bulkPrice: (product['bulkPrice'] ?? 0.0).toDouble(),
-                          hasWholesalePrice:
-                              product['hasWholesalePrice'] ?? false,
-                          wholesalePrice:
-                              (product['wholesalePrice'] ?? 0.0).toDouble(),
-                          wholesaleMinUnits:
-                              (product['wholesaleMinUnits'] ?? 0) as int,
-                        );
-                        if (result['success'] == true) {
-                          if (mounted) {
-                            await Provider.of<ProductProvider>(
-                              context,
-                              listen: false,
-                            ).fetchProducts();
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Stock actualizado correctamente'),
-                                backgroundColor: Color(0xFF05e265),
-                              ),
-                            );
-                          }
-                        } else {
-                          if (mounted) {
-                            setModalState(() => isSaving = false);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  result['message'] ?? 'Error al actualizar',
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                      },
+                onPressed: isSaving ? null : saveStock,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF05e265),
                   foregroundColor: Colors.black,
@@ -2000,7 +2004,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       ),
               ),
             ],
-          );
+          ));
         },
       ),
     );
@@ -2109,10 +2113,41 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return AlertDialog(
-            backgroundColor: const Color(0xFF1a1a1a),
-            title: Text(
-              'Cobrar - ${_f(currentTicket.total)}',
+          return Focus(
+            autofocus: true,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.f12) {
+                final parsedAmount = double.tryParse(amountController.text.replaceAll(",", ""));
+                final double amount = parsedAmount ?? currentTicket.total;
+                
+                if (amount >= currentTicket.total) {
+                  if (setModalState != null) {
+                    setModalState(() {
+                      currentTicket.amountTendered = amount;
+                      currentTicket.paymentMethod = localPaymentMethod;
+                    });
+                  }
+                  setState(() {
+                    currentTicket.amountTendered = amount;
+                    currentTicket.paymentMethod = localPaymentMethod;
+                  });
+                  Navigator.pop(context, true);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('El monto recibido debe ser mayor o igual al total'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: AlertDialog(
+              backgroundColor: const Color(0xFF1a1a1a),
+              title: Text(
+                'Cobrar - ${_f(currentTicket.total)}',
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -2165,6 +2200,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  autofocus: true,
                   controller: amountController,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -2189,7 +2225,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     ),
                   ),
                   onSubmitted: (_) {
-                    final double amount = double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
+                    final parsedAmount = double.tryParse(amountController.text.replaceAll(",", ""));
+                    final double amount = parsedAmount ?? currentTicket.total;
                     if (amount >= currentTicket.total) {
                       if (setModalState != null) {
                         setModalState(() {
@@ -2226,8 +2263,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               ),
               ElevatedButton(
                 onPressed: () {
-                  final double amount =
-                      double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
+                  final parsedAmount = double.tryParse(amountController.text.replaceAll(",", ""));
+                  final double amount = parsedAmount ?? currentTicket.total;
                   if (amount >= currentTicket.total) {
                     if (setModalState != null) {
                       setModalState(() {
@@ -2263,7 +2300,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 ),
               ),
             ],
-          );
+          ));
         }
       ),
     );
@@ -2360,14 +2397,25 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 itemCount: sales.length,
                 separatorBuilder: (context, index) => Divider(color: Colors.white.withOpacity(0.05)),
                 itemBuilder: (context, index) {
-                  final sale = sales[index];
-                  final DateTime date = DateTime.parse(sale['date']);
-                  final double total = (sale['total'] as num).toDouble();
-                  final String paymentMethod = sale['paymentMethod'] ?? 'Efectivo';
-                  final String saleId = sale['_id'];
-                  final List items = sale['products'] ?? [];
+                  final sale = sales[index] ?? {};
+                  final DateTime date = sale['date'] != null
+                      ? (DateTime.tryParse(sale['date'].toString()) ?? DateTime.now())
+                      : DateTime.now();
+                  final double total = sale['total'] != null
+                      ? (sale['total'] is num ? (sale['total'] as num).toDouble() : double.tryParse(sale['total'].toString()) ?? 0.0)
+                      : 0.0;
+                  final String paymentMethod = sale['paymentMethod']?.toString() ?? 'Efectivo';
+                  final String saleId = sale['_id']?.toString() ?? '000000';
+                  final String shortId = saleId.length >= 6 ? saleId.substring(saleId.length - 6).toUpperCase() : saleId;
+                  
+                  final List items = sale['products'] is List ? sale['products'] as List : [];
                   final String itemsSummary = items.isNotEmpty 
-                      ? items.take(2).map((i) => i['productId']['name']).join(', ') + (items.length > 2 ? '...' : '')
+                      ? items.take(2).map((i) {
+                          if (i is Map && i['productId'] is Map && i['productId']['name'] != null) {
+                            return i['productId']['name'].toString();
+                          }
+                          return 'Producto';
+                        }).join(', ') + (items.length > 2 ? '...' : '')
                       : 'Sin detalles';
                
                   return Container(
@@ -2394,7 +2442,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Venta #${saleId.substring(saleId.length - 6).toUpperCase()}',
+                                'Venta #$shortId',
                                 style: GoogleFonts.poppins(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
@@ -2658,10 +2706,93 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   Future<void> _showWithdrawalDialog() async {
     final amountController = TextEditingController();
     final reasonController = TextEditingController();
+    
+    bool isWithdrawing = false;
+
+    Future<void> submitWithdrawal() async {
+      if (isWithdrawing) return;
+      
+      final double amount = double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
+      final String reason = reasonController.text.trim();
+
+      if (amount <= 0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ingresa un monto válido'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (reason.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ingresa un motivo'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      isWithdrawing = true;
+      
+      // Mostrar loader mientras se hace la petición
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final response = await WithdrawalService.createWithdrawal(
+        amount: amount,
+        reason: reason,
+      );
+
+      if (mounted) {
+        Navigator.pop(context); // cerrar loader
+        if (response['success'] == true) {
+          setState(() {
+            _totalWithdrawals += amount;
+          });
+          Navigator.pop(context); // cerrar dialog principal
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Retiro registrado correctamente'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        } else {
+          isWithdrawing = false;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Error inesperado'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+      builder: (context) => Focus(
+        autofocus: false,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+            submitWithdrawal();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF1a1a1a),
         title: Text(
           'Salida de Efectivo',
           style: GoogleFonts.poppins(
@@ -2674,6 +2805,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           children: [
             TextField(
               controller: amountController,
+              autofocus: true,
+              onSubmitted: (_) => submitWithdrawal(),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -2692,6 +2825,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             const SizedBox(height: 16),
             TextField(
               controller: reasonController,
+              onSubmitted: (_) => submitWithdrawal(),
               style: GoogleFonts.poppins(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Motivo / Concepto',
@@ -2712,75 +2846,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             ),
           ),
           ElevatedButton(
-            // onPressed: () {
-            //   final double amount =
-            //       double.tryParse(amountController.text) ?? 0.0;
-            //   setState(() {
-            //     _totalWithdrawals += amount;
-            //   });
-            //   Navigator.pop(context);
-            //   ScaffoldMessenger.of(context).showSnackBar(
-            //     const SnackBar(
-            //       content: Text('Retiro registrado correctamente'),
-            //       backgroundColor: Colors.orange,
-            //     ),
-            //   );
-            // },
-            onPressed: () async {
-                  final double amount =
-                      double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
-                  final String reason = reasonController.text.trim();
-                  if (amount <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Ingresa un monto válido'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-                  if (reason.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Ingresa un motivo'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-                  // Mostrar loader mientras se hace la petición
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (_) => const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                  final response = await WithdrawalService.createWithdrawal(
-                    amount: amount,
-                    reason: reason,
-                  );
-                  Navigator.pop(context); // cerrar loader
-                  if (response['success'] == true) {
-                    setState(() {
-                      _totalWithdrawals += amount;
-                    });
-                    Navigator.pop(context); // cerrar dialog principal
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Retiro registrado correctamente'),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(response['message'] ?? 'Error inesperado'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
+            onPressed: submitWithdrawal,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF05e265),
             ),
@@ -2790,6 +2856,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             ),
           ),
         ],
+        ),
       ),
     );
   }

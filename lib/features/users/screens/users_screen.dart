@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/users_service.dart';
 import 'package:intl/intl.dart';
@@ -119,15 +120,74 @@ class _UsersScreenState extends State<UsersScreen> {
     );
     String selectedRole = isEditing ? user['role'] : 'Cajero';
 
+    bool isSubmitting = false;
+
+    Future<void> submitForm() async {
+      if (isSubmitting) return;
+      if (nameController.text.isNotEmpty && emailController.text.isNotEmpty) {
+        isSubmitting = true;
+        Map<String, dynamic> result;
+
+        if (isEditing) {
+          result = await UsersService.updateUser(
+            id: user!['id'],
+            name: nameController.text,
+            email: emailController.text,
+            role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+          );
+        } else {
+          result = await UsersService.createUser(
+            name: nameController.text,
+            email: emailController.text,
+            role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+          );
+        }
+
+        if (result['success']) {
+          await _loadUsers();
+          if (mounted) Navigator.pop(context);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(isEditing
+                    ? 'Usuario actualizado exitosamente'
+                    : 'Usuario creado exitosamente'),
+                backgroundColor: const Color(0xFF05e265),
+              ),
+            );
+          }
+        } else {
+          isSubmitting = false;
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result['message']),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    }
+
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return AlertDialog(
-              backgroundColor: const Color(0xFF1a1a1a),
-              title: Text(
-                isEditing ? 'Editar Usuario' : 'Nuevo Usuario',
+            return Focus(
+              autofocus: false,
+              onKeyEvent: (node, event) {
+                if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+                  submitForm();
+                  return KeyEventResult.handled;
+                }
+                return KeyEventResult.ignored;
+              },
+              child: AlertDialog(
+                backgroundColor: const Color(0xFF1a1a1a),
+                title: Text(
+                  isEditing ? 'Editar Usuario' : 'Nuevo Usuario',
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -140,7 +200,9 @@ class _UsersScreenState extends State<UsersScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextField(
+                        autofocus: true,
                         controller: nameController,
+                        onSubmitted: (_) => submitForm(),
                         style: GoogleFonts.poppins(color: Colors.white),
                         decoration: InputDecoration(
                           labelText: 'Nombre Completo',
@@ -164,6 +226,7 @@ class _UsersScreenState extends State<UsersScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: emailController,
+                        onSubmitted: (_) => submitForm(),
                         keyboardType: TextInputType.emailAddress,
                         style: GoogleFonts.poppins(color: Colors.white),
                         decoration: InputDecoration(
@@ -235,54 +298,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () async {
-                      if (nameController.text.isNotEmpty &&
-                          emailController.text.isNotEmpty) {
-
-                        Map<String, dynamic> result;
-
-                        if (isEditing) {
-                          // Editar usuario
-                          result = await UsersService.updateUser(
-                            id: user['id'],
-                            name: nameController.text,
-                            email: emailController.text,
-                            role: selectedRole == 'Administrador' ? 'admin' : 'seller',
-                          );
-                        } else {
-                          // Crear usuario
-                          result = await UsersService.createUser(
-                            name: nameController.text,
-                            email: emailController.text,
-                            role: selectedRole == 'Administrador' ? 'admin' : 'seller',
-                          );
-                        }
-
-                      
-
-                        if (result['success']) {
-                          await _loadUsers();
-
-                          Navigator.pop(context);
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(isEditing
-                                ? 'Usuario actualizado exitosamente'
-                                : 'Usuario creado exitosamente'),
-                              backgroundColor: Color(0xFF05e265),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(result['message']),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
-                    },
+                  onPressed: submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF05e265),
                   ),
@@ -295,7 +311,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   ),
                 ),
               ],
-            );
+            ));
           },
         );
       },

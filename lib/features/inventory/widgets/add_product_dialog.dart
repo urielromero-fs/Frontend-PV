@@ -46,6 +46,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
   ];
 
   Future<void> saveProduct() async {
+    if (isLoading) return;
     final name = nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(
@@ -108,7 +109,16 @@ class _AddProductDialogState extends State<AddProductDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return Focus(
+      autofocus: false,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+          saveProduct();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: AlertDialog(
       backgroundColor: const Color(0xFF1a1a1a),
       title: Text(
         'Añadir Producto',
@@ -130,6 +140,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0),
                   child: TextField(
+                    autofocus: true,
                     controller: nameController,
                     onSubmitted: (_) => saveProduct(),
                     decoration: InputDecoration(
@@ -462,7 +473,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                 ),
         ),
       ],
-    );
+    ));
   }
 
   Future<void> _scanBarcodeWithOptions(

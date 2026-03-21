@@ -68,6 +68,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
   }
 
   Future<void> updateProduct() async {
+    if (isLoading) return;
     final id = widget.product['_id']?.toString() ?? '';
     if (id.isEmpty) {
       ScaffoldMessenger.of(
@@ -114,7 +115,16 @@ class _EditProductDialogState extends State<EditProductDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return Focus(
+      autofocus: false,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+          updateProduct();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: AlertDialog(
       backgroundColor: const Color(0xFF1a1a1a),
       title: Text(
         'Actualizar Producto',
@@ -136,6 +146,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0),
                   child: TextField(
+                    autofocus: true,
                     controller: nameController,
                     onSubmitted: (_) => updateProduct(),
                     decoration: InputDecoration(
@@ -464,7 +475,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                 ),
         ),
       ],
-    );
+    ));
   }
 
   @override
