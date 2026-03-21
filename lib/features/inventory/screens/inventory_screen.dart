@@ -439,7 +439,68 @@ class _InventoryScreenState extends State<InventoryScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
-          return AlertDialog(
+
+          Future<void> saveStock() async {
+            if (isSaving) return;
+            final String val = stockController.text.trim();
+            if (val.isEmpty) return;
+            final double addUnits = double.tryParse(val) ?? 0;
+            if (addUnits <= 0) return;
+
+            setModalState(() => isSaving = true);
+            final double currentUnits = double.tryParse(product['units']?.toString() ?? '0') ?? 0;
+            final double newUnits = currentUnits + addUnits;
+
+            final result = await InventoryService.updateProduct(
+              id: product['_id'],
+              name: product['name'],
+              barcode: product['barcode'] ?? 'N/A',
+              isBulk: product['isBulk'] ?? false,
+              weight: (product['weight'] ?? 0.0).toDouble(),
+              category: product['category'] ?? 'Sin categoría',
+              units: newUnits,
+              buyingPrice: (product['buyingPrice'] ?? 0.0).toDouble(),
+              sellingPrice: (product['sellingPrice'] ?? 0.0).toDouble(),
+              bulkPrice: (product['bulkPrice'] ?? 0.0).toDouble(),
+              hasWholesalePrice: product['hasWholesalePrice'] ?? false,
+              wholesalePrice: (product['wholesalePrice'] ?? 0.0).toDouble(),
+              wholesaleMinUnits: (product['wholesaleMinUnits'] ?? 0) as int,
+            );
+
+            if (result['success'] == true) {
+              if (mounted) {
+                final provider = Provider.of<ProductProvider>(context, listen: false);
+                provider.fetchProducts();
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Stock actualizado correctamente'),
+                    backgroundColor: Color(0xFF05e265),
+                  ),
+                );
+              }
+            } else {
+              if (mounted) {
+                setModalState(() => isSaving = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(result['message'] ?? 'Error al actualizar'),
+                  ),
+                );
+              }
+            }
+          }
+
+          return Focus(
+            autofocus: false,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+                saveStock();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: AlertDialog(
             backgroundColor: const Color(0xFF1a1a1a),
             title: Text(
               'Agregar Stock',
@@ -470,6 +531,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   autofocus: true,
+                  onSubmitted: (_) => saveStock(),
                   style: GoogleFonts.poppins(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Cantidad a agregar',
@@ -495,66 +557,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
               ),
               ElevatedButton(
-                onPressed: isSaving
-                    ? null
-                    : () async {
-                        final String val = stockController.text.trim();
-                        if (val.isEmpty) return;
-                        final double addUnits = double.tryParse(val) ?? 0;
-                        if (addUnits <= 0) return;
-                        setModalState(() => isSaving = true);
-                        final double currentUnits =
-                            double.tryParse(product['units']?.toString() ?? '0') ??
-                            0;
-                        final double newUnits = currentUnits + addUnits;
-                        final result = await InventoryService.updateProduct(
-                          id: product['_id'],
-                          name: product['name'],
-                          barcode: product['barcode'] ?? 'N/A',
-                          isBulk: product['isBulk'] ?? false,
-                          weight: (product['weight'] ?? 0.0).toDouble(),
-                          category: product['category'] ?? 'Sin categoría',
-                          units: newUnits,
-                          buyingPrice:
-                              (product['buyingPrice'] ?? 0.0).toDouble(),
-                          sellingPrice:
-                              (product['sellingPrice'] ?? 0.0).toDouble(),
-                          bulkPrice: (product['bulkPrice'] ?? 0.0).toDouble(),
-                          hasWholesalePrice:
-                              product['hasWholesalePrice'] ?? false,
-                          wholesalePrice:
-                              (product['wholesalePrice'] ?? 0.0).toDouble(),
-                          wholesaleMinUnits:
-                              (product['wholesaleMinUnits'] ?? 0) as int,
-                        );
-                        if (result['success'] == true) {
-                          if (mounted) {
-                            final provider = Provider.of<ProductProvider>(
-                              context,
-                              listen: false,
-                            );
-                            provider.fetchProducts();
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Stock actualizado correctamente'),
-                                backgroundColor: Color(0xFF05e265),
-                              ),
-                            );
-                          }
-                        } else {
-                          if (mounted) {
-                            setModalState(() => isSaving = false);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  result['message'] ?? 'Error al actualizar',
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                      },
+                onPressed: isSaving ? null : saveStock,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF05e265),
                   foregroundColor: Colors.black,
@@ -574,7 +577,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       ),
               ),
             ],
-          );
+          ));
         },
       ),
     );

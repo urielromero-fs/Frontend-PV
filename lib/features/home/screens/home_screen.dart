@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
@@ -138,11 +139,41 @@ class _HomeScreenState extends State<HomeScreen> {
     final emailController = TextEditingController(text: _userEmail);
     final passwordController = TextEditingController();
 
+    Future<void> saveSettings() async {
+      setState(() {
+        _userName = nameController.text;
+        _userEmail = emailController.text;
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_name', _userName);
+      await prefs.setString('user_email', _userEmail);
+
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Perfil actualizado exitosamente'),
+            backgroundColor: Color(0xFF05e265),
+          ),
+        );
+      }
+    }
+
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1a1a1a),
+        return Focus(
+          autofocus: false,
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+              saveSettings();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: AlertDialog(
+            backgroundColor: const Color(0xFF1a1a1a),
           title: Text(
             'Configuración de Perfil',
             style: GoogleFonts.poppins(
@@ -164,7 +195,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 TextField(
+                  autofocus: true,
                   controller: nameController,
+                  onSubmitted: (_) => saveSettings(),
                   style: GoogleFonts.poppins(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Nombre Completo',
@@ -181,6 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: emailController,
+                  onSubmitted: (_) => saveSettings(),
                   keyboardType: TextInputType.emailAddress,
                   style: GoogleFonts.poppins(color: Colors.white),
                   decoration: InputDecoration(
@@ -198,6 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: passwordController,
+                  onSubmitted: (_) => saveSettings(),
                   obscureText: true,
                   style: GoogleFonts.poppins(color: Colors.white),
                   decoration: InputDecoration(
@@ -224,85 +259,85 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
-             onPressed: () async {
-                    final name = nameController.text.trim();
-                    final email = emailController.text.trim();
-                    final password = passwordController.text.trim();
+              onPressed: () async {
+                final name = nameController.text.trim();
+                final email = emailController.text.trim();
+                final password = passwordController.text.trim();
 
-                    // Regex simple para email
-                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                // Regex simple para email
+                final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
 
-                    // Validar email solo si viene con valor
-                    if (email.isNotEmpty && !emailRegex.hasMatch(email)) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Correo electrónico inválido'),
-                          backgroundColor: Colors.redAccent,
-                        ),
-                      );
-                      return;
-                    }
+                // Validar email solo si viene con valor
+                if (email.isNotEmpty && !emailRegex.hasMatch(email)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Correo electrónico inválido'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
 
-                    // Validar password solo si se escribe
-                    if (password.isNotEmpty && password.length < 8) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('La contraseña debe tener al menos 8 caracteres'),
-                          backgroundColor: Colors.redAccent,
-                        ),
-                      );
-                      return;
-                    }
+                // Validar password solo si se escribe
+                if (password.isNotEmpty && password.length < 8) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('La contraseña debe tener al menos 8 caracteres'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
 
-                    // Loader
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (_) => const Center(child: CircularProgressIndicator()),
+                // Loader
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const Center(child: CircularProgressIndicator()),
+                );
+
+                final result = await UsersService.updateAdminUser(
+                  name: name.isNotEmpty ? name : null,
+                  email: email.isNotEmpty ? email : null,
+                  password: password.isNotEmpty ? password : null,
+                );
+
+                Navigator.pop(context); // cerrar loader
+
+                if (result['success']) {
+                  // Solo actualizar lo que cambió
+                  setState(() {
+                    if (name.isNotEmpty) _userName = name;
+                    if (email.isNotEmpty) _userEmail = email;
+                  });
+
+                  final prefs = await SharedPreferences.getInstance();
+                  if (name.isNotEmpty) {
+                    await prefs.setString('user_name', name);
+                  }
+                  if (email.isNotEmpty) {
+                    await prefs.setString('user_email', email);
+                  }
+
+                  if (context.mounted) {
+                    Navigator.pop(context);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(result['message'] ?? 'Perfil actualizado'),
+                        backgroundColor: const Color(0xFF05e265),
+                      ),
                     );
-
-                    final result = await UsersService.updateAdminUser(
-                      name: name.isNotEmpty ? name : null,
-                      email: email.isNotEmpty ? email : null,
-                      password: password.isNotEmpty ? password : null,
-                    );
-
-                    Navigator.pop(context); // cerrar loader
-
-                    if (result['success']) {
-                      // Solo actualizar lo que cambió
-                      setState(() {
-                        if (name.isNotEmpty) _userName = name;
-                        if (email.isNotEmpty) _userEmail = email;
-                      });
-
-                      final prefs = await SharedPreferences.getInstance();
-                      if (name.isNotEmpty) {
-                        await prefs.setString('user_name', name);
-                      }
-                      if (email.isNotEmpty) {
-                        await prefs.setString('user_email', email);
-                      }
-
-                      if (context.mounted) {
-                        Navigator.pop(context);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(result['message'] ?? 'Perfil actualizado'),
-                            backgroundColor: const Color(0xFF05e265),
-                          ),
-                        );
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(result['message'] ?? 'Error al actualizar'),
-                          backgroundColor: Colors.redAccent,
-                        ),
-                      );
-                    }
-                  },
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result['message'] ?? 'Error al actualizar'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF05e265),
               ),
@@ -315,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
-        );
+        ));
       },
     );
   }
@@ -933,68 +968,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 32),
                         ],
 
-                        // Quick Actions Section
-                        Text(
-                          'Accesos Rápidos',
-                          style: GoogleFonts.outfit(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final crossAxisCount = constraints.maxWidth < 600 ? 1 : 2;
-                            return GridView.count(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              crossAxisCount: crossAxisCount,
-                              mainAxisSpacing: 16,
-                              crossAxisSpacing: 16,
-                              childAspectRatio: isMobile ? 1.5 : 2.5,
-                              children: [
-                                _DashboardCard(
-                                  title: 'Punto de Venta',
-                                  subtitle: 'Realiza cobros y genera tickets rápidamente',
-                                  icon: Icons.point_of_sale_rounded,
-                                  color: const Color(0xFF05e265),
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentsScreen())),
-                                ),
-                                _DashboardCard(
-                                  title: 'Inventario',
-                                  subtitle: 'Gestiona existencias y precios de productos',
-                                  icon: Icons.inventory_rounded,
-                                  color: const Color(0xFF2196F3),
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen())),
-                                ),
-                                if (_isAdmin) ...[
-                                  _DashboardCard(
-                                    title: 'Analíticas',
-                                    subtitle: 'Consulta el rendimiento de tu negocio',
-                                    icon: Icons.bar_chart_rounded,
-                                    color: const Color(0xFFFF9800),
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen())),
-                                  ),
-                                  _DashboardCard(
-                                    title: 'Equipo',
-                                    subtitle: 'Administra los roles y accesos de usuarios',
-                                    icon: Icons.supervised_user_circle_rounded,
-                                    color: const Color(0xFF9C27B0),
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersScreen())),
-                                  ),
-                                ],
-                                _DashboardCard(
-                                  title: 'Ayuda y Soporte',
-                                  subtitle: 'Contacta a soporte técnico y consulta horarios',
-                                  icon: Icons.support_agent_rounded,
-                                  color: Colors.amber,
-                                  onTap: _showSupportModal,
-                                ),
-                              ],
-                            );
-                          },
-                        ),
+
                         const SizedBox(height: 100), // Bottom padding for scroll
                       ]),
                     ),
@@ -1190,94 +1164,3 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _DashboardCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _DashboardCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.03),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white.withOpacity(0.05),
-              Colors.white.withOpacity(0.01),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(icon, color: color, size: 30),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                title,
-                style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: Text(
-                  subtitle,
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    color: Colors.white54,
-                    height: 1.4,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text(
-                    'Acceder',
-                    style: GoogleFonts.outfit(
-                      color: color,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.arrow_forward_rounded, color: color, size: 14),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
