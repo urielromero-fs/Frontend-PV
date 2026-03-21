@@ -331,10 +331,6 @@ class _UsersScreenState extends State<UsersScreen> {
                 final result = await UsersService.inactivateUser(id: id);
 
                 if(result['success']){
-                  // setState(() {
-                  //   users.removeWhere((u) => u['id'] == id);
-                  //   _onSearchChanged();
-                  // });
 
                 
                   await _loadUsers();

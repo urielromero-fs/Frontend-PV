@@ -10,6 +10,7 @@ import 'package:pv26/features/auth/services/auth_service.dart';
 import 'package:pv26/features/inventory/providers/product_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../reports/services/reports_service.dart';
+import '../../users/services/users_service.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -223,26 +224,85 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () async {
-                setState(() {
-                  _userName = nameController.text;
-                  _userEmail = emailController.text;
-                });
+             onPressed: () async {
+                    final name = nameController.text.trim();
+                    final email = emailController.text.trim();
+                    final password = passwordController.text.trim();
 
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('user_name', _userName);
-                await prefs.setString('user_email', _userEmail);
+                    // Regex simple para email
+                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
 
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Perfil actualizado exitosamente'),
-                      backgroundColor: Color(0xFF05e265),
-                    ),
-                  );
-                }
-              },
+                    // Validar email solo si viene con valor
+                    if (email.isNotEmpty && !emailRegex.hasMatch(email)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Correo electrónico inválido'),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Validar password solo si se escribe
+                    if (password.isNotEmpty && password.length < 8) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('La contraseña debe tener al menos 8 caracteres'),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Loader
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => const Center(child: CircularProgressIndicator()),
+                    );
+
+                    final result = await UsersService.updateAdminUser(
+                      name: name.isNotEmpty ? name : null,
+                      email: email.isNotEmpty ? email : null,
+                      password: password.isNotEmpty ? password : null,
+                    );
+
+                    Navigator.pop(context); // cerrar loader
+
+                    if (result['success']) {
+                      // Solo actualizar lo que cambió
+                      setState(() {
+                        if (name.isNotEmpty) _userName = name;
+                        if (email.isNotEmpty) _userEmail = email;
+                      });
+
+                      final prefs = await SharedPreferences.getInstance();
+                      if (name.isNotEmpty) {
+                        await prefs.setString('user_name', name);
+                      }
+                      if (email.isNotEmpty) {
+                        await prefs.setString('user_email', email);
+                      }
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(result['message'] ?? 'Perfil actualizado'),
+                            backgroundColor: const Color(0xFF05e265),
+                          ),
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(result['message'] ?? 'Error al actualizar'),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                    }
+                  },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF05e265),
               ),
