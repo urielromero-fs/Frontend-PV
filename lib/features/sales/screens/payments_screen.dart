@@ -15,6 +15,8 @@ import '../models/sales_models.dart';
 import 'package:pv26/features/sales/widgets/product_list_tile.dart';
 import 'package:pv26/features/sales/widgets/cart_item_widget.dart';
 import 'package:pv26/features/sales/widgets/bulk_product_dialog.dart';
+import 'package:pv26/features/sales/widgets/withdrawal_dialog.dart';
+import '../../inventory/widgets/add_stock_dialog.dart';
 import 'package:pv26/core/utils/currency_formatter.dart';
 
 String _f(double value) => CurrencyFormatter.format(value);
@@ -1862,150 +1864,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     );
   }
   Future<void> _showAddStockModal(Map product) async {
-    final TextEditingController stockController = TextEditingController();
-    bool isSaving = false;
     await showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-
-          Future<void> saveStock() async {
-            if (isSaving) return;
-            final String val = stockController.text.trim();
-            if (val.isEmpty) return;
-            final double addUnits = double.tryParse(val) ?? 0;
-            if (addUnits <= 0) return;
-
-            setModalState(() => isSaving = true);
-            final double currentUnits = double.tryParse(product['units']?.toString() ?? '0') ?? 0;
-            final double newUnits = currentUnits + addUnits;
-
-            final result = await InventoryService.updateProduct(
-              id: product['_id'],
-              name: product['name'],
-              barcode: product['barcode'] ?? 'N/A',
-              isBulk: product['isBulk'] ?? false,
-              weight: (product['weight'] ?? 0.0).toDouble(),
-              category: product['category'] ?? 'Sin categoría',
-              units: product['isBulk'] == true ? newUnits.toDouble() : newUnits.toDouble(),
-              buyingPrice: (product['buyingPrice'] ?? 0.0).toDouble(),
-              sellingPrice: (product['sellingPrice'] ?? 0.0).toDouble(),
-              bulkPrice: (product['bulkPrice'] ?? 0.0).toDouble(),
-              hasWholesalePrice: product['hasWholesalePrice'] ?? false,
-              wholesalePrice: (product['wholesalePrice'] ?? 0.0).toDouble(),
-              wholesaleMinUnits: (product['wholesaleMinUnits'] ?? 0) as int,
-            );
-
-            if (result['success'] == true) {
-              if (mounted) {
-                await Provider.of<ProductProvider>(context, listen: false).fetchProducts();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Stock actualizado correctamente'),
-                    backgroundColor: Color(0xFF05e265),
-                  ),
-                );
-              }
-            } else {
-              if (mounted) {
-                setModalState(() => isSaving = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(result['message'] ?? 'Error al actualizar'),
-                  ),
-                );
-              }
-            }
-          }
-
-          return Focus(
-            autofocus: false,
-            onKeyEvent: (node, event) {
-              if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
-                saveStock();
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            },
-            child: AlertDialog(
-            backgroundColor: const Color(0xFF1a1a1a),
-            title: Text(
-              'Agregar Stock',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Producto: ${product['name']}',
-                  style: GoogleFonts.poppins(
-                    color: const Color(0xFF05e265),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Stock actual: ${product['units']} ${product['isBulk'] == true ? 'Kg CT' : 'Unidades'}',
-                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: stockController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  autofocus: true,
-                  onSubmitted: (_) => saveStock(),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Cantidad a agregar',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'Cancelar',
-                  style: GoogleFonts.poppins(color: Colors.white70),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: isSaving ? null : saveStock,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF05e265),
-                  foregroundColor: Colors.black,
-                ),
-                child: isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.black,
-                        ),
-                      )
-                    : Text(
-                        'Agregar',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                      ),
-              ),
-            ],
-          ));
-        },
+      builder: (context) => AddStockDialog(
+        product: product,
+        onSaved: () =>
+            Provider.of<ProductProvider>(context, listen: false).fetchProducts(),
       ),
     );
   }
@@ -2698,168 +2562,19 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 color: Colors.white,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-  Future<void> _showWithdrawalDialog() async {
-    final amountController = TextEditingController();
-    final reasonController = TextEditingController();
-    
-    bool isWithdrawing = false;
-
-    Future<void> submitWithdrawal() async {
-      if (isWithdrawing) return;
-      
-      final double amount = double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
-      final String reason = reasonController.text.trim();
-
-      if (amount <= 0) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Ingresa un monto válido'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      if (reason.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Ingresa un motivo'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      isWithdrawing = true;
-      
-      // Mostrar loader mientras se hace la petición
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-      final response = await WithdrawalService.createWithdrawal(
-        amount: amount,
-        reason: reason,
-      );
-
-      if (mounted) {
-        Navigator.pop(context); // cerrar loader
-        if (response['success'] == true) {
+          Future<void> _showWithdrawalDialog() async {
+    showDialog(
+      context: context,
+      builder: (context) => WithdrawalDialog(
+        onSaved: (amount) {
           setState(() {
             _totalWithdrawals += amount;
           });
-          Navigator.pop(context); // cerrar dialog principal
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Retiro registrado correctamente'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        } else {
-          isWithdrawing = false;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message'] ?? 'Error inesperado'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-
-    await showDialog(
-      context: context,
-      builder: (context) => Focus(
-        autofocus: false,
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
-            submitWithdrawal();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
         },
-        child: AlertDialog(
-          backgroundColor: const Color(0xFF1a1a1a),
-        title: Text(
-          'Salida de Efectivo',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: amountController,
-              autofocus: true,
-              onSubmitted: (_) => submitWithdrawal(),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [CurrencyInputFormatter()],
-              style: GoogleFonts.poppins(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Monto a retirar',
-                labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                prefixText: r'$ ',
-                prefixStyle: GoogleFonts.poppins(color: Colors.white),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: reasonController,
-              onSubmitted: (_) => submitWithdrawal(),
-              style: GoogleFonts.poppins(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Motivo / Concepto',
-                labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancelar',
-              style: GoogleFonts.poppins(color: Colors.white54),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: submitWithdrawal,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF05e265),
-            ),
-            child: Text(
-              'Registrar',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-        ),
       ),
     );
   }
+
   void _showFilterDialog() {
     showDialog(
       context: context,

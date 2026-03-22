@@ -12,6 +12,7 @@ import '../widgets/stat_card.dart';
 import '../widgets/product_list_item.dart';
 import '../widgets/add_product_dialog.dart';
 import '../widgets/edit_product_dialog.dart';
+import '../widgets/add_stock_dialog.dart';
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
   @override
@@ -238,96 +239,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     ],
                   ),
                 ),
+                _buildStatGrid(allProducts, isMobile),
               const SizedBox(height: 24),
-              // Stats dinámicos
-              if (isMobile)
-                Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: StatCard(
-                            title: 'Total Productos',
-                            value: allProducts.length.toString(),
-                            icon: Icons.inventory,
-                            color: const Color(0xFF05e265),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: StatCard(
-                            title: 'Bajo Stock',
-                            value: allProducts
-                                .where((p) => (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0)
-                                .length
-                                .toString(),
-                            icon: Icons.warning,
-                            color: const Color(0xFFFF9800),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: StatCard(
-                            title: 'Sin Stock',
-                            value: allProducts
-                                .where((p) => (p['units'] ?? 0) == 0)
-                                .length
-                                .toString(),
-                            icon: Icons.error,
-                            color: const Color(0xFFE91E63),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(child: SizedBox()), // Placeholder to keep proportions
-                      ],
-                    ),
-                  ],
-                )
-              else
-                Row(
-                  children: [
-                    Expanded(
-                      child: StatCard(
-                        title: 'Total Productos',
-                        value: allProducts.length.toString(),
-                        icon: Icons.inventory,
-                        color: const Color(0xFF05e265),
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    Expanded(
-                      child: StatCard(
-                        title: 'Bajo Stock',
-                        value: allProducts
-                            .where(
-                              (p) =>
-                                  (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0,
-                            )
-                            .length
-                            .toString(),
-                        icon: Icons.warning,
-                        color: const Color(0xFFFF9800),
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    Expanded(
-                      child: StatCard(
-                        title: 'Sin Stock',
-                        value: allProducts
-                            .where((p) => (p['units'] ?? 0) == 0)
-                            .length
-                            .toString(),
-                        icon: Icons.error,
-                        color: const Color(0xFFE91E63),
-                      ),
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 24),
+
               // Tabla de productos
               Expanded(
                 child: Container(
@@ -485,152 +399,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
     ));
   }
   void _showAddStockModal(Map product) {
-    final TextEditingController stockController = TextEditingController();
-    bool isSaving = false;
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-
-          Future<void> saveStock() async {
-            if (isSaving) return;
-            final String val = stockController.text.trim();
-            if (val.isEmpty) return;
-            final double addUnits = double.tryParse(val) ?? 0;
-            if (addUnits <= 0) return;
-
-            setModalState(() => isSaving = true);
-            final double currentUnits = double.tryParse(product['units']?.toString() ?? '0') ?? 0;
-            final double newUnits = currentUnits + addUnits;
-
-            final result = await InventoryService.updateProduct(
-              id: product['_id'],
-              name: product['name'],
-              barcode: product['barcode'] ?? 'N/A',
-              isBulk: product['isBulk'] ?? false,
-              weight: (product['weight'] ?? 0.0).toDouble(),
-              category: product['category'] ?? 'Sin categoría',
-              units: newUnits,
-              buyingPrice: (product['buyingPrice'] ?? 0.0).toDouble(),
-              sellingPrice: (product['sellingPrice'] ?? 0.0).toDouble(),
-              bulkPrice: (product['bulkPrice'] ?? 0.0).toDouble(),
-              hasWholesalePrice: product['hasWholesalePrice'] ?? false,
-              wholesalePrice: (product['wholesalePrice'] ?? 0.0).toDouble(),
-              wholesaleMinUnits: (product['wholesaleMinUnits'] ?? 0) as int,
-            );
-
-            if (result['success'] == true) {
-              if (mounted) {
-                final provider = Provider.of<ProductProvider>(context, listen: false);
-                provider.fetchProducts();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Stock actualizado correctamente'),
-                    backgroundColor: Color(0xFF05e265),
-                  ),
-                );
-              }
-            } else {
-              if (mounted) {
-                setModalState(() => isSaving = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(result['message'] ?? 'Error al actualizar'),
-                  ),
-                );
-              }
-            }
-          }
-
-          return Focus(
-            autofocus: false,
-            onKeyEvent: (node, event) {
-              if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
-                saveStock();
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            },
-            child: AlertDialog(
-            backgroundColor: const Color(0xFF1a1a1a),
-            title: Text(
-              'Agregar Stock',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Producto: ${product['name']}',
-                  style: GoogleFonts.poppins(
-                    color: const Color(0xFF05e265),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Stock actual: ${product['units']} ${product['isBulk'] == true ? 'Kg CT' : 'Unidades'}',
-                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: stockController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  autofocus: true,
-                  onSubmitted: (_) => saveStock(),
-                  style: GoogleFonts.poppins(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Cantidad a agregar',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'Cancelar',
-                  style: GoogleFonts.poppins(color: Colors.white70),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: isSaving ? null : saveStock,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF05e265),
-                  foregroundColor: Colors.black,
-                ),
-                child: isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.black,
-                        ),
-                      )
-                    : Text(
-                        'Agregar',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                      ),
-              ),
-            ],
-          ));
-        },
+      builder: (context) => AddStockDialog(
+        product: product,
+        onSaved: () =>
+            Provider.of<ProductProvider>(context, listen: false).fetchProducts(),
       ),
     );
   }
@@ -817,6 +591,87 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildStatGrid(List<dynamic> allProducts, bool isMobile) {
+    final lowStockCount = allProducts
+        .where((p) => (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0)
+        .length;
+    final outOfStockCount = allProducts.where((p) => (p['units'] ?? 0) == 0).length;
+
+    if (isMobile) {
+      return Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  title: 'Total Productos',
+                  value: allProducts.length.toString(),
+                  icon: Icons.inventory,
+                  color: const Color(0xFF05e265),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: StatCard(
+                  title: 'Bajo Stock',
+                  value: lowStockCount.toString(),
+                  icon: Icons.warning,
+                  color: const Color(0xFFFF9800),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  title: 'Sin Stock',
+                  value: outOfStockCount.toString(),
+                  icon: Icons.error,
+                  color: const Color(0xFFE91E63),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: SizedBox()),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: StatCard(
+            title: 'Total Productos',
+            value: allProducts.length.toString(),
+            icon: Icons.inventory,
+            color: const Color(0xFF05e265),
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: StatCard(
+            title: 'Bajo Stock',
+            value: lowStockCount.toString(),
+            icon: Icons.warning,
+            color: const Color(0xFFFF9800),
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: StatCard(
+            title: 'Sin Stock',
+            value: outOfStockCount.toString(),
+            icon: Icons.error,
+            color: const Color(0xFFE91E63),
+          ),
+        ),
+      ],
     );
   }
 }
