@@ -125,42 +125,19 @@ class _LoginScreenState extends State<LoginScreen>
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 400),
                     child: Padding(
-                      padding: const EdgeInsets.all(24.0),
+                      padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Logo or App Title
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    const Color(0xFF05e265),
-                                    const Color(0xFF04c457),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Icon(
-                                Icons.eco,
-                                size: 40,
-                                color: Colors.white,
-                              ),
+                            const SizedBox(height: 12),
+                            Image.asset(                   
+                              'assets/images/logo.png',
+                              height: 60,
+                              fit: BoxFit.contain,
                             ),
-                            const SizedBox(height: 24),
-
-                            // Logo
-                            Center(                
-                              child: Image.asset(                   
-                                'assets/images/logo.png',
-                                height: 50,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-
+                            const SizedBox(height: 32),
                             Text(
                               'Inicia sesión para continuar',
                               style: GoogleFonts.poppins(

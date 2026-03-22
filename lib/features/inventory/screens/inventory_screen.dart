@@ -30,6 +30,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
   String selectedStockFilter = 'Todos';
   bool filterBulkOnly = false;
   final TextEditingController searchController = TextEditingController();
+  final FocusNode _keyboardFocusNode = FocusNode();
+  String _barcodeBuffer = '';
+  DateTime _lastKeyEventTime = DateTime.now();
   final List<String> stockFilters = [
     'Todos',
     'Bajo Stock',
@@ -70,6 +73,51 @@ class _InventoryScreenState extends State<InventoryScreen> {
     setState(() {
       _userRole = role ?? 'cajero';
     });
+  }
+
+  @override
+  void dispose() {
+    _keyboardFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      final now = DateTime.now();
+
+      // Detectamos si el foco actual NO es un TextField/EditableText
+      // Para no interferir si el usuario ya está escribiendo manualmente o si el scanner ya está escribiendo en el buscador
+      final primaryFocus = FocusManager.instance.primaryFocus;
+      bool isInputFocused = primaryFocus != null && 
+                            primaryFocus != _keyboardFocusNode &&
+                            (primaryFocus.children.isEmpty); // Simple heurística: los campos de texto suelen ser nodos hoja o manejados diferente
+      
+      // En Flutter, si el primaryFocus es el nodo del TextField, no queremos duplicar datos en nuestro buffer global
+      if (primaryFocus != null && primaryFocus.debugLabel != null && primaryFocus.debugLabel!.contains('EditableText')) {
+        _barcodeBuffer = '';
+        return;
+      }
+
+      if (now.difference(_lastKeyEventTime).inMilliseconds > 100) {
+        _barcodeBuffer = '';
+      }
+      _lastKeyEventTime = now;
+
+      if (event.logicalKey == LogicalKeyboardKey.enter) {
+        if (_barcodeBuffer.isNotEmpty) {
+          setState(() {
+            searchQuery = _barcodeBuffer;
+            searchController.text = _barcodeBuffer;
+            _barcodeBuffer = '';
+          });
+        }
+      } else {
+        final character = event.character;
+        if (character != null && character.isNotEmpty) {
+          _barcodeBuffer += character;
+        }
+      }
+    }
   }
   @override
   Widget build(BuildContext context) {
@@ -123,69 +171,73 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ],
       ),
       /* Removed FloatingActionButton as requested and moved it to the top */
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
+      body: KeyboardListener(
+        focusNode: _keyboardFocusNode,
+        autofocus: true,
+        onKeyEvent: _handleKeyEvent,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withAlpha(30)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.search,
-                      color: Colors.white70,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: searchController,
-                        onChanged: (value) {
-                          setState(() {
-                            searchQuery = value;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Buscar producto...',
-                          hintStyle: GoogleFonts.poppins(
-                            color: Colors.white.withOpacity(0.5),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withAlpha(30)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.search,
+                        color: Colors.white70,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              searchQuery = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Buscar producto...',
+                            hintStyle: GoogleFonts.poppins(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 14,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
                             fontSize: 14,
                           ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 14,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: _showFilterDialog,
-                      icon: const Icon(Icons.filter_list, color: Colors.white, size: 20),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withAlpha(20),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: _showFilterDialog,
+                        icon: const Icon(Icons.filter_list, color: Colors.white, size: 20),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withAlpha(20),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 24),
               // Stats dinámicos
               if (isMobile)
@@ -430,7 +482,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
   void _showAddStockModal(Map product) {
     final TextEditingController stockController = TextEditingController();
