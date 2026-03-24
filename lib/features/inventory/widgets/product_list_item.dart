@@ -43,7 +43,7 @@ class ProductListItem extends StatelessWidget {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
 
     final actionsMenu = PopupMenuButton<String>(
-      color: const Color(0xFF1a1a1a),
+      color: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (String value) {
         if (value == 'edit') {
@@ -61,7 +61,7 @@ class ProductListItem extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Editar',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
               ),
             ],
           ),
@@ -74,7 +74,7 @@ class ProductListItem extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Eliminar',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
               ),
             ],
           ),
@@ -99,7 +99,7 @@ class ProductListItem extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white.withAlpha(26))),
+          border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.1))),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,7 +114,7 @@ class ProductListItem extends StatelessWidget {
                       Text(
                         name,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -164,7 +164,7 @@ class ProductListItem extends StatelessWidget {
                     Text(
                       '${isBulk ? 'KG CT' : 'Stock'}: $stock',
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -215,7 +215,7 @@ class ProductListItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white.withAlpha(26))),
+        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.1))),
       ),
       child: Row(
         children: [
@@ -224,7 +224,7 @@ class ProductListItem extends StatelessWidget {
             child: Text(
               name,
               style: GoogleFonts.poppins(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -232,7 +232,7 @@ class ProductListItem extends StatelessWidget {
           Expanded(
             child: Text(
               category,
-              style: GoogleFonts.poppins(color: Colors.white70),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
             ),
           ),
           Expanded(
@@ -241,7 +241,7 @@ class ProductListItem extends StatelessWidget {
                 Text(
                   '$stock ${isBulk ? 'Kg CT' : 'Uds'}',
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -272,7 +272,7 @@ class ProductListItem extends StatelessWidget {
                 Text(
                   price,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

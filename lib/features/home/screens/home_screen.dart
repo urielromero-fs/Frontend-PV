@@ -11,8 +11,9 @@ import 'package:pv26/features/auth/services/auth_service.dart';
 import 'package:pv26/features/inventory/providers/product_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../reports/services/reports_service.dart';
+import 'package:pv26/core/providers/theme_provider.dart';
 import '../../users/services/users_service.dart'; 
-
+import '../../../core/utils/currency_formatter.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -173,11 +174,11 @@ class _HomeScreenState extends State<HomeScreen> {
             return KeyEventResult.ignored;
           },
           child: AlertDialog(
-            backgroundColor: const Color(0xFF1a1a1a),
+            backgroundColor: Theme.of(context).cardColor,
           title: Text(
             'Configuración de Perfil',
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -189,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'Actualiza tus datos de acceso.',
                   style: GoogleFonts.poppins(
-                    color: Colors.white70,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontSize: 12,
                   ),
                 ),
@@ -198,17 +199,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   autofocus: true,
                   controller: nameController,
                   onSubmitted: (_) => saveSettings(),
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     labelText: 'Nombre Completo',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
                     ),
                     focusedBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Color(0xFF05e265)),
                     ),
-                    prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                    prefixIcon: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -216,17 +217,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: emailController,
                   onSubmitted: (_) => saveSettings(),
                   keyboardType: TextInputType.emailAddress,
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     labelText: 'Correo Electrónico',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
                     ),
                     focusedBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Color(0xFF05e265)),
                     ),
-                    prefixIcon: const Icon(Icons.email, color: Colors.white70),
+                    prefixIcon: Icon(Icons.email, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -234,17 +235,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: passwordController,
                   onSubmitted: (_) => saveSettings(),
                   obscureText: true,
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     labelText: 'Nueva Contraseña (opcional)',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
                     ),
                     focusedBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Color(0xFF05e265)),
                     ),
-                    prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                    prefixIcon: Icon(Icons.lock, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                   ),
                 ),
               ],
@@ -255,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancelar',
-                style: GoogleFonts.poppins(color: Colors.white54),
+                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
               ),
             ),
             ElevatedButton(
@@ -386,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1a1a1a),
+          backgroundColor: Theme.of(context).cardColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
@@ -395,7 +396,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'Centro de Ayuda',
                 style: GoogleFonts.outfit(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -407,13 +408,13 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 'Estamos aquí para apoyarte con cualquier duda o problema técnico.',
-                style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13),
+                style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
               ),
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Theme.of(context).dividerColor.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -427,7 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             'Horario de Atención',
                             style: GoogleFonts.outfit(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -435,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             'Lunes a Viernes: 10:00 AM - 5:00 PM',
                             style: GoogleFonts.outfit(
-                              color: Colors.white70,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               fontSize: 11,
                             ),
                           ),
@@ -458,11 +459,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 title: Text(
                   'Correo Electrónico',
-                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
                   'uriel.romero@fstack.com.mx',
-                  style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
+                  style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
                 ),
                 onTap: () {
                   final Uri emailUri = Uri(
@@ -488,11 +489,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 title: Text(
                   'WhatsApp Soporte',
-                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
                   '+52 55 1234 5678',
-                  style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
+                  style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
                 ),
                 onTap: () {
                   final Uri whatsappUri = Uri.parse('https://wa.me/525512345678?text=Hola,%20necesito%20soporte%20con%20Centli%20POS.');
@@ -539,13 +540,9 @@ class _HomeScreenState extends State<HomeScreen> {
       return Container(
         width: sidebarWidth,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF000000), Color(0xFF1a1a1a)],
-          ),
+          color: Theme.of(context).cardColor,
           border: Border(
-            right: BorderSide(color: Colors.white.withOpacity(0.05)),
+            right: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.05)),
           ),
         ),
         child: Column(
@@ -663,6 +660,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: _showSupportModal,
                     isCollapsed: _isSidebarCollapsed,
                   ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(color: Colors.white10),
+                  ),
+                  // Botón de cambio de tema
+                  ListTile(
+                    onTap: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
+                    leading: Icon(
+                      Provider.of<ThemeProvider>(context).isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                      color: Provider.of<ThemeProvider>(context).isDarkMode ? Colors.orange : Colors.indigoAccent,
+                    ),
+                    title: _isSidebarCollapsed 
+                      ? null 
+                      : Text(
+                          Provider.of<ThemeProvider>(context).isDarkMode ? 'Modo Claro' : 'Modo Oscuro',
+                          style: GoogleFonts.poppins(
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87,
+                            fontSize: 14,
+                          ),
+                        ),
+                  ),
                 ],
               ),
             ),
@@ -701,7 +719,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text(
                                 _userName,
-                                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                                style: GoogleFonts.outfit(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
@@ -724,11 +746,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF050505),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: isMobile
           ? AppBar(
-              backgroundColor: Colors.black,
-              iconTheme: const IconThemeData(color: Colors.white),
+              backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+              iconTheme: IconThemeData(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               elevation: 0,
               title: Row(
                 children: [
@@ -736,11 +760,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Centli',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold,color: Colors.white),
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ],
               ),
               actions: [
+                IconButton(
+                  icon: Icon(
+                    Provider.of<ThemeProvider>(context).isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                    color: Provider.of<ThemeProvider>(context).isDarkMode ? Colors.orange : Colors.indigoAccent,
+                  ),
+                  onPressed: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
+                ),
                 IconButton(
                   icon: const Icon(Icons.logout_rounded, color: Colors.white70),
                   onPressed: () => _handleLogout(context),
@@ -851,16 +885,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (!isMobile) buildSidebar(),
           Expanded(
             child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(-0.8, -0.8),
-                  radius: 1.5,
-                  colors: [
-                    Color(0xFF151515),
-                    Color(0xFF050505),
-                  ],
-                ),
-              ),
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
@@ -890,14 +915,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: GoogleFonts.outfit(
                                 fontSize: isMobile ? 28 : 40,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Bienvenido de nuevo a Centli',
                               style: GoogleFonts.outfit(
-                                color: Colors.white54,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 fontSize: isMobile ? 14 : 18,
                               ),
                             ),
@@ -1013,7 +1038,7 @@ class _NavItem extends StatelessWidget {
               ? Center(
                   child: Icon(
                     icon,
-                    color: isActive ? const Color(0xFF05e265) : Colors.white60,
+                    color: isActive ? const Color(0xFF05e265) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     size: 24,
                   ),
                 )
@@ -1021,7 +1046,7 @@ class _NavItem extends StatelessWidget {
                   children: [
                     Icon(
                       icon,
-                      color: isActive ? const Color(0xFF05e265) : Colors.white60,
+                      color: isActive ? const Color(0xFF05e265) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       size: 24,
                     ),
                     const SizedBox(width: 16),
@@ -1029,7 +1054,9 @@ class _NavItem extends StatelessWidget {
                       child: Text(
                         title,
                         style: GoogleFonts.outfit(
-                          color: isActive ? Colors.white : Colors.white60,
+                          color: isActive 
+                            ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                           fontSize: 15,
                         ),
@@ -1073,12 +1100,12 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.4 : 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -1122,13 +1149,16 @@ class _StatCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.outfit(color: Colors.white60, fontSize: 13),
+                style: GoogleFonts.outfit(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
                 style: GoogleFonts.outfit(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),

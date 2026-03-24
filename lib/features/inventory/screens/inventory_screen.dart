@@ -140,8 +140,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
           'Inventario',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
-        backgroundColor: const Color(0xFF000000),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -177,13 +177,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         autofocus: true,
         onKeyEvent: _handleKeyEvent,
         child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
-            ),
-          ),
+          color: Theme.of(context).scaffoldBackgroundColor,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -192,15 +186,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(15),
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withAlpha(30)),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.search,
-                        color: Colors.white70,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -215,14 +209,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           decoration: InputDecoration(
                             hintText: 'Buscar producto...',
                             hintStyle: GoogleFonts.poppins(
-                              color: Colors.white.withOpacity(0.5),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                               fontSize: 14,
                             ),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           style: GoogleFonts.poppins(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 14,
                           ),
                         ),
@@ -230,25 +224,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       const SizedBox(width: 8),
                       IconButton(
                         onPressed: _showFilterDialog,
-                        icon: const Icon(Icons.filter_list, color: Colors.white, size: 20),
+                        icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface, size: 20),
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withAlpha(20),
+                          backgroundColor: Theme.of(context).dividerColor.withOpacity(0.05),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
                 _buildStatGrid(allProducts, isMobile),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
               // Tabla de productos
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(13),
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withAlpha(26)),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                   ),
                   child: Column(
                     children: [
@@ -257,7 +252,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(13),
+                            color: Theme.of(context).dividerColor.withOpacity(0.03),
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(12),
                               topRight: Radius.circular(12),
@@ -270,7 +265,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 child: Text(
                                   'Producto',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -279,7 +274,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 child: Text(
                                   'Categoría',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -288,7 +283,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 child: Text(
                                   'Stock',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -297,7 +292,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 child: Text(
                                   'Precio',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -307,7 +302,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                   child: Text(
                                     'Estado',
                                     style: GoogleFonts.poppins(
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -318,7 +313,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                   child: Text(
                                     'Acciones',
                                     style: GoogleFonts.poppins(
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),

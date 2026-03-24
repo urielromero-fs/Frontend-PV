@@ -109,11 +109,11 @@ class _WithdrawalDialogState extends State<WithdrawalDialog> {
         return KeyEventResult.ignored;
       },
       child: AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
           'Salida de Efectivo',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -126,14 +126,14 @@ class _WithdrawalDialogState extends State<WithdrawalDialog> {
               onSubmitted: (_) => submitWithdrawal(),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [CurrencyInputFormatter()],
-              style: GoogleFonts.poppins(color: Colors.white),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: 'Monto a retirar',
-                labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                prefixText: '$ ',
-                prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                prefixText: r'$ ',
+                prefixStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                 ),
               ),
             ),
@@ -141,12 +141,12 @@ class _WithdrawalDialogState extends State<WithdrawalDialog> {
             TextField(
               controller: reasonController,
               onSubmitted: (_) => submitWithdrawal(),
-              style: GoogleFonts.poppins(color: Colors.white),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: 'Motivo / Concepto',
-                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                 ),
               ),
             ),
@@ -157,7 +157,7 @@ class _WithdrawalDialogState extends State<WithdrawalDialog> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancelar',
-              style: GoogleFonts.poppins(color: Colors.white54),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54)),
             ),
           ),
           ElevatedButton(

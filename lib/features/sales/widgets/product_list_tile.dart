@@ -30,13 +30,20 @@ class ProductListTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withAlpha(hasStock ? 13 : 8),
+          color: Theme.of(context).cardColor.withOpacity(hasStock ? 1.0 : 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: hasStock 
-                ? Colors.white.withAlpha(26) 
+                ? Theme.of(context).dividerColor.withOpacity(0.1) 
                 : Colors.red.withOpacity(0.2),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -65,7 +72,7 @@ class ProductListTile extends StatelessWidget {
                     Text(
                       name,
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -145,7 +152,7 @@ class ProductListTile extends StatelessWidget {
             ] else 
               Icon(
                 Icons.add_circle_outline,
-                color: Colors.white.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                 size: 24,
               ),
           ],

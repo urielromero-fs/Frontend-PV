@@ -104,7 +104,9 @@ class _LoginScreenState extends State<LoginScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
+            colors: Theme.of(context).brightness == Brightness.dark 
+              ? [const Color(0xFF000000), const Color(0xFF1a1a1a)]
+              : [const Color(0xFFF5F7F9), const Color(0xFFFFFFFF)],
           ),
         ),
         child: SafeArea(
@@ -117,8 +119,9 @@ class _LoginScreenState extends State<LoginScreen>
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: Card(
+                  color: Theme.of(context).cardColor,
                   elevation: 20,
-                  shadowColor: Colors.black.withAlpha(77),
+                  shadowColor: Colors.black.withAlpha(Theme.of(context).brightness == Brightness.dark ? 200 : 30),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -142,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen>
                               'Inicia sesión para continuar',
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
-                                color: Colors.black54,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54),
                               ),
                             ),
                             const SizedBox(height: 32),

@@ -90,10 +90,10 @@ class _BulkProductDialogState extends State<BulkProductDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF1a1a1a),
+      backgroundColor: Theme.of(context).cardColor,
       title: Text(
         widget.productName,
-        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
       ),
       content: KeyboardListener(
         focusNode: FocusNode(),
@@ -110,7 +110,7 @@ class _BulkProductDialogState extends State<BulkProductDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Peso (Kg)', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13)),
+                      Text('Peso (Kg)', style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 13)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _weightController,
@@ -120,17 +120,17 @@ class _BulkProductDialogState extends State<BulkProductDialog> {
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,3}')),
                         ],
-                        style: GoogleFonts.poppins(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.w600),
                         textAlign: TextAlign.center,
                         decoration: InputDecoration(
                           hintText: '0.000',
-                          hintStyle: GoogleFonts.poppins(color: Colors.white12),
+                          hintStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
                           suffixText: 'Kg',
-                          suffixStyle: GoogleFonts.poppins(color: Colors.white38, fontSize: 14),
+                          suffixStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4), fontSize: 14),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.05),
+                          fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF02e3b2), width: 1.5)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF05e265), width: 1.5)),
                         ),
                         onSubmitted: (_) => _submit(),
                       ),
@@ -146,7 +146,7 @@ class _BulkProductDialogState extends State<BulkProductDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Monto (\$)', style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13)),
+                      Text('Monto (\$)', style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 13)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _amountController,
@@ -157,11 +157,11 @@ class _BulkProductDialogState extends State<BulkProductDialog> {
                         textAlign: TextAlign.center,
                         decoration: InputDecoration(
                           hintText: '0.00',
-                          hintStyle: GoogleFonts.poppins(color: Colors.white12),
+                          hintStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
                           prefixText: r'$ ',
                           prefixStyle: GoogleFonts.poppins(color: const Color(0xFF05e265), fontSize: 20),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.05),
+                          fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF05e265), width: 1.5)),
                         ),
@@ -176,12 +176,12 @@ class _BulkProductDialogState extends State<BulkProductDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
               'Precio por Kg: ${CurrencyFormatter.format(widget.pricePerKg)}',
-                style: GoogleFonts.poppins(color: Colors.white54, fontSize: 13),
+                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
               ),
             ),
           ],
@@ -193,7 +193,7 @@ class _BulkProductDialogState extends State<BulkProductDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text(
             'Cancelar',
-            style: GoogleFonts.poppins(color: Colors.white54),
+            style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
           ),
         ),
         ElevatedButton(

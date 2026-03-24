@@ -90,11 +90,11 @@ class _AddStockDialogState extends State<AddStockDialog> {
         return KeyEventResult.ignored;
       },
       child: AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
           'Agregar Stock',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -104,25 +104,25 @@ class _AddStockDialogState extends State<AddStockDialog> {
           children: [
             Text(
               'Producto: ${widget.product['name']}',
-              style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 13),
             ),
             const SizedBox(height: 8),
             Text(
               'Stock actual: ${widget.product['units']} ${widget.product['isBulk'] == true ? 'Kg CT' : 'Unidades'}',
-              style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 13),
             ),
             const SizedBox(height: 20),
             TextField(
               controller: stockController,
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: GoogleFonts.poppins(color: Colors.white),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
               onSubmitted: (_) => saveStock(),
               decoration: InputDecoration(
                 labelText: 'Cantidad a agregar',
-                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                  borderSide: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -138,7 +138,7 @@ class _AddStockDialogState extends State<AddStockDialog> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancelar',
-              style: GoogleFonts.poppins(color: Colors.white54),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54)),
             ),
           ),
           ElevatedButton(

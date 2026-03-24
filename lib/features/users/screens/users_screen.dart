@@ -185,11 +185,11 @@ class _UsersScreenState extends State<UsersScreen> {
                 return KeyEventResult.ignored;
               },
               child: AlertDialog(
-                backgroundColor: const Color(0xFF1a1a1a),
+                backgroundColor: Theme.of(context).cardColor,
                 title: Text(
                   isEditing ? 'Editar Usuario' : 'Nuevo Usuario',
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -203,15 +203,15 @@ class _UsersScreenState extends State<UsersScreen> {
                         autofocus: true,
                         controller: nameController,
                         onSubmitted: (_) => submitForm(),
-                        style: GoogleFonts.poppins(color: Colors.white),
+                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         decoration: InputDecoration(
                           labelText: 'Nombre Completo',
                           labelStyle: GoogleFonts.poppins(
-                            color: Colors.white70,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(
-                              color: Colors.white.withAlpha(51),
+                              color: Theme.of(context).dividerColor,
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -228,15 +228,15 @@ class _UsersScreenState extends State<UsersScreen> {
                         controller: emailController,
                         onSubmitted: (_) => submitForm(),
                         keyboardType: TextInputType.emailAddress,
-                        style: GoogleFonts.poppins(color: Colors.white),
+                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         decoration: InputDecoration(
                           labelText: 'Correo Electrónico',
                           labelStyle: GoogleFonts.poppins(
-                            color: Colors.white70,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(
-                              color: Colors.white.withAlpha(51),
+                              color: Theme.of(context).dividerColor,
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -251,16 +251,16 @@ class _UsersScreenState extends State<UsersScreen> {
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
                         value: selectedRole,
-                        dropdownColor: const Color(0xFF1a1a1a),
-                        style: GoogleFonts.poppins(color: Colors.white),
+                        dropdownColor: Theme.of(context).cardColor,
+                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         decoration: InputDecoration(
                           labelText: 'Rol',
                           labelStyle: GoogleFonts.poppins(
-                            color: Colors.white70,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(
-                              color: Colors.white.withAlpha(51),
+                              color: Theme.of(context).dividerColor,
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -294,13 +294,14 @@ class _UsersScreenState extends State<UsersScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'Cancelar',
-                    style: GoogleFonts.poppins(color: Colors.white54),
+                    style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                   ),
                 ),
                 ElevatedButton(
                   onPressed: submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF05e265),
+                    foregroundColor: Colors.white,
                   ),
                   child: Text(
                     isEditing ? 'Guardar' : 'Crear',
@@ -322,24 +323,24 @@ class _UsersScreenState extends State<UsersScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
           'Eliminar Usuario',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
           '¿Estás seguro de que deseas eliminar este usuario?',
-          style: GoogleFonts.poppins(color: Colors.white70),
+          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancelar',
-              style: GoogleFonts.poppins(color: Colors.white54),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
             ),
           ),
           ElevatedButton(
@@ -366,13 +367,16 @@ class _UsersScreenState extends State<UsersScreen> {
                   );
                 }
               },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             child: Text(
               'Eliminar',
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
             ),
           ),
         ],
@@ -411,8 +415,8 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
           const SizedBox(width: 16),
         ],
-        backgroundColor: const Color(0xFF000000),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -423,13 +427,7 @@ class _UsersScreenState extends State<UsersScreen> {
       ),
       /* Removed FloatingActionButton as requested and moved it to the top */
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
-          ),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -439,15 +437,15 @@ class _UsersScreenState extends State<UsersScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(15),
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withAlpha(30)),
+                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                 ),
                 child: Row(
                   children: [
                     const Icon(
                       Icons.search,
-                      color: Colors.white70,
+                      color: Color(0xFF05e265),
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -457,14 +455,14 @@ class _UsersScreenState extends State<UsersScreen> {
                         decoration: InputDecoration(
                           hintText: 'Buscar usuarios...',
                           hintStyle: GoogleFonts.poppins(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                             fontSize: 14,
                           ),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 14,
                         ),
                       ),
@@ -511,9 +509,9 @@ class _UsersScreenState extends State<UsersScreen> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                   ),
                   child: Column(
                     children: [
@@ -522,7 +520,7 @@ class _UsersScreenState extends State<UsersScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(13),
+                            color: Theme.of(context).dividerColor.withOpacity(0.03),
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(12),
                               topRight: Radius.circular(12),
@@ -563,7 +561,7 @@ class _UsersScreenState extends State<UsersScreen> {
                                   child: Text(
                                     'Estado',
                                     style: GoogleFonts.poppins(
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -574,7 +572,7 @@ class _UsersScreenState extends State<UsersScreen> {
                                   child: Text(
                                     'Acciones',
                                     style: GoogleFonts.poppins(
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -583,7 +581,7 @@ class _UsersScreenState extends State<UsersScreen> {
                             ],
                           ),
                         ),
-                        const Divider(color: Colors.white24, height: 1),
+                        Divider(color: Theme.of(context).dividerColor.withOpacity(0.1), height: 1),
                       ],
                       // Lista de usuarios
                       Expanded(
@@ -592,7 +590,7 @@ class _UsersScreenState extends State<UsersScreen> {
                                 child: Text(
                                   'No hay usuarios registrados',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.white70,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                   ),
                                 ),
                               )
@@ -667,7 +665,7 @@ class _UserStatCard extends StatelessWidget {
                 Text(
                   value,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -677,7 +675,7 @@ class _UserStatCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontSize: 11,
                   ),
                 ),
@@ -727,7 +725,7 @@ class _UserRow extends StatelessWidget {
     final bool isInactive = status == 'Inactivo';
 
     final actionsMenu = PopupMenuButton<String>(
-      color: const Color(0xFF1a1a1a),
+      color: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (String value) {
         if (value == 'edit') {
@@ -747,7 +745,7 @@ class _UserRow extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Enviar contraseña',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
               ),
             ],
           ),
@@ -760,7 +758,7 @@ class _UserRow extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Editar',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
               ),
             ],
           ),
@@ -773,7 +771,7 @@ class _UserRow extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Eliminar',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
               ),
             ],
           ),
@@ -808,7 +806,7 @@ class _UserRow extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+            bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.5)),
           ),
         ),
         child: Column(
@@ -833,14 +831,14 @@ class _UserRow extends StatelessWidget {
                       Text(
                         name,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
                         email,
                         style: GoogleFonts.poppins(
-                          color: Colors.white70,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           fontSize: 14,
                         ),
                       ),
@@ -848,7 +846,7 @@ class _UserRow extends StatelessWidget {
                       Text(
                         'Rol: $role',
                         style: GoogleFonts.poppins(
-                          color: Colors.white54,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                           fontSize: 12,
                         ),
                       ),
@@ -865,7 +863,7 @@ class _UserRow extends StatelessWidget {
                 Text(
                   'Registro: $joinDate',
                   style: GoogleFonts.poppins(
-                    color: Colors.white54,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                     fontSize: 12,
                   ),
                 ),
@@ -898,7 +896,7 @@ class _UserRow extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+          bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.5)),
         ),
       ),
       child: Row(
@@ -927,7 +925,7 @@ class _UserRow extends StatelessWidget {
                       Text(
                         name,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                         maxLines: 1,
@@ -936,7 +934,7 @@ class _UserRow extends StatelessWidget {
                       Text(
                         email,
                         style: GoogleFonts.poppins(
-                          color: Colors.white70,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           fontSize: 12,
                         ),
                         maxLines: 1,
@@ -952,7 +950,7 @@ class _UserRow extends StatelessWidget {
             child: Text(
               role,
               style: GoogleFonts.poppins(
-                color: Colors.white70,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -960,7 +958,7 @@ class _UserRow extends StatelessWidget {
           Expanded(
             child: Text(
               joinDate,
-              style: GoogleFonts.poppins(color: Colors.white70),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
             ),
           ),
           Expanded(

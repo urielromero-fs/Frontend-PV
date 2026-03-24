@@ -119,7 +119,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   void _showPeriodSelector() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1a1a1a),
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -132,7 +132,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Text(
                 'Seleccionar Período',
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -156,7 +156,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         style: GoogleFonts.poppins(
           color: _selectedPeriod == period
               ? const Color(0xFFFF9800)
-              : Colors.white70,
+              : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           fontWeight: _selectedPeriod == period
               ? FontWeight.bold
               : FontWeight.normal,
@@ -212,8 +212,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
           'Reportes',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
-        backgroundColor: const Color(0xFF000000),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -229,13 +229,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
-          ),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -245,9 +239,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(13),
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withAlpha(26)),
+                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                 ),
                 child: Row(
                   children: [
@@ -255,7 +249,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       child: Text(
                         'Período: $_selectedPeriod',
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -351,7 +345,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Text(
                 'Análisis de Ventas',
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -365,9 +359,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(13),
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withAlpha(26)),
+                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,7 +369,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             Text(
                               'Ventas Diarias',
                               style: GoogleFonts.poppins(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -396,9 +390,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(13),
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withAlpha(26)),
+                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,7 +400,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             Text(
                               'Ventas por Categoría',
                               style: GoogleFonts.poppins(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -448,9 +442,9 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(13),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withAlpha(26)),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -480,7 +474,7 @@ class _MetricCard extends StatelessWidget {
           Text(
             value,
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -488,7 +482,7 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             title,
-            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
+            style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 14),
           ),
         ],
       ),
@@ -536,7 +530,7 @@ class _SalesChart extends StatelessWidget {
       return Center(
         child: Text(
           'No hay datos',
-          style: GoogleFonts.poppins(color: Colors.white70),
+          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
         ),
       );
     }
@@ -595,7 +589,7 @@ class _AnimatedBar extends StatelessWidget {
         // Label siempre debajo
         Text(
           label,
-          style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 12),
         ),
       ],
     );
@@ -614,7 +608,7 @@ class _CategoryChart extends StatelessWidget {
       return Center(
         child: Text(
           'No hay datos',
-          style: GoogleFonts.poppins(color: Colors.white70),
+          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
         ),
       );
     }
@@ -683,14 +677,14 @@ class _CategoryItem extends StatelessWidget {
             Text(
               name,
               style: GoogleFonts.poppins(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),
             Text(
               '$percentage%',
-              style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 14),
             ),
           ],
         ),
@@ -698,7 +692,7 @@ class _CategoryItem extends StatelessWidget {
         Container(
           height: 8,
           decoration: BoxDecoration(
-            color: Colors.white.withAlpha(26),
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(4),
           ),
           child: FractionallySizedBox(

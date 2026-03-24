@@ -17,10 +17,10 @@ class QtyBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: Colors.white.withAlpha(20),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
           borderRadius: BorderRadius.circular(4),
         ),
-        child: Icon(icon, size: 14, color: Colors.white),
+        child: Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurface),
       ),
     );
   }

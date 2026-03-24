@@ -41,7 +41,7 @@ class StatCard extends StatelessWidget {
                 Text(
                   value,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -51,7 +51,7 @@ class StatCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontSize: 11,
                   ),
                 ),

@@ -24,9 +24,16 @@ class CartItemWidget extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(13),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withAlpha(15)),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -39,7 +46,7 @@ class CartItemWidget extends StatelessWidget {
                 Text(
                   item.name,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -49,7 +56,7 @@ class CartItemWidget extends StatelessWidget {
                       ? '${CurrencyFormatter.format(item.price)} / kg'
                       : '${CurrencyFormatter.format(item.price)} c/u',
                   style: GoogleFonts.poppins(
-                    color: Colors.white54,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontSize: 11, // Aumentado de 10 a 11
                   ),
                 ),
@@ -69,7 +76,7 @@ class CartItemWidget extends StatelessWidget {
                 child: Text(
                   quantityText,
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),

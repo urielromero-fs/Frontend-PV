@@ -125,11 +125,11 @@ class _EditProductDialogState extends State<EditProductDialog> {
         return KeyEventResult.ignored;
       },
       child: AlertDialog(
-      backgroundColor: const Color(0xFF1a1a1a),
+      backgroundColor: Theme.of(context).cardColor,
       title: Text(
         'Actualizar Producto',
         style: GoogleFonts.poppins(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -151,10 +151,10 @@ class _EditProductDialogState extends State<EditProductDialog> {
                     onSubmitted: (_) => updateProduct(),
                     decoration: InputDecoration(
                       labelText: 'Nombre del Producto',
-                      labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                      labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                       enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(
-                          color: Colors.white.withAlpha(51),
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -163,7 +163,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    style: GoogleFonts.poppins(color: Colors.white),
+                    style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -178,11 +178,11 @@ class _EditProductDialogState extends State<EditProductDialog> {
                         decoration: InputDecoration(
                           labelText: 'CB (Código de Barras)',
                           labelStyle: GoogleFonts.poppins(
-                            color: Colors.white70,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(
-                              color: Colors.white.withAlpha(51),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -193,7 +193,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        style: GoogleFonts.poppins(color: Colors.white),
+                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -254,7 +254,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                       value: category,
                       child: Text(
                         category,
-                        style: GoogleFonts.poppins(color: Colors.white),
+                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                       ),
                     );
                   }).toList(),
@@ -265,13 +265,13 @@ class _EditProductDialogState extends State<EditProductDialog> {
                       });
                     }
                   },
-                  dropdownColor: const Color(0xFF1a1a1a),
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  dropdownColor: Theme.of(context).cardColor,
+                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     labelText: 'Categoría',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -298,9 +298,9 @@ class _EditProductDialogState extends State<EditProductDialog> {
                           ],
                   decoration: InputDecoration(
                     labelText: isBulk ? 'KG CT' : 'Unidades',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -308,7 +308,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -318,13 +318,13 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   inputFormatters: [CurrencyInputFormatter()],
                   decoration: InputDecoration(
                     prefixText: r'$ ',
-                    prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                    prefixStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                     labelText: isBulk
                         ? 'Precio de Compra (por 1 KG CT)'
                         : 'Precio de Compra',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -332,7 +332,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -342,13 +342,13 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   inputFormatters: [CurrencyInputFormatter()],
                   decoration: InputDecoration(
                     prefixText: r'$ ',
-                    prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                    prefixStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                     labelText: isBulk
                         ? 'Precio de Venta (por 1 KG CT)'
                         : 'Precio de Venta',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -356,7 +356,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -376,7 +376,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                     Text(
                       '¿Tiene precio mayoreo?',
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 16,
                       ),
                     ),
@@ -394,12 +394,12 @@ class _EditProductDialogState extends State<EditProductDialog> {
                           inputFormatters: [CurrencyInputFormatter()],
                           decoration: InputDecoration(
                             prefixText: r'$ ',
-                            prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                            prefixStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                             labelText: 'Precio Mayoreo',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                            labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
-                                color: Colors.white.withAlpha(51),
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -408,7 +408,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -420,10 +420,10 @@ class _EditProductDialogState extends State<EditProductDialog> {
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           decoration: InputDecoration(
                             labelText: 'Mínimo Unidades',
-                            labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                            labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
-                                color: Colors.white.withAlpha(51),
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -432,7 +432,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         ),
                       ),
                     ],
@@ -451,7 +451,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
           },
           child: Text(
             'Cancelar',
-            style: GoogleFonts.poppins(color: Colors.white70),
+            style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
           ),
         ),
         ElevatedButton(

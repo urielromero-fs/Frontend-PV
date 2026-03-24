@@ -85,37 +85,35 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   }
   Future<void> _checkOpenSession() async {
     final result = await CashSessionService.getOpenSession();
-            if (!result['success']) {            
-              return;
-            }
-            final data = result['data'];
-            if (data == null) {
-              setState(() {
-                _isRegisterOpen = false;
-                _currentSessionId = null;
-              });
-              return;
-            }
-            // 
-            if (data is Map<String, dynamic>) {
-              setState(() {
-                _isRegisterOpen = true;
-                _currentSessionId = data['_id'];
-                _initialCash = (data['openingAmount'] ?? 0).toDouble();
-              });
-            }
-          }
+    if (!result['success']) {
+      return;
+    }
+    final data = result['data'];
+    if (data == null) {
+      setState(() {
+        _isRegisterOpen = false;
+        _currentSessionId = null;
+      });
+      return;
+    }
+    if (data is Map<String, dynamic>) {
+      setState(() {
+        _isRegisterOpen = true;
+        _currentSessionId = data['_id'];
+        _initialCash = (data['openingAmount'] ?? 0).toDouble();
+      });
+    }
+  }
   Future<void> _processSale() async {
-    //Mostrar diálogo de carga
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(color: Color(0xFF05e265)),
+      builder: (context) => Center(
+        child: CircularProgressIndicator(color: const Color(0xFF05e265)),
       ),
     );
+
     try {
-      // Mapear items al formato del endpoint
       final List<Map<String, dynamic>> productsPayload = currentTicket.items
           .map((item) {
             return {
@@ -124,25 +122,25 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             };
           })
           .toList();
-      //Llamar al servicio
+
       final result = await SaleService.createSale(
-          products: productsPayload,
-          paymentMethod: currentTicket.paymentMethod,
-          discount: currentTicket.discount
+        products: productsPayload,
+        paymentMethod: currentTicket.paymentMethod,
+        discount: currentTicket.discount,
       );
-      // Quitar diálogo de carga
+
       Navigator.pop(context);
-    if (result['success']) {
-      // Actualizar contadores locales para el reporte diario
-        //Actualizar inventario 
+
+      if (result['success']) {
         await Provider.of<ProductProvider>(context, listen: false)
             .fetchProducts();
-        // Guardar copia de los datos antes de limpiar para el ticket
+
         final ticketItems = List<CartItem>.from(currentTicket.items);
         final ticketTotal = currentTicket.total;
         final ticketReceived = currentTicket.amountTendered ?? 0.0;
         final ticketChange = ticketReceived - ticketTotal;
         final ticketPaymentMethod = currentTicket.paymentMethod;
+
         setState(() {
           _totalSales += currentTicket.total;
           currentTicket.items.clear();
@@ -151,6 +149,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           currentTicket.paymentMethod = 'Efectivo';
           _calculateTotals();
         });
+
         _showSuccessDialog(
           result['message'],
           ticketData: {
@@ -165,20 +164,28 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         _showErrorSnackBar(result['message']);
       }
     } catch (e) {
-      Navigator.pop(context); // Quitar carga en caso de error
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
       _showErrorSnackBar('Error de conexión: $e');
     }
   }
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(backgroundColor: Colors.redAccent, content: Text(message)),
+      SnackBar(
+        backgroundColor: Theme.of(context).colorScheme.error,
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
   void _showSuccessDialog(String message, {Map<String, dynamic>? ticketData}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: const Icon(
           Icons.check_circle,
           color: Color(0xFF05e265),
@@ -190,14 +197,32 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             if (ticketData != null) ...[
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dividerColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    _buildTicketDetailRow('Total:', _f(ticketData['total'])),
+                    _buildTicketDetailRow('Recibido:', _f(ticketData['received'])),
+                    _buildTicketDetailRow('Cambio:', _f(ticketData['change'])),
+                  ],
+                ),
+              ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: () {
                   PrintService.printTicket(
-                    businessName: '', // Título removido a petición del usuario
+                    businessName: '',
                     items: ticketData['items'],
                     total: ticketData['total'],
                     received: ticketData['received'],
@@ -206,9 +231,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   );
                 },
                 icon: const Icon(Icons.print, color: Colors.white),
-                label: const Text('Imprimir Ticket', style: TextStyle(color: Colors.white)),
+                label: const Text(
+                  'Imprimir Ticket',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF05e265),
+                  foregroundColor: Colors.white,
                 ),
               ),
             ],
@@ -218,9 +247,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Aceptar',
-              style: TextStyle(color: Color(0xFF05e265)),
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF05e265),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -233,7 +265,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
           'Iniciar Cobro de Caja',
           style: GoogleFonts.poppins(
@@ -318,7 +350,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
           'Cerrar Operación',
           style: GoogleFonts.poppins(
@@ -384,7 +416,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
           'Reporte del Día',
           style: GoogleFonts.poppins(
@@ -412,9 +444,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               '-\$${NumberFormat("#,###.00").format(_totalWithdrawals)}',
               color: Colors.redAccent,
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.0),
-              child: Divider(color: Colors.white24),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Divider(color: Theme.of(context).dividerColor),
             ),
             _buildReportRow(
               'Total en Caja:',
@@ -558,7 +590,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           children: [
             Text(
               'Cobros',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             if (_isRegisterOpen) ...[
               SizedBox(width: isMobile ? 8 : 16),
@@ -588,11 +623,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             ],
           ],
         ),
-        backgroundColor: const Color(0xFF000000),
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -693,11 +728,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   Widget _buildMobileLayout(List<dynamic> filteredProducts) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -726,11 +757,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       onSubmitted: (value) => _onSearchSubmitted(value),
                       decoration: InputDecoration(
                         hintText: 'Buscar producto...',
-                        hintStyle: GoogleFonts.poppins(color: Colors.white70),
-                        icon: const Icon(Icons.search, color: Colors.white70),
+                        hintStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                        icon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                         border: InputBorder.none,
                       ),
-                      style: GoogleFonts.poppins(color: Colors.white),
+                      style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                     ),
                   ),
                 ),
@@ -738,7 +769,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 // Category Filter Buttons (Example)
                 IconButton(
                   onPressed: _showFilterDialog,
-                  icon: const Icon(Icons.filter_list, color: Colors.white70),
+                  icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                   tooltip: 'Filtrar',
                 ),
               ],
@@ -777,11 +808,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         flex: 2,
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [const Color(0xFF000000), const Color(0xFF1a1a1a)],
-            ),
+            color: Theme.of(context).scaffoldBackgroundColor,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -795,9 +822,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(13),
+                          color: Theme.of(context).dividerColor.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withAlpha(26)),
+                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                         ),
                         child: TextField(
                           focusNode: _searchFocusNode,
@@ -811,15 +838,15 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                           decoration: InputDecoration(
                             hintText: 'Buscar producto...',
                             hintStyle: GoogleFonts.poppins(
-                              color: Colors.white70,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                             ),
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.search,
-                              color: Colors.white70,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                             ),
                             border: InputBorder.none,
                           ),
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         ),
                       ),
                     ),
@@ -827,9 +854,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     // Category Filter Buttons (Example)
                     IconButton(
                       onPressed: _showFilterDialog,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.filter_list,
-                        color: Colors.white70,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                       ),
                       tooltip: 'Filtrar',
                     ),
@@ -870,17 +897,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         flex: 3,
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [const Color(0xFF1a1a1a), const Color(0xFF000000)],
-            ),
+            color: Theme.of(context).cardColor,
           ),
           child: Column(
             children: [
               // Ticket Tabs
               Container(
-                color: Colors.black,
+                color: Theme.of(context).cardColor,
                 child: Row(
                   children: [
                     Expanded(
@@ -889,7 +912,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         isScrollable: true,
                         indicatorColor: const Color(0xFF05e265),
                         labelColor: const Color(0xFF05e265),
-                        unselectedLabelColor: Colors.white54,
+                        unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                         tabs: _tickets.asMap().entries.map((entry) {
                           return Tab(
                             child: Row(
@@ -900,7 +923,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                     padding: const EdgeInsets.only(left: 8.0),
                                     child: InkWell(
                                       onTap: () => _closeTicket(entry.key),
-                                      child: const Icon(Icons.close, size: 16),
+                                      child: Icon(Icons.close, size: 16, color: Theme.of(context).colorScheme.onSurface),
                                     ),
                                   ),
                               ],
@@ -936,19 +959,19 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            currentTicket.items.isEmpty 
+                            currentTicket.items.isEmpty
                                 ? 'Carrito'
                                 : 'Carrito (${currentTicket.items.fold<double>(0.0, (sum, item) => sum + (item.isBulk ? 1.0 : item.quantity)).toInt()} art.)',
                             style: GoogleFonts.poppins(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.delete_outline,
-                              color: Colors.white70,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                             ),
                             onPressed: () {
                               setState(() {
@@ -970,14 +993,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                   children: [
                                     Icon(
                                       Icons.shopping_cart_outlined,
-                                      color: Colors.white.withAlpha(51),
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                                       size: 48,
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
                                       'Ticket vacío',
                                       style: GoogleFonts.poppins(
-                                        color: Colors.white70,
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                         fontSize: 14,
                                       ),
                                     ),
@@ -1176,14 +1199,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                     Text(
                                       'Recibido:',
                                       style: GoogleFonts.poppins(
-                                        color: Colors.white70,
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                         fontSize: 16,
                                       ),
                                     ),
                                     Text(
                                       _f(currentTicket.amountTendered!),
                                       style: GoogleFonts.poppins(
-                                        color: Colors.white,
+                                        color: Theme.of(context).colorScheme.onSurface,
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -1198,7 +1221,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                     Text(
                                       'Cambio:',
                                       style: GoogleFonts.poppins(
-                                        color: Colors.white70,
+                                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                         fontSize: 16,
                                       ),
                                     ),
@@ -1226,10 +1249,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         paymentMethod: currentTicket.paymentMethod,
                                       );
                                     },
-                                    icon: const Icon(Icons.print, size: 16, color: Colors.white70),
+                                    icon: Icon(Icons.print, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                                     label: Text(
                                       'Imprimir previo',
-                                      style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+                                      style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 12),
                                     ),
                                     style: TextButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1310,51 +1333,53 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       child: InkWell(
         onTap: _showMobileCartBottomSheet,
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
+            Row(
               children: [
-                const Icon(Icons.shopping_cart, color: Colors.white),
-                if (totalItems > 0)
-                  Positioned(
-                    right: -8,
-                    top: -8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        totalItems.toString(),
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.shopping_cart, color: Colors.white),
+                    if (totalItems > 0)
+                      Positioned(
+                        right: -8,
+                        top: -8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            totalItems.toString(),
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'Ver Carrito',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
+                ),
               ],
             ),
-            const SizedBox(width: 16),
-            Text(
-              'Ver Carrito',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(width: 16),
             Text(
               _f(currentTicket.total),
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 18,
               ),
             ),
           ],
@@ -1373,9 +1398,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
              _currentModalSetState = setModalState;
             return Container(
               height: MediaQuery.of(context).size.height * 0.9,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1a1a1a),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
                 children: [
@@ -1384,7 +1409,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white24,
+                      color: Theme.of(context).dividerColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1402,7 +1427,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                     ? 'Carrito'
                                     : 'Carrito (${currentTicket.items.fold<double>(0.0, (sum, item) => sum + (item.isBulk ? 1.0 : item.quantity)).toInt()} art.)',
                                 style: GoogleFonts.poppins(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1422,9 +1447,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       label: Text('Vaciar', style: GoogleFonts.poppins(color: Colors.redAccent)),
                                     ),
                                   IconButton(
-                                    icon: const Icon(
+                                    icon: Icon(
                                       Icons.close,
-                                      color: Colors.white70,
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                     ),
                                     onPressed: () => Navigator.pop(context),
                                   ),
@@ -1435,7 +1460,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                           const SizedBox(height: 12),
                           // Ticket Tabs
                           Container(
-                            color: Colors.black,
+                            color: Theme.of(context).cardColor,
                             child: Row(
                               children: [
                                 Expanded(
@@ -1444,7 +1469,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                     isScrollable: true,
                                     indicatorColor: const Color(0xFF05e265),
                                     labelColor: const Color(0xFF05e265),
-                                    unselectedLabelColor: Colors.white54,
+                                    unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                                     tabs: _tickets.asMap().entries.map((entry) {
                                       return Tab(
                                         child: Row(
@@ -1461,9 +1486,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                     setModalState(() {});
                                                     setState(() {});
                                                   },
-                                                  child: const Icon(
+                                                  child: Icon(
                                                     Icons.close,
                                                     size: 16,
+                                                    color: Theme.of(context).colorScheme.onSurface,
                                                   ),
                                                 ),
                                               ),
@@ -1502,14 +1528,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         children: [
                                           Icon(
                                             Icons.shopping_cart_outlined,
-                                            color: Colors.white.withAlpha(51),
+                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                                             size: 48,
                                           ),
                                           const SizedBox(height: 12),
                                           Text(
                                             'Ticket vacío',
                                             style: GoogleFonts.poppins(
-                                              color: Colors.white70,
+                                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                               fontSize: 14,
                                             ),
                                           ),
@@ -1594,10 +1620,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(13),
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.white.withAlpha(26),
+                                color: Theme.of(context).dividerColor.withOpacity(0.1),
                               ),
                             ),
                             child: Column(
@@ -1610,14 +1636,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       Text(
                                         'Subtotal',
                                         style: GoogleFonts.poppins(
-                                          color: Colors.white70,
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                           fontSize: 16,
                                         ),
                                       ),
                                       Text(
                                         _f(currentTicket.subtotal),
                                         style: GoogleFonts.poppins(
-                                          color: Colors.white70,
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                           fontSize: 16,
                                         ),
                                       ),
@@ -1661,7 +1687,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  const Divider(color: Colors.white24),
+                                  Divider(color: Theme.of(context).dividerColor),
                                   const SizedBox(height: 8),
                                 ],
                                 Row(
@@ -1673,7 +1699,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         Text(
                                           'Total',
                                           style: GoogleFonts.poppins(
-                                            color: Colors.white,
+                                            color: Theme.of(context).colorScheme.onSurface,
                                             fontSize: 22,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -1743,14 +1769,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       Text(
                                         'Recibido:',
                                         style: GoogleFonts.poppins(
-                                          color: Colors.white70,
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                           fontSize: 16,
                                         ),
                                       ),
                                       Text(
                                         _f(currentTicket.amountTendered!),
                                         style: GoogleFonts.poppins(
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -1765,7 +1791,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       Text(
                                         'Cambio:',
                                         style: GoogleFonts.poppins(
-                                          color: Colors.white70,
+                                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                           fontSize: 16,
                                         ),
                                       ),
@@ -1793,10 +1819,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                           paymentMethod: currentTicket.paymentMethod,
                                         );
                                       },
-                                      icon: const Icon(Icons.print, size: 16, color: Colors.white70),
+                                      icon: Icon(Icons.print, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                                       label: Text(
                                         'Imprimir previo',
-                                        style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+                                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 12),
                                       ),
                                       style: TextButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -2009,21 +2035,24 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               return KeyEventResult.ignored;
             },
             child: AlertDialog(
-              backgroundColor: const Color(0xFF1a1a1a),
+              backgroundColor: Theme.of(context).cardColor,
               title: Text(
-                'Cobrar - ${_f(currentTicket.total)}',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+                'Cobrar - TOTAL: ${_f(currentTicket.total)}',
+                style: GoogleFonts.poppins(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            content: Column(
+              content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Método de Pago:',
-                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
+                  style: GoogleFonts.poppins(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -2060,7 +2089,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 const SizedBox(height: 24),
                 Text(
                   'Cantidad con la que paga el cliente:',
-                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 14),
+                  style: GoogleFonts.poppins(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -2071,21 +2103,24 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   ),
                   inputFormatters: [CurrencyInputFormatter()],
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Monto recibido',
-                    labelStyle: GoogleFonts.poppins(color: Colors.white70, fontSize: 16),
+                    labelStyle: GoogleFonts.poppins(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      fontSize: 16,
+                    ),
                     prefixText: r'$ ',
                     prefixStyle: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
                     ),
                   ),
                   onSubmitted: (_) {
@@ -2122,7 +2157,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   'Cancelar',
-                  style: GoogleFonts.poppins(color: Colors.white54),
+                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                 ),
               ),
               ElevatedButton(
@@ -2154,12 +2189,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF05e265),
+                  foregroundColor: Colors.white,
                 ),
                 child: Text(
                   'Aceptar',
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
                   ),
                 ),
               ),
@@ -2181,10 +2216,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF05e265).withOpacity(0.2) : Colors.white.withAlpha(13),
+            color: isActive
+                ? const Color(0xFF05e265).withOpacity(0.2)
+                : Theme.of(context).dividerColor.withOpacity(0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isActive ? const Color(0xFF05e265) : Colors.white.withAlpha(26),
+              color: isActive
+                  ? const Color(0xFF05e265)
+                  : Theme.of(context).dividerColor.withOpacity(0.1),
               width: 2,
             ),
           ),
@@ -2193,18 +2232,21 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             children: [
               Icon(
                 icon,
-                color: isActive ? const Color(0xFF05e265) : Colors.white70,
-                size: 24, // reduced slightly to fit smaller screens
+                color: isActive
+                    ? const Color(0xFF05e265)
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                size: 24,
               ),
               const SizedBox(height: 8),
               FittedBox(
-                fit: BoxFit.scaleDown,
                 child: Text(
                   label,
                   style: GoogleFonts.poppins(
-                    color: isActive ? Colors.white : Colors.white70,
-                    fontSize: 12,
+                    color: isActive
+                        ? const Color(0xFF05e265)
+                        : Theme.of(context).colorScheme.onSurface,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 12,
                   ),
                 ),
               ),
@@ -2219,7 +2261,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       context: context,
       barrierDismissible: true,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: Row(
           children: [
             const Icon(Icons.history, color: Color(0xFF05e265)),
@@ -2323,18 +2365,32 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  const Icon(Icons.access_time, size: 12, color: Colors.white38),
+                                  Icon(
+                                    Icons.access_time, 
+                                    size: 12, 
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     DateFormat('dd/MM/yyyy HH:mm').format(date),
-                                    style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11),
+                                    style: GoogleFonts.poppins(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4), 
+                                      fontSize: 11,
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
-                                  const Icon(Icons.payment, size: 12, color: Colors.white38),
+                                  Icon(
+                                    Icons.payment, 
+                                    size: 12, 
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     paymentMethod,
-                                    style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11),
+                                    style: GoogleFonts.poppins(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4), 
+                                      fontSize: 11,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -2380,19 +2436,19 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
           '¿Cancelar venta?',
-          style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
         ),
         content: Text(
           'Esta acción es irreversible y anulará el ticket seleccionado.',
-          style: GoogleFonts.poppins(color: Colors.white70),
+          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Regresar', style: GoogleFonts.poppins(color: Colors.white54)),
+            child: Text('Regresar', style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -2470,11 +2526,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
+        backgroundColor: Theme.of(context).cardColor,
         title: Text(
           'Aplicar Descuento',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -2483,7 +2539,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           children: [
             Text(
               'Ingresa el monto de descuento para este ticket:',
-              style: GoogleFonts.poppins(color: Colors.white70),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -2492,14 +2548,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 decimal: true,
               ),
               inputFormatters: [CurrencyInputFormatter()],
-              style: GoogleFonts.poppins(color: Colors.white),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: 'Monto de descuento',
-                labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                 prefixText: r'$ ',
-                prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                prefixStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                 enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
                 ),
               ),
               autofocus: true,
@@ -2531,7 +2587,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancelar',
-              style: GoogleFonts.poppins(color: Colors.white54),
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
             ),
           ),
           ElevatedButton(
@@ -2554,15 +2612,21 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF05e265),
+              foregroundColor: Colors.white,
             ),
             child: Text(
               'Aplicar',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
               ),
             ),
-          Future<void> _showWithdrawalDialog() async {
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showWithdrawalDialog() async {
     showDialog(
       context: context,
       builder: (context) => WithdrawalDialog(
@@ -2580,7 +2644,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       context: context,
       builder: (_) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1a1a1a),
+          backgroundColor: Theme.of(context).cardColor,
           title: Text(
             'Filtros',
             style: GoogleFonts.poppins(
@@ -2596,13 +2660,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   // Categoría
                   DropdownButtonFormField<String>(
                     value: selectedCategoryFilter,
-                    dropdownColor: const Color(0xFF1a1a1a),
+                    dropdownColor: Theme.of(context).cardColor,
                     items: categoryFilters.map((cat) {
                       return DropdownMenuItem(
                         value: cat,
                         child: Text(
                           cat,
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         ),
                       );
                     }).toList(),
@@ -2617,13 +2681,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   // Ordenamiento
                   DropdownButtonFormField<String>(
                     value: selectedSortOption,
-                    dropdownColor: const Color(0xFF1a1a1a),
+                    dropdownColor: Theme.of(context).cardColor,
                     items: sortOptions.map((sort) {
                       return DropdownMenuItem(
                         value: sort,
                         child: Text(
                           sort,
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         ),
                       );
                     }).toList(),
@@ -2649,7 +2713,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                       ),
                       Text(
                         'Solo productos a granel',
-                        style: GoogleFonts.poppins(color: Colors.white),
+                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ],
                   ),
@@ -2684,6 +2748,32 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           ],
         );
       },
+    );
+  }
+
+  Widget _buildTicketDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              fontSize: 14,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
