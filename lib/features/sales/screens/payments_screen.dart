@@ -1130,7 +1130,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                     Text(
                                       'Total',
                                       style: GoogleFonts.poppins(
-                                        color: Colors.white,
+                                        color: Theme.of(context).colorScheme.onSurface,
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
                                       ),

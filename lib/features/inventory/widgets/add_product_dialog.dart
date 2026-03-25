@@ -107,6 +107,48 @@ class _AddProductDialogState extends State<AddProductDialog> {
     super.dispose();
   }
 
+  // Helper para inputs consistentes con MD3
+  InputDecoration _inputDecoration(BuildContext context, {
+    required String labelText,
+    String? prefixText,
+    TextStyle? prefixStyle,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InputDecoration(
+      labelText: labelText,
+      prefixText: prefixText,
+      prefixStyle: prefixStyle ?? GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
+      labelStyle: GoogleFonts.poppins(
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+      ),
+      floatingLabelStyle: GoogleFonts.poppins(
+        color: const Color(0xFF05e265),
+        fontWeight: FontWeight.w500,
+      ),
+      filled: true,
+      fillColor: isDark
+          ? Theme.of(context).colorScheme.onSurface.withOpacity(0.07)
+          : Colors.grey.shade50,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: isDark
+              ? Theme.of(context).colorScheme.onSurface.withOpacity(0.3)
+              : Theme.of(context).dividerColor.withOpacity(0.2),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF05e265), width: 1.8),
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Focus(
@@ -143,24 +185,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                     autofocus: true,
                     controller: nameController,
                     onSubmitted: (_) => saveProduct(),
-                    decoration: InputDecoration(
-                      labelText: 'Nombre del Producto',
-                      labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                      floatingLabelStyle: GoogleFonts.poppins(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Color(0xFF05e265)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                    decoration: _inputDecoration(context, labelText: 'Nombre del Producto'),
                     style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                   ),
                 ),
@@ -173,24 +198,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                         onSubmitted: (_) => saveProduct(),
                         keyboardType: TextInputType.number,
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        decoration: InputDecoration(
-                          labelText: 'CB (Código de Barras)',
-                          labelStyle: GoogleFonts.poppins(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Color(0xFF05e265),
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+                        decoration: _inputDecoration(context, labelText: 'CB (Código de Barras)'),
                         style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
@@ -201,13 +209,8 @@ class _AddProductDialogState extends State<AddProductDialog> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
-                        icon: const Icon(
-                          Icons.qr_code_scanner,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          _scanBarcodeWithOptions(context, barcodeController);
-                        },
+                        icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+                        onPressed: () => _scanBarcodeWithOptions(context, barcodeController),
                         tooltip: 'Escanear Código de Barras',
                       ),
                     ),
@@ -265,47 +268,17 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   },
                   dropdownColor: Theme.of(context).cardColor,
                   style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
-                  decoration: InputDecoration(
-                    labelText: 'Categoría',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  decoration: _inputDecoration(context, labelText: 'Categoría'),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: unitsController,
                   onSubmitted: (_) => saveProduct(),
-                  keyboardType: TextInputType.numberWithOptions(
-                      decimal: isBulk,
-                    ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: isBulk),
                   inputFormatters: isBulk
-                        ? [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d+\.?\d{0,2}'),
-                            ),
-                          ]
-                        : [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                  decoration: InputDecoration(
-                    labelText: isBulk ? 'KG CT' : 'Unidades',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                      ? [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))]
+                      : [FilteringTextInputFormatter.digitsOnly],
+                  decoration: _inputDecoration(context, labelText: isBulk ? 'KG CT' : 'Unidades'),
                   style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 const SizedBox(height: 16),
@@ -314,21 +287,10 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   onSubmitted: (_) => saveProduct(),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [CurrencyInputFormatter()],
-                  decoration: InputDecoration(
+                  decoration: _inputDecoration(
+                    context,
+                    labelText: isBulk ? 'Precio de Compra (por 1 KG CT)' : 'Precio de Compra',
                     prefixText: r'$ ',
-                    prefixStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
-                    labelText: isBulk
-                        ? 'Precio de Compra (por 1 KG CT)'
-                        : 'Precio de Compra',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
                   ),
                   style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                 ),
@@ -338,21 +300,10 @@ class _AddProductDialogState extends State<AddProductDialog> {
                   onSubmitted: (_) => saveProduct(),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [CurrencyInputFormatter()],
-                  decoration: InputDecoration(
+                  decoration: _inputDecoration(
+                    context,
+                    labelText: isBulk ? 'Precio de Venta (por 1 KG CT)' : 'Precio de Venta',
                     prefixText: r'$ ',
-                    prefixStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
-                    labelText: isBulk
-                        ? 'Precio de Venta (por 1 KG CT)'
-                        : 'Precio de Venta',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFF05e265)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
                   ),
                   style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                 ),
@@ -390,21 +341,10 @@ class _AddProductDialogState extends State<AddProductDialog> {
                           onSubmitted: (_) => saveProduct(),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           inputFormatters: [CurrencyInputFormatter()],
-                          decoration: InputDecoration(
-                            prefixText: r'$ ',
-                            prefixStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
+                          decoration: _inputDecoration(
+                            context,
                             labelText: 'Precio Mayoreo',
-                            labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Color(0xFF05e265)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                            prefixText: r'$ ',
                           ),
                           style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         ),
@@ -416,20 +356,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                           onSubmitted: (_) => saveProduct(),
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            labelText: 'Mínimo Unidades',
-                            labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Color(0xFF05e265)),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
+                          decoration: _inputDecoration(context, labelText: 'Mínimo Unidades'),
                           style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         ),
                       ),
