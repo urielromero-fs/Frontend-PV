@@ -11,11 +11,8 @@ import 'package:pv26/features/auth/services/auth_service.dart';
 import 'package:pv26/features/inventory/providers/product_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../reports/services/reports_service.dart';
-import 'package:pv26/core/providers/theme_provider.dart';
 import '../../users/services/users_service.dart'; 
-import '../../../core/utils/currency_formatter.dart';
 import 'package:showcaseview/showcaseview.dart';
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,43 +30,20 @@ class _HomeScreenState extends State<HomeScreen> {
   bool get _isAdmin => _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'administrador';
   bool get _isCajero => _userRole.toLowerCase() == 'seller' || _userRole.toLowerCase() == 'cajero';
 
-   Map<String, dynamic> metricData = {};
+  Map<String, dynamic> metricData = {};
 
-  //Onboarding  
-
-  final GlobalKey _sidebarDashboardMenuButtonKey = GlobalKey();
-  final GlobalKey _dashboardKey = GlobalKey(); 
+  //Guided tour 
+  final GlobalKey _sideBarButton = GlobalKey(); 
+  final GlobalKey _sidebarDashboardKey = GlobalKey();
   final GlobalKey _inventoryKey = GlobalKey();
   final GlobalKey _salesKey = GlobalKey();
   final GlobalKey _usersKey = GlobalKey();
   final GlobalKey _reportsKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
-  final GlobalKey _logoutKey = GlobalKey(); 
 
   @override
   void initState() {
-
-    //Onboarding
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 600), () {
-          ShowcaseView.get().startShowCase([
-            _dashboardKey, 
-            _inventoryKey,
-            _salesKey,
-            _usersKey, 
-            _reportsKey, 
-            _settingsKey, 
-            _logoutKey,
-            _sidebarDashboardMenuButtonKey,
-            
-          ]);
-        });
-      });
-
     super.initState();
-
-
-
     _loadUserData();
       // Carga inicial de productos
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -83,7 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _loadMetrics(); 
 
-  
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => ShowcaseView.get().startShowCase([_sidebarDashboardKey]),
+    );
 
 
 
@@ -214,11 +190,11 @@ class _HomeScreenState extends State<HomeScreen> {
             return KeyEventResult.ignored;
           },
           child: AlertDialog(
-            backgroundColor: Theme.of(context).cardColor,
+            backgroundColor: const Color(0xFF1a1a1a),
           title: Text(
             'Configuración de Perfil',
             style: GoogleFonts.poppins(
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -230,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'Actualiza tus datos de acceso.',
                   style: GoogleFonts.poppins(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Colors.white70,
                     fontSize: 12,
                   ),
                 ),
@@ -239,17 +215,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   autofocus: true,
                   controller: nameController,
                   onSubmitted: (_) => saveSettings(),
-                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
+                  style: GoogleFonts.poppins(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Nombre Completo',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
                     ),
                     focusedBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Color(0xFF05e265)),
                     ),
-                    prefixIcon: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                    prefixIcon: const Icon(Icons.person, color: Colors.white70),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -257,17 +233,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: emailController,
                   onSubmitted: (_) => saveSettings(),
                   keyboardType: TextInputType.emailAddress,
-                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
+                  style: GoogleFonts.poppins(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Correo Electrónico',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
                     ),
                     focusedBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Color(0xFF05e265)),
                     ),
-                    prefixIcon: Icon(Icons.email, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                    prefixIcon: const Icon(Icons.email, color: Colors.white70),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -275,17 +251,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: passwordController,
                   onSubmitted: (_) => saveSettings(),
                   obscureText: true,
-                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
+                  style: GoogleFonts.poppins(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Nueva Contraseña (opcional)',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                    labelStyle: GoogleFonts.poppins(color: Colors.white70),
                     enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                      borderSide: BorderSide(color: Colors.white.withAlpha(51)),
                     ),
                     focusedBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Color(0xFF05e265)),
                     ),
-                    prefixIcon: Icon(Icons.lock, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                    prefixIcon: const Icon(Icons.lock, color: Colors.white70),
                   ),
                 ),
               ],
@@ -296,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancelar',
-                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                style: GoogleFonts.poppins(color: Colors.white54),
               ),
             ),
             ElevatedButton(
@@ -427,7 +403,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).cardColor,
+          backgroundColor: const Color(0xFF1a1a1a),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
@@ -436,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'Centro de Ayuda',
                 style: GoogleFonts.outfit(
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -448,13 +424,13 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 'Estamos aquí para apoyarte con cualquier duda o problema técnico.',
-                style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
+                style: GoogleFonts.outfit(color: Colors.white70, fontSize: 13),
               ),
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).dividerColor.withOpacity(0.05),
+                  color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -468,7 +444,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             'Horario de Atención',
                             style: GoogleFonts.outfit(
-                              color: Theme.of(context).colorScheme.onSurface,
+                              color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -476,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             'Lunes a Viernes: 10:00 AM - 5:00 PM',
                             style: GoogleFonts.outfit(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              color: Colors.white70,
                               fontSize: 11,
                             ),
                           ),
@@ -499,11 +475,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 title: Text(
                   'Correo Electrónico',
-                  style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
                   'uriel.romero@fstack.com.mx',
-                  style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                  style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
                 ),
                 onTap: () {
                   final Uri emailUri = Uri(
@@ -529,11 +505,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 title: Text(
                   'WhatsApp Soporte',
-                  style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
                   '+52 55 1234 5678',
-                  style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                  style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
                 ),
                 onTap: () {
                   final Uri whatsappUri = Uri.parse('https://wa.me/525512345678?text=Hola,%20necesito%20soporte%20con%20Centli%20POS.');
@@ -580,9 +556,13 @@ class _HomeScreenState extends State<HomeScreen> {
       return Container(
         width: sidebarWidth,
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF000000), Color(0xFF1a1a1a)],
+          ),
           border: Border(
-            right: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.05)),
+            right: BorderSide(color: Colors.white.withOpacity(0.05)),
           ),
         ),
         child: Column(
@@ -619,10 +599,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        IconButton(
+                        // IconButton(
+                        //   icon: const Icon(Icons.menu_open, color: Colors.white),
+                        //   onPressed: () => setState(() => _isSidebarCollapsed = false),
+                        // ),
+
+                      Showcase(
+                        key: _sidebarDashboardKey,
+                        description: 'Este botón abre o cierra el menú',
+                        child: IconButton(
                           icon: const Icon(Icons.menu_open, color: Colors.white),
                           onPressed: () => setState(() => _isSidebarCollapsed = false),
                         ),
+                      ),
                       ],
                     )
                   : Row(
@@ -636,32 +625,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const Spacer(),
-                        // IconButton(
-                        //   icon: const Icon(Icons.menu, color: Colors.white),
-                        //   onPressed: () => setState(() => _isSidebarCollapsed = true),
-                        // ),
-
-                        Showcase(
-                          key: _sidebarDashboardMenuButtonKey,
-                          description: 'Toca para Abrir o Cerrar el Menú.',
-                          tooltipPadding: const EdgeInsets.all(12),
-                          tooltipActions: [
-                                    
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.next,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Siguiente',
-                                     
-                                    )
-                                  ],
-                          tooltipActionConfig: TooltipActionConfig(
-                                alignment: MainAxisAlignment.center,
-                              ),
-                          child: IconButton(
-                            icon: const Icon(Icons.menu_open, color: Colors.white),
-                            onPressed: () => setState(() => _isSidebarCollapsed = true),
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.menu, color: Colors.white),
+                          onPressed: () => setState(() => _isSidebarCollapsed = true),
                         ),
                       ],
                     ),
@@ -673,206 +639,55 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 children: [
                   if (_isAdmin)
-
-                  //Dashboard button 
-                  Showcase(
-                          key: _dashboardKey,
-                          description: 'Bienvenido a Centli. Este es tu dashboard: un resumen de tu negocio. ',
-                          tooltipPadding: const EdgeInsets.all(12),
-                          tooltipActions: [
-                                    
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.next,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Siguiente',
-                                     
-                                    )
-                                  ],
-                          tooltipActionConfig: TooltipActionConfig(
-                                alignment: MainAxisAlignment.center,
-                              ),
-                          child: _NavItem(
-                                    icon: Icons.dashboard_rounded,
-                                    title: 'Dashboard',
-                                    isActive: true,
-                                    isCollapsed: _isSidebarCollapsed,
-                                    onTap: () {},
-                                  ),
+                    _NavItem(
+                      icon: Icons.dashboard_rounded,
+                      title: 'Dashboard',
+                      isActive: true,
+                      isCollapsed: _isSidebarCollapsed,
+                      onTap: () {},
                     ),
-
-                  //Inventory button 
-                  Showcase(
-                          key: _inventoryKey,
-                          description: 'En el inventario puedes agregar, editar, eliminar y ver tus productos.',
-                          tooltipPadding: const EdgeInsets.all(12),
-                          tooltipActions: [
-                                    
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.next,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Siguiente',
-                                     
-                                    )
-                                  ],
-                          tooltipActionConfig: TooltipActionConfig(
-                                alignment: MainAxisAlignment.center,
-                              ),
-                          child:  _NavItem(
-                                icon: Icons.inventory_2_rounded,
-                                title: 'Inventario',
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen())),
-                                isCollapsed: _isSidebarCollapsed,
-                              ),
+                  _NavItem(
+                    icon: Icons.inventory_2_rounded,
+                    title: 'Inventario',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen())),
+                    isCollapsed: _isSidebarCollapsed,
                   ),
-
-                //Sales button 
-                Showcase(
-                          key: _salesKey,
-                          description: 'Dirígete a Cobros para comenzar a vender.',
-                          tooltipPadding: const EdgeInsets.all(12),
-                          tooltipActions: [
-                                    
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.next,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Siguiente',
-                                     
-                                    )
-                                  ],
-                          tooltipActionConfig: TooltipActionConfig(
-                                alignment: MainAxisAlignment.center,
-                              ),
-                          child:  _NavItem(
-                                icon: Icons.point_of_sale_rounded,
-                                title: 'Cobros',
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentsScreen())),
-                                isCollapsed: _isSidebarCollapsed,
-                              ),
-                ),
-                    
-
-
-                  
+                  _NavItem(
+                    icon: Icons.point_of_sale_rounded,
+                    title: 'Cobros',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentsScreen())),
+                    isCollapsed: _isSidebarCollapsed,
+                  ),
                   if (_isAdmin) ...[
-
-                    
-                    //Users button 
-                    Showcase(
-                              key: _usersKey,
-                              description: 'En Usuarios puedes agregar, editar, eliminar o ver a tus administradores y vendedores.',
-                              tooltipPadding: const EdgeInsets.all(12),
-                              tooltipActions: [
-                                        
-                                        TooltipActionButton(
-                                          type: TooltipDefaultActionType.next,
-                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                          textStyle: TextStyle(color: Colors.white),
-                                          name: 'Siguiente',
-                                        
-                                        )
-                                      ],
-                              tooltipActionConfig: TooltipActionConfig(
-                                    alignment: MainAxisAlignment.center,
-                                  ),
-                              child: _NavItem(
-                                        icon: Icons.people_alt_rounded,
-                                        title: 'Usuarios',
-                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersScreen())),
-                                        isCollapsed: _isSidebarCollapsed,
-                                      ),
+                    _NavItem(
+                      icon: Icons.people_alt_rounded,
+                      title: 'Usuarios',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersScreen())),
+                      isCollapsed: _isSidebarCollapsed,
                     ),
-                    
-                   
-                    //Reports button 
-                    Showcase(
-                              key: _reportsKey,
-                              description: 'En Reportes puedes ver metricas de tus ventas por dia, semana o mes.',
-                              tooltipPadding: const EdgeInsets.all(12),
-                              tooltipActions: [
-                                        
-                                        TooltipActionButton(
-                                          type: TooltipDefaultActionType.next,
-                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                          textStyle: TextStyle(color: Colors.white),
-                                          name: 'Siguiente',
-                                        
-                                        )
-                                      ],
-                              tooltipActionConfig: TooltipActionConfig(
-                                    alignment: MainAxisAlignment.center,
-                                  ),
-                              child: _NavItem(
-                                        icon: Icons.analytics_rounded,
-                                        title: 'Reportes',
-                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen())),
-                                        isCollapsed: _isSidebarCollapsed,
-                                      ),
+                    _NavItem(
+                      icon: Icons.analytics_rounded,
+                      title: 'Reportes',
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen())),
+                      isCollapsed: _isSidebarCollapsed,
                     ),
-                    
-
                   ],
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Divider(color: Colors.white10),
                   ),
                   if (_isAdmin)
-
-                    //Reports button 
-                    Showcase(
-                              key: _settingsKey,
-                              description: 'En Configuracion puedes editar tu nombre, correo o contraseña.',
-                              tooltipPadding: const EdgeInsets.all(12),
-                              tooltipActions: [
-                                        
-                                        TooltipActionButton(
-                                          type: TooltipDefaultActionType.next,
-                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                          textStyle: TextStyle(color: Colors.white),
-                                          name: 'Siguiente',
-                                        
-                                        )
-                                      ],
-                              tooltipActionConfig: TooltipActionConfig(
-                                    alignment: MainAxisAlignment.center,
-                                  ),
-                              child:   _NavItem(
-                                          icon: Icons.settings_rounded,
-                                          title: 'Configuracion',
-                                          onTap: _showSettingsModal,
-                                          isCollapsed: _isSidebarCollapsed,
-                                        ),
+                    _NavItem(
+                      icon: Icons.settings_rounded,
+                      title: 'Configuracion',
+                      onTap: _showSettingsModal,
+                      isCollapsed: _isSidebarCollapsed,
                     ),
-                    
-
                   _NavItem(
                     icon: Icons.help_outline_rounded,
                     title: 'Ayuda y Soporte',
                     onTap: _showSupportModal,
                     isCollapsed: _isSidebarCollapsed,
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Divider(color: Colors.white10),
-                  ),
-                  // Botón de cambio de tema
-                  ListTile(
-                    onTap: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
-                    leading: Icon(
-                      Provider.of<ThemeProvider>(context).isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                      color: Provider.of<ThemeProvider>(context).isDarkMode ? Colors.orange : Colors.indigoAccent,
-                    ),
-                    title: _isSidebarCollapsed 
-                      ? null 
-                      : Text(
-                          Provider.of<ThemeProvider>(context).isDarkMode ? 'Modo Claro' : 'Modo Oscuro',
-                          style: GoogleFonts.poppins(
-                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87,
-                            fontSize: 14,
-                          ),
-                        ),
                   ),
                 ],
               ),
@@ -912,11 +727,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text(
                                 _userName,
-                                style: GoogleFonts.outfit(
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
+                                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
@@ -926,35 +737,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
-
-
-                          //Logout button 
-                          Showcase(
-                                    key: _logoutKey,
-                                    description: 'Toca para cerrar sesión.',
-                                    tooltipPadding: const EdgeInsets.all(12),
-                                    tooltipActions: [
-                                              
-                                              TooltipActionButton(
-                                                type: TooltipDefaultActionType.next,
-                                                backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                                textStyle: TextStyle(color: Colors.white),
-                                                name: 'Siguiente',
-                                              
-                                              )
-                                            ],
-                                    tooltipActionConfig: TooltipActionConfig(
-                                          alignment: MainAxisAlignment.center,
-                                        ),
-                                    child:  
-                                          IconButton(
-                                            icon: const Icon(Icons.logout_rounded, color: Colors.white54, size: 20),
-                                            onPressed: () => _handleLogout(context),
-                                          ),
-                          ),
-                          
-
-
+                        IconButton(
+                          icon: const Icon(Icons.logout_rounded, color: Colors.white54, size: 20),
+                          onPressed: () => _handleLogout(context),
+                        ),
                       ],
                     ),
             ),
@@ -964,13 +750,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFF050505),
       appBar: isMobile
           ? AppBar(
-              backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-              iconTheme: IconThemeData(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              backgroundColor: Colors.black,
+              iconTheme: const IconThemeData(color: Colors.white),
               elevation: 0,
               title: Row(
                 children: [
@@ -978,21 +762,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Centli',
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold,color: Colors.white),
                   ),
                 ],
               ),
               actions: [
-                IconButton(
-                  icon: Icon(
-                    Provider.of<ThemeProvider>(context).isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                    color: Provider.of<ThemeProvider>(context).isDarkMode ? Colors.orange : Colors.indigoAccent,
-                  ),
-                  onPressed: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
-                ),
                 IconButton(
                   icon: const Icon(Icons.logout_rounded, color: Colors.white70),
                   onPressed: () => _handleLogout(context),
@@ -1103,7 +877,16 @@ class _HomeScreenState extends State<HomeScreen> {
           if (!isMobile) buildSidebar(),
           Expanded(
             child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(-0.8, -0.8),
+                  radius: 1.5,
+                  colors: [
+                    Color(0xFF151515),
+                    Color(0xFF050505),
+                  ],
+                ),
+              ),
               child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
@@ -1133,14 +916,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: GoogleFonts.outfit(
                                 fontSize: isMobile ? 28 : 40,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: Colors.white,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Bienvenido de nuevo a Centli',
                               style: GoogleFonts.outfit(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                color: Colors.white54,
                                 fontSize: isMobile ? 14 : 18,
                               ),
                             ),
@@ -1256,7 +1039,7 @@ class _NavItem extends StatelessWidget {
               ? Center(
                   child: Icon(
                     icon,
-                    color: isActive ? const Color(0xFF05e265) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: isActive ? const Color(0xFF05e265) : Colors.white60,
                     size: 24,
                   ),
                 )
@@ -1264,7 +1047,7 @@ class _NavItem extends StatelessWidget {
                   children: [
                     Icon(
                       icon,
-                      color: isActive ? const Color(0xFF05e265) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: isActive ? const Color(0xFF05e265) : Colors.white60,
                       size: 24,
                     ),
                     const SizedBox(width: 16),
@@ -1272,9 +1055,7 @@ class _NavItem extends StatelessWidget {
                       child: Text(
                         title,
                         style: GoogleFonts.outfit(
-                          color: isActive 
-                            ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black)
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: isActive ? Colors.white : Colors.white60,
                           fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                           fontSize: 15,
                         ),
@@ -1318,12 +1099,12 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white.withOpacity(0.04),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.4 : 0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -1367,16 +1148,13 @@ class _StatCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.outfit(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  fontSize: 13,
-                ),
+                style: GoogleFonts.outfit(color: Colors.white60, fontSize: 13),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
                 style: GoogleFonts.outfit(
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Colors.white,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1388,4 +1166,3 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-

@@ -7,8 +7,12 @@ import 'package:pv26/features/auth/screens/register_screen.dart';
 import 'package:pv26/features/inventory/providers/product_provider.dart';
 import 'package:pv26/core/providers/theme_provider.dart';
 import 'package:pv26/core/theme/app_theme.dart';
-
+import 'package:showcaseview/showcaseview.dart';
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar Showcase (nuevo API)
+  ShowcaseView.register();
   runApp(
     MultiProvider(
       providers: [

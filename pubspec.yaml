@@ -53,7 +53,7 @@ dependencies:
   diacritic: ^0.1.2
   path_provider: ^2.0.15
   url_launcher: ^6.3.2
- 
+  showcaseview: ^5.0.1
 
 
 dev_dependencies:
