@@ -13,6 +13,9 @@ import '../widgets/product_list_item.dart';
 import '../widgets/add_product_dialog.dart';
 import '../widgets/edit_product_dialog.dart';
 import '../widgets/add_stock_dialog.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
   @override
@@ -24,6 +27,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   bool isLoading = false;
   String errorMessage = '';
   String _userRole = 'cajero'; // Default restriction
+  
   // Filtros locales
   String searchQuery = '';
   String selectedCategoryFilter = 'Todas';
@@ -34,11 +38,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
   final FocusNode _keyboardFocusNode = FocusNode();
   String _barcodeBuffer = '';
   DateTime _lastKeyEventTime = DateTime.now();
+
   final List<String> stockFilters = [
     'Todos',
     'Bajo Stock',
     'Sin Stock',
   ];
+
   final List<String> categoryFilters = [
     'Todas',
     "Sin categoría",
@@ -58,17 +64,82 @@ class _InventoryScreenState extends State<InventoryScreen> {
     "General",
     "Otros",
   ];
+
   final List<String> sortOptions = [
     'Ninguno',
     'Precio Ascendente',
     'Precio Descendente',
   ];
+
+  //Onboarding  
+  final GlobalKey _addProductKey = GlobalKey(); 
+  final GlobalKey _refreshListKey = GlobalKey(); 
+  final GlobalKey _filterProductsKey = GlobalKey(); 
+  final GlobalKey _productOptionsKey = GlobalKey(); 
+  final GlobalKey _addStockKey = GlobalKey(); 
+
+
+  static const String _InventoryOnboardingKey = 'onboarding_inventory';
+
+  Future<bool> _shouldShowOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      return !(prefs.getBool(_InventoryOnboardingKey) ?? false);
+    }
+
+  Future<void> _setOnboardingShown() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_InventoryOnboardingKey, true);
+    }
+
   @override
   void initState() {
+
+    // //Onboarding
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Future.delayed(const Duration(milliseconds: 600), () {
+    //     ShowcaseView.get().startShowCase([
+    //       _addProductKey,
+    //       _refreshListKey,
+    //       _filterProductsKey,
+    //       _productOptionsKey,
+    //       _addStockKey,
+    //     ]);
+    //   });
+    // });
+
+
     super.initState();
 
     _loadUserRole();
+    
+ 
+    // Onboarding
+    _initOnboarding();
+
   }
+
+  
+   
+  Future<void> _initOnboarding() async {
+    final shouldShow = await _shouldShowOnboarding();
+    if (!shouldShow) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        ShowcaseView.get().startShowCase([   
+          _addProductKey,
+           _refreshListKey,
+           _filterProductsKey,
+           _productOptionsKey,
+           _addStockKey,
+        ]);
+      });
+    });
+
+    await _setOnboardingShown();
+  }
+
+
   Future<void> _loadUserRole() async {
     final role = await AuthService.getCurrentUserRole();
     setState(() {
@@ -148,27 +219,75 @@ class _InventoryScreenState extends State<InventoryScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          ElevatedButton.icon(
-            onPressed: _showAddProductModal,
-            icon: const Icon(Icons.add, size: 18, color: Colors.black),
-            label: Text(
-              'Agregar producto',
-              style: GoogleFonts.poppins(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF05e265),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => provider.fetchProducts(),
-          ),
+
+                  //Add product button 
+                  Showcase(
+                          key: _addProductKey,
+                          description: 'Toca para agregar un producto.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                                ElevatedButton.icon(
+                                  onPressed: _showAddProductModal,
+                                  icon: const Icon(Icons.add, size: 18, color: Colors.black),
+                                  label: Text(
+                                    'Agregar producto',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF05e265),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                ),
+
+                  ),
+                  
+                  //Refresh list button 
+                  Showcase(
+                          key: _refreshListKey,
+                          description: "Toca para actualizar la lista de productos.", 
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                                 IconButton(
+                                  icon: const Icon(Icons.refresh),
+                                  onPressed: () => provider.fetchProducts(),
+                                ),
+
+                  ),
+
+
+
+         
         ],
       ),
       /* Removed FloatingActionButton as requested and moved it to the top */
@@ -222,14 +341,39 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: _showFilterDialog,
-                        icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface, size: 20),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Theme.of(context).dividerColor.withOpacity(0.05),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                      ),
+
+                  //Filter products button 
+                  Showcase(
+                          key: _filterProductsKey,
+                          description: "Toca para filtrar productos por stock o categoría, o para ordenarlos.", 
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                                 IconButton(
+                                  onPressed: _showFilterDialog,
+                                  icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface, size: 20),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: Theme.of(context).dividerColor.withOpacity(0.05),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                ),
+
+                  ),
+
+
+                      
                     ],
                   ),
                 ),
@@ -348,6 +492,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 itemCount: filteredProducts.length,
                                 itemBuilder: (context, index) {
                                   final product = filteredProducts[index];
+                                  
+                                  // Solo el primer producto tendrá showcase (por ejemplo)
+                                  final GlobalKey? addStockKey = index == 0 ? _addStockKey : null;
+                                  final GlobalKey? actionMenuKey = index == 0 ? _productOptionsKey : null;
+
+
+
                                   return ProductListItem(
                                     id: (product['_id'] ?? '').toString(),
                                     name: product['name'] ?? 'Sin nombre',
@@ -367,10 +518,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                         ? const Color(0xFFFF9800)
                                         : const Color(0xFF05e265),
                                     userRole: _userRole,
+
+
+                                    // SHOWCASE solo para este producto
+                                    addStockKey: addStockKey,
+                                    actionMenuKey: actionMenuKey,
+
                                     onDelete: () =>
                                         _deleteProduct(product['_id']),
                                     onEdit: () =>
                                         _showEditProductModal(product),
+
+                                    
                                     onAddStock: () =>
                                         _showAddStockModal(product),
                                     hasWholesalePrice:

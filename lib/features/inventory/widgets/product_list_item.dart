@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:showcaseview/showcaseview.dart';
+
+
+
 
 class ProductListItem extends StatelessWidget {
   final String id;
@@ -19,6 +23,10 @@ class ProductListItem extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onAddStock;
 
+  // SHOWCASE
+  final GlobalKey? addStockKey;
+  final GlobalKey? actionMenuKey;
+
   const ProductListItem({
     super.key,
     required this.id,
@@ -36,13 +44,91 @@ class ProductListItem extends StatelessWidget {
     required this.hasWholesalePrice,
     required this.wholesalePrice,
     required this.wholesaleMinUnits,
+    this.addStockKey,
+    this.actionMenuKey,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
 
+
+
+   
+      Widget actionButton = Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFF05e265).withAlpha(26),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFF05e265).withAlpha(51),
+            width: 1,
+          ),
+        ),
+        child: const Icon(Icons.more_vert, color: Color(0xFF05e265), size: 20),
+      );
+
+
+      Widget addStockButton = GestureDetector(
+          onTap: onAddStock,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+            color: const Color(0xFF05e265).withAlpha(40),
+            borderRadius: BorderRadius.circular(4),
+              ),
+            child: const Icon(
+                      Icons.add,
+                      color: Color(0xFF05e265),
+                      size: 18,
+                    ),
+            ),
+        ); 
+
+     
+      if (addStockKey != null) {
+        actionButton = Showcase(
+          key: actionMenuKey!,
+          description: "Toca para editar o eliminar el producto.",
+          tooltipPadding: const EdgeInsets.all(12),
+          tooltipActions: [
+            TooltipActionButton(
+              type: TooltipDefaultActionType.next,
+              backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+              textStyle: const TextStyle(color: Colors.white),
+              name: 'Siguiente',
+            )
+          ],
+          tooltipActionConfig: const TooltipActionConfig(
+            alignment: MainAxisAlignment.center,
+          ),
+          child: actionButton,
+        );
+
+
+        addStockButton = Showcase(
+          key: addStockKey!,
+          description: "Toca para agregar stock de forma más rápida.",
+          tooltipPadding: const EdgeInsets.all(12),
+          tooltipActions: [
+            TooltipActionButton(
+              type: TooltipDefaultActionType.next,
+              backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+              textStyle: const TextStyle(color: Colors.white),
+              name: 'Siguiente',
+            )
+          ],
+          tooltipActionConfig: const TooltipActionConfig(
+            alignment: MainAxisAlignment.center,
+          ),
+          child: addStockButton,
+        );
+      }
+
+
     final actionsMenu = PopupMenuButton<String>(
+
       color: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (String value) {
@@ -52,6 +138,7 @@ class ProductListItem extends StatelessWidget {
           onDelete();
         }
       },
+
       itemBuilder: (BuildContext context) => [
         PopupMenuItem<String>(
           value: 'edit',
@@ -66,6 +153,7 @@ class ProductListItem extends StatelessWidget {
             ],
           ),
         ),
+
         PopupMenuItem<String>(
           value: 'delete',
           child: Row(
@@ -80,20 +168,14 @@ class ProductListItem extends StatelessWidget {
           ),
         ),
       ],
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: const Color(0xFF05e265).withAlpha(26),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: const Color(0xFF05e265).withAlpha(51),
-            width: 1,
-          ),
-        ),
-        child: const Icon(Icons.more_vert, color: Color(0xFF05e265), size: 20),
-      ),
+
+
+       child: actionButton, 
+  
+
     );
+
+    
 
     if (isMobile) {
       return Container(
@@ -246,21 +328,14 @@ class ProductListItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: onAddStock,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF05e265).withAlpha(40),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Icon(
-                      Icons.add,
-                      color: Color(0xFF05e265),
-                      size: 18,
-                    ),
-                  ),
-                ),
+
+
+
+                addStockButton,
+
+
+
+
               ],
             ),
           ),

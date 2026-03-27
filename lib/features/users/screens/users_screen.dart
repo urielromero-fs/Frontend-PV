@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/users_service.dart';
 import 'package:intl/intl.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -19,13 +21,65 @@ class _UsersScreenState extends State<UsersScreen> {
   List<Map<String, dynamic>> _filteredUsers = [];
   final TextEditingController _searchController = TextEditingController();
 
+  //Onboarding  
+  final GlobalKey _addUserKey = GlobalKey(); 
+  final GlobalKey _optionsUserKey = GlobalKey(); 
+  
+  static const String _usersOnboardingKey = 'onboarding_users';
+
+  Future<bool> _shouldShowOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      return !(prefs.getBool(_usersOnboardingKey) ?? false);
+    }
+
+  Future<void> _setOnboardingShown() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_usersOnboardingKey, true);
+    }
+
+
   @override
   void initState() {
+
+    //     //Onboarding
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Future.delayed(const Duration(milliseconds: 600), () {
+    //     ShowcaseView.get().startShowCase([
+    //       _addUserKey,
+    //       _optionsUserKey
+          
+    //     ]);
+    //   });
+    // });
+
+
     super.initState();
     _filteredUsers = users;
     _searchController.addListener(_onSearchChanged);
     _loadUsers(); 
+
+      // Onboarding
+    _initOnboarding();
+
   }
+
+  Future<void> _initOnboarding() async {
+    final shouldShow = await _shouldShowOnboarding();
+    if (!shouldShow) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        ShowcaseView.get().startShowCase([   
+          _addUserKey,
+          _optionsUserKey
+          
+        ]);
+      });
+    });
+
+    await _setOnboardingShown();
+  }
+
 
   @override
   void dispose() {
@@ -394,26 +448,52 @@ class _UsersScreenState extends State<UsersScreen> {
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         actions: [
-          ElevatedButton.icon(
-            onPressed: () => _showUserForm(),
-            icon: const Icon(Icons.add, size: 18, color: Colors.black),
-            label: Text(
-              'Agregar usuario',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF05e265),
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
+          
+                      //add user  button
+                  Showcase(
+                          key: _addUserKey,
+                          description: 'Toca para agregar un usuario nuevo. Las credenciales del usuario le llegaran al correo que proporcione.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                                ElevatedButton.icon(
+                                  onPressed: () => _showUserForm(),
+                                  icon: const Icon(Icons.add, size: 18, color: Colors.black),
+                                  label: Text(
+                                    'Agregar usuario',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF05e265),
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+
+
+                        ) 
+
+                    
+
+         // const SizedBox(width: 16),
         ],
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
@@ -598,6 +678,12 @@ class _UsersScreenState extends State<UsersScreen> {
                                 itemCount: _filteredUsers.length,
                                 itemBuilder: (context, index) {
                                   final user = _filteredUsers[index];
+
+
+                                  // Solo el primer producto tendrá showcase (por ejemplo)
+                                  final GlobalKey? actionMenuKey = index == 0 ? _optionsUserKey : null;
+
+
                                   return _UserRow(
                                     name: user['name'],
                                     email: user['email'],
@@ -608,6 +694,9 @@ class _UsersScreenState extends State<UsersScreen> {
                                     onEdit: () => _showUserForm(user),
                                     onDelete: () => _deleteUser(user['id']),
                                     onSendPassword: () => _sendPassword(user['email']),
+                                    // SHOWCASE solo para este producto
+                                  
+                                    actionMenuKey: actionMenuKey,
                                   );
                                 },
                               ),
@@ -699,7 +788,8 @@ class _UserRow extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onSendPassword; 
 
-  
+  // SHOWCASE
+  final GlobalKey? actionMenuKey;
   
 
   const _UserRow({
@@ -712,6 +802,7 @@ class _UserRow extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onSendPassword,
+    this.actionMenuKey,
   });
 
 
@@ -723,6 +814,48 @@ class _UserRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color statusColor = status == 'Inactivo' ? const Color(0xFFE91E63) : const Color(0xFF05e265);
     final bool isInactive = status == 'Inactivo';
+
+  
+    Widget actionButton = Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFF05e265).withAlpha(26),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFF05e265).withAlpha(51),
+            width: 1,
+          ),
+        ),
+        child: const Icon(Icons.more_vert, color: Color(0xFF05e265), size: 20),
+      );
+
+    if(actionMenuKey != null){
+      actionButton = Showcase(
+                          key: actionMenuKey!,
+                          description: 'Toca para editar, eliminar o enviarle una nueva contraseña al usuario.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                               
+                          actionButton
+                        ); 
+
+
+
+    }
 
     final actionsMenu = PopupMenuButton<String>(
       color: Theme.of(context).cardColor,
@@ -777,19 +910,10 @@ class _UserRow extends StatelessWidget {
           ),
         ),
       ],
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: const Color(0xFF05e265).withAlpha(26),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: const Color(0xFF05e265).withAlpha(51),
-            width: 1,
-          ),
-        ),
-        child: const Icon(Icons.more_vert, color: Color(0xFF05e265), size: 20),
-      ),
+      child: 
+        actionButton
+
+
     );
 
     final Widget actionsMenuDisabled = Opacity(
@@ -799,6 +923,7 @@ class _UserRow extends StatelessWidget {
         child: actionsMenu,
       ),
     );
+
 
 
     if (isMobile) {

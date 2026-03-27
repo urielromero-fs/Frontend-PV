@@ -46,25 +46,21 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey _settingsKey = GlobalKey();
   final GlobalKey _logoutKey = GlobalKey(); 
 
+  static const String _homeOnboardingKey = 'onboarding_home';
+
+    Future<bool> _shouldShowOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      return !(prefs.getBool(_homeOnboardingKey) ?? false);
+    }
+
+    Future<void> _setOnboardingShown() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_homeOnboardingKey, true);
+    }
+
   @override
   void initState() {
 
-    //Onboarding
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 600), () {
-          ShowcaseView.get().startShowCase([
-            _dashboardKey, 
-            _inventoryKey,
-            _salesKey,
-            _usersKey, 
-            _reportsKey, 
-            _settingsKey, 
-            _logoutKey,
-            _sidebarDashboardMenuButtonKey,
-            
-          ]);
-        });
-      });
 
     super.initState();
 
@@ -84,14 +80,35 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadMetrics(); 
 
   
-
+    // Onboarding
+    _initOnboarding();
 
 
   }
 
 
    
+  Future<void> _initOnboarding() async {
+    final shouldShow = await _shouldShowOnboarding();
+    if (!shouldShow) return;
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        ShowcaseView.get().startShowCase([   
+          _dashboardKey,
+          _inventoryKey,
+          _salesKey,
+          _usersKey,
+          _reportsKey,
+          _settingsKey,
+          _logoutKey,
+          _sidebarDashboardMenuButtonKey,
+        ]);
+      });
+    });
+
+    await _setOnboardingShown();
+  }
 
   
   
@@ -646,14 +663,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           description: 'Toca para Abrir o Cerrar el Menú.',
                           tooltipPadding: const EdgeInsets.all(12),
                           tooltipActions: [
-                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ),
                                     TooltipActionButton(
                                       type: TooltipDefaultActionType.next,
                                       backgroundColor: const Color.fromARGB(255, 53, 237, 59),
                                       textStyle: TextStyle(color: Colors.white),
                                       name: 'Siguiente',
                                      
-                                    )
+                                    ), 
+
+                               
                                   ],
                           tooltipActionConfig: TooltipActionConfig(
                                 alignment: MainAxisAlignment.center,
@@ -680,14 +705,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           description: 'Bienvenido a Centli. Este es tu dashboard: un resumen de tu negocio. ',
                           tooltipPadding: const EdgeInsets.all(12),
                           tooltipActions: [
-                                    
+                                     TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ),
                                     TooltipActionButton(
                                       type: TooltipDefaultActionType.next,
                                       backgroundColor: const Color.fromARGB(255, 53, 237, 59),
                                       textStyle: TextStyle(color: Colors.white),
                                       name: 'Siguiente',
                                      
-                                    )
+                                    ),
+
+
                                   ],
                           tooltipActionConfig: TooltipActionConfig(
                                 alignment: MainAxisAlignment.center,
@@ -707,14 +740,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           description: 'En el inventario puedes agregar, editar, eliminar y ver tus productos.',
                           tooltipPadding: const EdgeInsets.all(12),
                           tooltipActions: [
-                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ),                                   
                                     TooltipActionButton(
                                       type: TooltipDefaultActionType.next,
                                       backgroundColor: const Color.fromARGB(255, 53, 237, 59),
                                       textStyle: TextStyle(color: Colors.white),
                                       name: 'Siguiente',
                                      
-                                    )
+                                    ), 
+
+
                                   ],
                           tooltipActionConfig: TooltipActionConfig(
                                 alignment: MainAxisAlignment.center,
@@ -733,14 +774,21 @@ class _HomeScreenState extends State<HomeScreen> {
                           description: 'Dirígete a Cobros para comenzar a vender.',
                           tooltipPadding: const EdgeInsets.all(12),
                           tooltipActions: [
-                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    )  ,                                 
                                     TooltipActionButton(
                                       type: TooltipDefaultActionType.next,
                                       backgroundColor: const Color.fromARGB(255, 53, 237, 59),
                                       textStyle: TextStyle(color: Colors.white),
                                       name: 'Siguiente',
                                      
-                                    )
+                                    ), 
+
                                   ],
                           tooltipActionConfig: TooltipActionConfig(
                                 alignment: MainAxisAlignment.center,
@@ -765,14 +813,21 @@ class _HomeScreenState extends State<HomeScreen> {
                               description: 'En Usuarios puedes agregar, editar, eliminar o ver a tus administradores y vendedores.',
                               tooltipPadding: const EdgeInsets.all(12),
                               tooltipActions: [
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.skip,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Saltar',
                                         
+                                        ),                                        
                                         TooltipActionButton(
                                           type: TooltipDefaultActionType.next,
                                           backgroundColor: const Color.fromARGB(255, 53, 237, 59),
                                           textStyle: TextStyle(color: Colors.white),
                                           name: 'Siguiente',
                                         
-                                        )
+                                        ), 
+
                                       ],
                               tooltipActionConfig: TooltipActionConfig(
                                     alignment: MainAxisAlignment.center,
@@ -792,14 +847,21 @@ class _HomeScreenState extends State<HomeScreen> {
                               description: 'En Reportes puedes ver metricas de tus ventas por dia, semana o mes.',
                               tooltipPadding: const EdgeInsets.all(12),
                               tooltipActions: [
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.skip,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Saltar',
                                         
+                                        )  ,                                     
                                         TooltipActionButton(
                                           type: TooltipDefaultActionType.next,
                                           backgroundColor: const Color.fromARGB(255, 53, 237, 59),
                                           textStyle: TextStyle(color: Colors.white),
                                           name: 'Siguiente',
                                         
-                                        )
+                                        ), 
+
                                       ],
                               tooltipActionConfig: TooltipActionConfig(
                                     alignment: MainAxisAlignment.center,
@@ -826,14 +888,21 @@ class _HomeScreenState extends State<HomeScreen> {
                               description: 'En Configuracion puedes editar tu nombre, correo o contraseña.',
                               tooltipPadding: const EdgeInsets.all(12),
                               tooltipActions: [
-                                        
+                                      TooltipActionButton(
+                                          type: TooltipDefaultActionType.skip,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Saltar',
+                                     
+                                      ),
                                         TooltipActionButton(
                                           type: TooltipDefaultActionType.next,
                                           backgroundColor: const Color.fromARGB(255, 53, 237, 59),
                                           textStyle: TextStyle(color: Colors.white),
                                           name: 'Siguiente',
                                         
-                                        )
+                                        ), 
+
                                       ],
                               tooltipActionConfig: TooltipActionConfig(
                                     alignment: MainAxisAlignment.center,
@@ -934,14 +1003,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                     description: 'Toca para cerrar sesión.',
                                     tooltipPadding: const EdgeInsets.all(12),
                                     tooltipActions: [
+                                              TooltipActionButton(
+                                                type: TooltipDefaultActionType.skip,
+                                                backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                textStyle: TextStyle(color: Colors.white),
+                                                name: 'Saltar',
                                               
+                                              )   ,                                           
                                               TooltipActionButton(
                                                 type: TooltipDefaultActionType.next,
                                                 backgroundColor: const Color.fromARGB(255, 53, 237, 59),
                                                 textStyle: TextStyle(color: Colors.white),
                                                 name: 'Siguiente',
                                               
-                                              )
+                                              ), 
+
                                             ],
                                     tooltipActionConfig: TooltipActionConfig(
                                           alignment: MainAxisAlignment.center,

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/reports_service.dart'; 
-
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -16,14 +17,62 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Map<String, dynamic> metricData = {};
 
+  //Onboarding  
+  final GlobalKey _periodKey = GlobalKey(); 
+  final GlobalKey _downloadReportKey = GlobalKey(); 
+
+  static const String _reportsOnboardingKey = 'onboarding_reports';
+
+  Future<bool> _shouldShowOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      return !(prefs.getBool(_reportsOnboardingKey) ?? false);
+    }
+
+  Future<void> _setOnboardingShown() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_reportsOnboardingKey, true);
+    }
 
   @override
   void initState() {
+
+        //Onboarding
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Future.delayed(const Duration(milliseconds: 600), () {
+    //     ShowcaseView.get().startShowCase([
+    //         _periodKey,
+    //         _downloadReportKey
+          
+    //     ]);
+    //   });
+    // });
+
     super.initState();
    
     _loadMetrics(_selectedPeriod); 
+
+      // Onboarding
+    _initOnboarding();
   }
   
+   
+  Future<void> _initOnboarding() async {
+    final shouldShow = await _shouldShowOnboarding();
+    if (!shouldShow) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        ShowcaseView.get().startShowCase([   
+          _periodKey,
+          _downloadReportKey
+        ]);
+      });
+    });
+
+    await _setOnboardingShown();
+  }
+
+
   Future<void> _loadMetrics(String period) async{
 
 
@@ -222,10 +271,37 @@ class _ReportsScreenState extends State<ReportsScreen> {
           },
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: _exportReport,
-          ),
+
+
+          Showcase(
+                          key: _downloadReportKey,
+                          description: 'Toca para descargar el historico de ventas.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                               
+                                IconButton(
+                                        icon: const Icon(Icons.download),
+                                        onPressed: _exportReport,
+                                      ),
+                        )
+
+
+         
+
+
         ],
       ),
       body: Container(
@@ -257,7 +333,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     ),
                     InkWell(
                       onTap: _showPeriodSelector,
-                      child: Container(
+                      child:  
+
+                    //Period selector
+                    Showcase(
+                          key: _periodKey,
+                          description: 'Toca para cambiar el periodo a dia, semana o mes.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                               Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 8,
@@ -266,24 +363,33 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           color: const Color(0xFFFF9800),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.calendar_today,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Cambiar',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
+                        child:
+                                Row(
+        
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.calendar_today,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Cambiar',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+
+                        )
+
+
+                        
+
                       ),
                     ),
                   ],

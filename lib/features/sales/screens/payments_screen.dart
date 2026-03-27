@@ -18,6 +18,8 @@ import 'package:pv26/features/sales/widgets/bulk_product_dialog.dart';
 import 'package:pv26/features/sales/widgets/withdrawal_dialog.dart';
 import '../../inventory/widgets/add_stock_dialog.dart';
 import 'package:pv26/core/utils/currency_formatter.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 String _f(double value) => CurrencyFormatter.format(value);
 class PaymentsScreen extends StatefulWidget {
@@ -70,19 +72,173 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   double _totalWithdrawals = 0.0;
   bool _isLoadingSession = false;
   String? _currentSessionId;
+
+  //Onboarding  
+  final GlobalKey _aperturaCajaKey = GlobalKey(); 
+  final GlobalKey _cerrarCajaKey = GlobalKey(); 
+  final GlobalKey _historialKey = GlobalKey(); 
+  final GlobalKey _salidaEfectivoKey = GlobalKey(); 
+  final GlobalKey _agregaTicketKey = GlobalKey(); 
+  final GlobalKey _cobrarKey = GlobalKey(); 
+  final GlobalKey _discountKey = GlobalKey(); 
+
+  static const String _paymentsOnboardingKey = 'onboarding_payments';
+
+  Future<bool> _shouldShowOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      return !(prefs.getBool(_paymentsOnboardingKey) ?? false);
+    }
+
+  Future<void> _setOnboardingShown() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_paymentsOnboardingKey, true);
+    }
+
+
+  
+    Future<bool> _shouldShowOpenCashShowcase() async {
+      final prefs = await SharedPreferences.getInstance();
+      return !(prefs.getBool('onboarding_open_cash_shown') ?? false);
+    }
+
+    Future<void> _setOpenCashShowcaseShown() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_open_cash_shown', true);
+    }
+
+   
+    Future<bool> _shouldShowPostOpenCashShowcase() async {
+      final prefs = await SharedPreferences.getInstance();
+      return !(prefs.getBool('onboarding_post_open_cash_shown') ?? false);
+    }
+
+    Future<void> _setPostOpenCashShowcaseShown() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_post_open_cash_shown', true);
+    }
+
+
   @override
   void initState() {
+
+
+
+
     super.initState();
     _addNewTicket();
     _initCashSession();
+
+    //Onboarding
+    _initOnboarding();
+
+    // WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // await Future.delayed(const Duration(milliseconds: 600));
+
+    //   if (!_isRegisterOpen) {
+    //     // Mostrar solo "apertura de caja"
+    //     ShowcaseView.get().startShowCase([_aperturaCajaKey]);
+    //   }
+      // } else {
+      //   // Mostrar las demás opciones si la caja ya está abierta
+      //   ShowcaseView.get().startShowCase([
+      //     _cerrarCajaKey,
+      //     _historialKey,
+      //     _salidaEfectivoKey,
+      //     _agregaTicketKey,
+      //     _cobrarKey,
+      //     _discountKey
+      //   ]);
+    //   // }
+    // });
   }
+
+
+  Future<void> _initOnboarding() async {
+        final shouldShow = await _shouldShowOnboarding();
+        if (!shouldShow) return;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Future.delayed(const Duration(milliseconds: 600), () {
+           
+              if (!_isRegisterOpen) {
+                // Mostrar solo "apertura de caja"
+                ShowcaseView.get().startShowCase([_aperturaCajaKey]);
+              }  else {
+      
+                ShowcaseView.get().startShowCase([
+                  _cerrarCajaKey,
+                  _historialKey,
+                  _salidaEfectivoKey,
+                  _agregaTicketKey,
+                  _cobrarKey,
+                  _discountKey
+                ]);
+              }
+          });
+        });
+
+        await _setOnboardingShown();
+      }
+
+
+
+  void _startPostOpenShowcase() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 400), () {
+          ShowcaseView.get().startShowCase([
+            _cerrarCajaKey,
+            _historialKey,
+            _salidaEfectivoKey,
+            _agregaTicketKey,
+            _cobrarKey,
+            _discountKey,
+          ]);
+        });
+      });
+  }
+
+
   Future<void> _initCashSession() async {
     await _checkOpenSession();
     // Solo mostrar diálogo si no hay sesión abierta
     if (!_isRegisterOpen) {
-      _showOpenRegisterDialog();
+
+      //  final shouldShow = await _shouldShowOpenCashShowcase();
+
+      //   // Mostrar modal con Showcase solo la primera vez
+      //   if (shouldShow) {
+      //    _showOpenRegisterDialog(showShowcase: true);
+       _showOpenRegisterDialog();
     }
+  //         await _setOpenCashShowcaseShown();
+  //       } else {
+  //         _showOpenRegisterDialog(showShowcase: false);
+  //       }
+  //   } else {
+  //   // Si la caja ya está abierta, revisar si se deben mostrar los showcases post-apertura
+  //   final shouldShowPost = await _shouldShowPostOpenCashShowcase();
+  //   if (shouldShowPost) {
+  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+  //       Future.delayed(const Duration(milliseconds: 400), () {
+  //         ShowcaseView.get().startShowCase([
+  //           _cerrarCajaKey,
+  //           _historialKey,
+  //           _salidaEfectivoKey,
+  //           _agregaTicketKey,
+  //           _cobrarKey,
+  //           _discountKey,
+  //         ]);
+  //       });
+  //     });
+  //     await _setPostOpenCashShowcaseShown();
+  //   }
+  // }
+     
+    
   }
+
+
+
   Future<void> _checkOpenSession() async {
     final result = await CashSessionService.getOpenSession();
     if (!result['success']) {
@@ -104,6 +260,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       });
     }
   }
+
   Future<void> _processSale() async {
     showDialog(
       context: context,
@@ -170,6 +327,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       _showErrorSnackBar('Error de conexión: $e');
     }
   }
+  
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -181,6 +339,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   void _showSuccessDialog(String message, {Map<String, dynamic>? ticketData}) {
     showDialog(
       context: context,
@@ -259,20 +418,23 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   Future<void> _showOpenRegisterDialog() async {
     final amountController = TextEditingController();
-    await showDialog(
+
+    await  showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
-        title: Text(
-          'Iniciar Cobro de Caja',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title:
+              Text(
+                  'Iniciar Cobro de Caja',
+                  style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                  ),
+              ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -281,23 +443,49 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               style: GoogleFonts.poppins(color: Colors.white70),
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [CurrencyInputFormatter()],
-              style: GoogleFonts.poppins(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Monto inicial',
-                labelStyle: GoogleFonts.poppins(color: Colors.white70),
-                prefixText: r'$ ',
-                prefixStyle: GoogleFonts.poppins(color: Colors.white),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                ),
-              ),
-            ),
+
+               //Open box field 
+                  Showcase(
+                          key: _aperturaCajaKey,
+                          description: 'Agrega un monto para abrir la caja.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                                
+                                TextField(
+                                      controller: amountController,
+                                      keyboardType: const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                      inputFormatters: [CurrencyInputFormatter()],
+                                      style: GoogleFonts.poppins(color: Colors.white),
+                                      decoration: InputDecoration(
+                                        labelText: 'Monto inicial',
+                                        labelStyle: GoogleFonts.poppins(color: Colors.white70),
+                                        prefixText: r'$ ',
+                                        prefixStyle: GoogleFonts.poppins(color: Colors.white),
+                                        enabledBorder: UnderlineInputBorder(
+                                          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                                        ),
+                                      ),
+                                    ),
+        
+         
+                        ),
+
+
           ],
         ),
         actions: [
@@ -325,6 +513,34 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   _currentSessionId = data?['_id'];
                 });
                 Navigator.pop(context);
+
+                final shouldShowAfterOpen = await _shouldShowOnboarding();
+
+                if (shouldShowAfterOpen){
+                    _startPostOpenShowcase();
+                }
+
+                await _setOnboardingShown(); 
+
+              //                 // Solo mostrar los demás showcases si no se habían mostrado aún
+              // final shouldShowPost = await _shouldShowPostOpenCashShowcase();
+              // if (shouldShowPost) {
+              //   WidgetsBinding.instance.addPostFrameCallback((_) {
+              //     Future.delayed(const Duration(milliseconds: 400), () {
+              //       ShowcaseView.get().startShowCase([
+              //         _cerrarCajaKey,
+              //         _historialKey,
+              //         _salidaEfectivoKey,
+              //         _agregaTicketKey,
+              //         _cobrarKey,
+              //         _discountKey,
+              //       ]);
+              //     });
+              //   });
+              //   await _setPostOpenCashShowcaseShown();
+              // }
+
+                 
               } else {
                 ScaffoldMessenger.of(
                   context,
@@ -346,6 +562,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   Future<void> _showCloseRegisterDialog() async {
     await showDialog(
       context: context,
@@ -410,6 +627,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   Future<void> _showDailyReportDialog() async {
     final double endCash = _initialCash + _totalSales - _totalWithdrawals;
     await showDialog(
@@ -481,6 +699,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   Widget _buildReportRow(
     String label,
     String value, {
@@ -508,12 +727,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ],
     );
   }
+  
   void _addNewTicket() {
     setState(() {
       _tickets.add(Ticket(id: 'Ticket ${_tickets.length + 1}'));
       _updateTabController();
     });
   }
+  
   void _closeTicket(int index) {
     if (_tickets.length <= 1) return; // Don't close the last ticket
     setState(() {
@@ -521,10 +742,12 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       _updateTabController();
     });
   }
+  
   void _updateTabController() {
     _tabController = TabController(length: _tickets.length, vsync: this);
     _tabController.animateTo(_tickets.length - 1); // Switch to new ticket
   }
+  
   @override
   void dispose() {
     searchController.dispose();
@@ -532,7 +755,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     _searchFocusNode.dispose();
     super.dispose();
   }
+
   Ticket get currentTicket => _tickets[_tabController.index];
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductProvider>(context);
@@ -637,83 +862,265 @@ class _PaymentsScreenState extends State<PaymentsScreen>
             Padding(
               padding: EdgeInsets.only(right: isMobile ? 4.0 : 8.0),
               child: isMobile
-                  ? ElevatedButton(
-                      onPressed: _showCloseRegisterDialog,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange.withOpacity(0.2),
-                        foregroundColor: Colors.orange,
-                        elevation: 0,
-                        side: BorderSide(color: Colors.orange.withOpacity(0.5)),
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(36, 36),
-                      ),
-                      child: const Icon(Icons.lock_outline, size: 18),
-                    )
-                  : ElevatedButton.icon(
-                      onPressed: _showCloseRegisterDialog,
-                      icon: const Icon(Icons.lock_outline, size: 16),
-                      label: const Text('Cerrar Operación'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange.withOpacity(0.2),
-                        foregroundColor: Colors.orange,
-                        elevation: 0,
-                        side: BorderSide(color: Colors.orange.withOpacity(0.5)),
-                      ),
-                    ),
+                  ? 
+                  //Close session
+                  Showcase(
+                          key: _cerrarCajaKey,
+                          description: 'Toca para cerrar la caja.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ), 
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                               ElevatedButton(
+                                  onPressed: _showCloseRegisterDialog,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange.withOpacity(0.2),
+                                    foregroundColor: Colors.orange,
+                                    elevation: 0,
+                                    side: BorderSide(color: Colors.orange.withOpacity(0.5)),
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(36, 36),
+                                  ),
+                                  child: const Icon(Icons.lock_outline, size: 18),
+                                )
+                    
+         
+                        )   
+
+                  : 
+                  
+                      Showcase(
+                          key: _cerrarCajaKey,
+                          description: 'Toca para cerrar la caja.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ), 
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                                 ElevatedButton.icon(
+                                  onPressed: _showCloseRegisterDialog,
+                                  icon: const Icon(Icons.lock_outline, size: 16),
+                                  label: const Text('Cerrar Operación'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange.withOpacity(0.2),
+                                    foregroundColor: Colors.orange,
+                                    elevation: 0,
+                                    side: BorderSide(color: Colors.orange.withOpacity(0.5)),
+                                  ),
+                                ),
+                    
+         
+                        )   
+
             ),
           Padding(
             padding: EdgeInsets.only(right: isMobile ? 4.0 : 8.0),
             child: isMobile
-                ? ElevatedButton(
-                    onPressed: _showSalesHistoryDialog,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.withOpacity(0.2),
-                      foregroundColor: Colors.blueAccent,
-                      elevation: 0,
-                      side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(36, 36),
-                    ),
-                    child: const Icon(Icons.history, size: 18),
-                  )
-                : ElevatedButton.icon(
-                    onPressed: _showSalesHistoryDialog,
-                    icon: const Icon(Icons.history, size: 16),
-                    label: const Text('Historial'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.withOpacity(0.2),
-                      foregroundColor: Colors.blueAccent,
-                      elevation: 0,
-                      side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
-                    ),
-                  ),
+                ? 
+                
+                //Historial button
+                  Showcase(
+                          key: _historialKey,
+                          description: 'Toca para ver el historial de ventas.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+
+                                  TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ), 
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                              ElevatedButton(
+                                  onPressed: _showSalesHistoryDialog,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue.withOpacity(0.2),
+                                    foregroundColor: Colors.blueAccent,
+                                    elevation: 0,
+                                    side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(36, 36),
+                                  ),
+                                  child: const Icon(Icons.history, size: 18),
+                                )
+                        ) 
+ 
+                : 
+                //Historial button
+                  Showcase(
+                          key: _historialKey,
+                          description: 'Toca para ver el historial de ventas.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ), 
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                              ElevatedButton.icon(
+                                  onPressed: _showSalesHistoryDialog,
+                                  icon: const Icon(Icons.history, size: 16),
+                                  label: const Text('Historial'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue.withOpacity(0.2),
+                                    foregroundColor: Colors.blueAccent,
+                                    elevation: 0,
+                                    side: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
+                                  ),
+                                ),
+                        ) 
+
           ),
           Padding(
             padding: EdgeInsets.only(right: isMobile ? 8.0 : 16.0),
             child: isMobile
-                ? ElevatedButton(
-                    onPressed: _showWithdrawalDialog,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.withOpacity(0.2),
-                      foregroundColor: Colors.redAccent,
-                      elevation: 0,
-                      side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(36, 36),
-                    ),
-                    child: const Icon(Icons.money_off, size: 18),
-                  )
-                : ElevatedButton.icon(
-                    onPressed: _showWithdrawalDialog,
-                    icon: const Icon(Icons.money_off, size: 16),
-                    label: const Text('Salida de efectivo'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.withOpacity(0.2),
-                      foregroundColor: Colors.redAccent,
-                      elevation: 0,
-                      side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
-                    ),
-                  ),
+                ? 
+                  //Withdrawal button
+                  Showcase(
+                          key: _salidaEfectivoKey,
+                          description: 'Toca para hacer un retiro de efectivo.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ), 
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                              ElevatedButton(
+                                  onPressed: _showWithdrawalDialog,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red.withOpacity(0.2),
+                                    foregroundColor: Colors.redAccent,
+                                    elevation: 0,
+                                    side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(36, 36),
+                                  ),
+                                  child: const Icon(Icons.money_off, size: 18),
+                                )
+                        ) 
+
+                
+                
+
+                : 
+                 //Withdrawal button
+                  Showcase(
+                          key: _salidaEfectivoKey,
+                          description: 'Toca para hacer un retiro de efectivo.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ), 
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                              ElevatedButton.icon(
+                                  onPressed: _showWithdrawalDialog,
+                                  icon: const Icon(Icons.money_off, size: 16),
+                                  label: const Text('Salida de efectivo'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red.withOpacity(0.2),
+                                    foregroundColor: Colors.redAccent,
+                                    elevation: 0,
+                                    side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                                  ),
+                                ),
+                        ) 
+
+                
+
           ),
         ],
       ),
@@ -725,6 +1132,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     ),
   );
 }
+  
   Widget _buildMobileLayout(List<dynamic> filteredProducts) {
     return Container(
       decoration: BoxDecoration(
@@ -801,6 +1209,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   List<Widget> _buildDesktopLayout(List<dynamic> filteredProducts) {
     return [
       // Left Panel - Product Search/Add
@@ -937,14 +1346,44 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         },
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.add_circle,
-                        color: Color(0xFF05e265),
-                      ),
-                      onPressed: _addNewTicket,
-                      tooltip: 'Nuevo Ticket',
-                    ),
+
+                 //add new ticket button
+                  Showcase(
+                          key: _agregaTicketKey,
+                          description: 'Toca para agregar un nuevo ticket.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ), 
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.add_circle,
+                                  color: Color(0xFF05e265),
+                                ),
+                                onPressed: _addNewTicket,
+                                tooltip: 'Nuevo Ticket',
+                              ),
+                        )
+
+
+
                   ],
                 ),
               ),
@@ -1139,42 +1578,74 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                       const SizedBox(width: 8),
                                       GestureDetector(
                                         onTap: () => _showDiscountDialog(),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.orange.withOpacity(
-                                              0.2,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.orange.withOpacity(
-                                                0.5,
-                                              ),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.local_offer_outlined,
-                                                color: Colors.orange,
-                                                size: 12,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Desc.',
-                                                style: GoogleFonts.poppins(
-                                                  color: Colors.orange,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                        child: 
+                                        
+                                        //Discount button
+                                          Showcase(
+                                                  key: _discountKey,
+                                                  description: 'Toca para agregar un descuento.',
+                                                  tooltipPadding: const EdgeInsets.all(12),
+                                                  tooltipActions: [
+                                                            TooltipActionButton(
+                                                                  type: TooltipDefaultActionType.skip,
+                                                                  backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                                  textStyle: TextStyle(color: Colors.white),
+                                                                  name: 'Saltar',
+                                                                
+                                                                ), 
+                                                            TooltipActionButton(
+                                                              type: TooltipDefaultActionType.next,
+                                                              backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                              textStyle: TextStyle(color: Colors.white),
+                                                              name: 'Siguiente',
+                                                            
+                                                            )
+                                                          ],
+                                                  tooltipActionConfig: TooltipActionConfig(
+                                                        alignment: MainAxisAlignment.center,
+                                                      ),
+                                                  child:  Container(
+                                                        padding: const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.orange.withOpacity(
+                                                            0.2,
+                                                          ),
+                                                          borderRadius: BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                          border: Border.all(
+                                                            color: Colors.orange.withOpacity(
+                                                              0.5,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        child: 
+                                                                    Row(
+                                                                    children: [
+                                                                      const Icon(
+                                                                        Icons.local_offer_outlined,
+                                                                        color: Colors.orange,
+                                                                        size: 12,
+                                                                      ),
+                                                                      const SizedBox(width: 4),
+                                                                      Text(
+                                                                        'Desc.',
+                                                                        style: GoogleFonts.poppins(
+                                                                          color: Colors.orange,
+                                                                          fontSize: 10,
+                                                                          fontWeight: FontWeight.bold,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                )
+
+  
+                                          
+
                                         ),
                                       ),
                                     ],
@@ -1265,38 +1736,75 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                               ],
                             SizedBox(
                               width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: currentTicket.items.isEmpty
-                                    ? null
-                                    : () {
-                                        if (currentTicket.amountTendered ==
-                                            null) {
-                                          _showPaymentDialog().then((success) {
-                                            if (success == true) _processSale();
-                                          });
-                                        } else {
-                                          _processSale();
-                                        }
-                                      },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF05e265),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text(
-                                  currentTicket.amountTendered == null
-                                      ? 'COBRAR'
-                                      : 'FINALIZAR VENTA',
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
+                              child: 
+                              
+                              //Cobrar button 
+                                  Showcase(
+                                          key: _cobrarKey,
+                                          description: 'Toca para cobrar los productos en el ticket.',
+                                          tooltipPadding: const EdgeInsets.all(12),
+                                          tooltipActions: [
+                                                    TooltipActionButton(
+                                                        type: TooltipDefaultActionType.skip,
+                                                        backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                        textStyle: TextStyle(color: Colors.white),
+                                                        name: 'Saltar',
+                                                      
+                                                      ), 
+                                                    TooltipActionButton(
+                                                      type: TooltipDefaultActionType.next,
+                                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                      textStyle: TextStyle(color: Colors.white),
+                                                      name: 'Siguiente',
+                                                    
+                                                    )
+                                                  ],
+                                          tooltipActionConfig: TooltipActionConfig(
+                                                alignment: MainAxisAlignment.center,
+                                              ),
+                                          child:  
+                                                ElevatedButton(
+                                                  onPressed: currentTicket.items.isEmpty
+                                                      ? null
+                                                      : () {
+                                                          if (currentTicket.amountTendered ==
+                                                              null) {
+                                                            _showPaymentDialog().then((success) {
+                                                              if (success == true) _processSale();
+                                                            });
+                                                          } else {
+                                                            _processSale();
+                                                          }
+                                                        },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: const Color(0xFF05e265),
+                                                    foregroundColor: Colors.white,
+                                                    padding: const EdgeInsets.symmetric(
+                                                      vertical: 16,
+                                                    ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                  ),
+                                                  child: 
+                                                                                                Text(
+                                                                  currentTicket.amountTendered == null
+                                                                      ? 'COBRAR'
+                                                                      : 'FINALIZAR VENTA',
+                                                                  style: GoogleFonts.poppins(
+                                                                    fontWeight: FontWeight.bold,
+                                                                  ),
+                                                                ),
+                                                  
+                                                  
+                                                  
+
+
+                                                ),
+                                        )
+
+                              
+
                             ),
                           ],
                         ),
@@ -1311,6 +1819,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     ];
   }
+  
   Widget _buildMobileCartBottomBar() {
     int totalItems = currentTicket.items.fold(
       0,
@@ -1387,6 +1896,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   void _showMobileCartBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -1503,6 +2013,32 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                     },
                                   ),
                                 ),
+
+                 //add new ticket button
+                  Showcase(
+                          key: _agregaTicketKey,
+                          description: 'Toca para agregar un nuevo ticket.',
+                          tooltipPadding: const EdgeInsets.all(12),
+                          tooltipActions: [
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.skip,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Saltar',
+                                     
+                                    ), 
+                                    TooltipActionButton(
+                                      type: TooltipDefaultActionType.next,
+                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                      textStyle: TextStyle(color: Colors.white),
+                                      name: 'Siguiente',
+                                     
+                                    )
+                                  ],
+                          tooltipActionConfig: TooltipActionConfig(
+                                alignment: MainAxisAlignment.center,
+                              ),
+                          child:  
                                 IconButton(
                                   icon: const Icon(
                                     Icons.add_circle,
@@ -1515,6 +2051,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                   },
                                   tooltip: 'Nuevo Ticket',
                                 ),
+                        )
+
+
                               ],
                             ),
                           ), 
@@ -1710,41 +2249,72 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                             onTap: () => _showDiscountDialog(
                                               setModalState: setModalState,
                                             ),
-                                            child: Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 4,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.orange
-                                                    .withOpacity(0.2),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: Colors.orange
-                                                      .withOpacity(0.5),
-                                                ),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.local_offer_outlined,
-                                                    color: Colors.orange,
-                                                    size: 12,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    'Desc.',
-                                                    style: GoogleFonts.poppins(
-                                                      color: Colors.orange,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                                            child: 
+                                          //Discount button
+                                          Showcase(
+                                                  key: _discountKey,
+                                                  description: 'Toca para agregar un descuento.',
+                                                  tooltipPadding: const EdgeInsets.all(12),
+                                                  tooltipActions: [
+                                                            TooltipActionButton(
+                                                                type: TooltipDefaultActionType.skip,
+                                                                backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                                textStyle: TextStyle(color: Colors.white),
+                                                                name: 'Saltar',
+                                                              
+                                                              ), 
+                                                            TooltipActionButton(
+                                                              type: TooltipDefaultActionType.next,
+                                                              backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                              textStyle: TextStyle(color: Colors.white),
+                                                              name: 'Siguiente',
+                                                            
+                                                            )
+                                                          ],
+                                                  tooltipActionConfig: TooltipActionConfig(
+                                                        alignment: MainAxisAlignment.center,
+                                                      ),
+                                                  child: 
+                                                          Container(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 4,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.orange
+                                                            .withOpacity(0.2),
+                                                        borderRadius:
+                                                            BorderRadius.circular(12),
+                                                        border: Border.all(
+                                                          color: Colors.orange
+                                                              .withOpacity(0.5),
+                                                        ),
+                                                      ),
+                                                      child: 
+                                                            Row(
+                                                              children: [
+                                                                const Icon(
+                                                                  Icons.local_offer_outlined,
+                                                                  color: Colors.orange,
+                                                                  size: 12,
+                                                                ),
+                                                                const SizedBox(width: 4),
+                                                                Text(
+                                                                  'Desc.',
+                                                                  style: GoogleFonts.poppins(
+                                                                    color: Colors.orange,
+                                                                    fontSize: 10,
+                                                                    fontWeight:
+                                                                        FontWeight.bold,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                )
+                                              
+                                              
+                                               
                                             ),
                                           ),
                                         ],
@@ -1835,44 +2405,76 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                 ],
                                 SizedBox(
                                   width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: currentTicket.items.isEmpty
-                                        ? null
-                                        : () {
-                                            if (currentTicket.amountTendered ==
-                                                null) {
-                                              _showPaymentDialog(
-                                                setModalState: setModalState,
-                                              ).then((success) {
-                                                if (success == true) {
-                                                  _processSale();
-                                                  Navigator.pop(context);
-                                                }
-                                              });
-                                            } else {
-                                              _processSale();
-                                              Navigator.pop(context);
-                                            }
-                                          },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF05e265),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      currentTicket.amountTendered == null
-                                          ? 'COBRAR'
-                                          : 'FINALIZAR VENTA',
-                                      style: GoogleFonts.poppins(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
+                                  child: 
+                                   //Cobrar button 
+                                      Showcase(
+                                          key: _cobrarKey,
+                                          description: 'Toca para cobrar los productos en el ticket.',
+                                          tooltipPadding: const EdgeInsets.all(12),
+                                          tooltipActions: [
+                                                    TooltipActionButton(
+                                                            type: TooltipDefaultActionType.skip,
+                                                            backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                            textStyle: TextStyle(color: Colors.white),
+                                                            name: 'Saltar',
+                                                          
+                                                          ), 
+                                                    TooltipActionButton(
+                                                      type: TooltipDefaultActionType.next,
+                                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                      textStyle: TextStyle(color: Colors.white),
+                                                      name: 'Siguiente',
+                                                    
+                                                    )
+                                                  ],
+                                          tooltipActionConfig: TooltipActionConfig(
+                                                alignment: MainAxisAlignment.center,
+                                              ),
+                                          child:  
+                                                ElevatedButton(
+                                                    onPressed: currentTicket.items.isEmpty
+                                                        ? null
+                                                        : () {
+                                                            if (currentTicket.amountTendered ==
+                                                                null) {
+                                                              _showPaymentDialog(
+                                                                setModalState: setModalState,
+                                                              ).then((success) {
+                                                                if (success == true) {
+                                                                  _processSale();
+                                                                  Navigator.pop(context);
+                                                                }
+                                                              });
+                                                            } else {
+                                                              _processSale();
+                                                              Navigator.pop(context);
+                                                            }
+                                                          },
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: const Color(0xFF05e265),
+                                                      foregroundColor: Colors.white,
+                                                      padding: const EdgeInsets.symmetric(
+                                                        vertical: 16,
+                                                      ),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                    ),
+                                                    child: 
+                                                          Text(
+                                                                  currentTicket.amountTendered == null
+                                                                      ? 'COBRAR'
+                                                                      : 'FINALIZAR VENTA',
+                                                                  style: GoogleFonts.poppins(
+                                                                    fontWeight: FontWeight.bold,
+                                                                  ),
+                                                                ),                            
+                
+                                                  ),
+                                        )
+                                  
+                                  
+
                                 ),
                               ],
                             ),
@@ -1889,6 +2491,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       },
     );
   }
+  
   Future<void> _showAddStockModal(Map product) async {
     await showDialog(
       context: context,
@@ -1899,6 +2502,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   void _addToCart(Map<String, dynamic> product) async {
     //double price = product['price'];
     final wholesaleMin = (product['wholesaleMinUnits'] as num?)?.toDouble() ?? 0;
@@ -1977,6 +2581,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       //   _currentModalSetState!(() {}); // reconstruye el modal
       // }
   }
+  
   void _calculateTotals() {
     currentTicket.subtotal = currentTicket.items.fold(
       0.0,
@@ -1996,6 +2601,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       currentTicket.amountTendered = null;
     }
   }
+  
   Future<bool?> _showPaymentDialog({StateSetter? setModalState}) async {
     final amountController = TextEditingController();
     String localPaymentMethod = currentTicket.paymentMethod;
@@ -2204,6 +2810,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   Widget _buildPaymentMethodOption({
     required IconData icon,
     required String label,
@@ -2256,6 +2863,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   void _showSalesHistoryDialog() async {
     showDialog(
       context: context,
@@ -2432,6 +3040,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   void _confirmCancelSale(BuildContext context, String saleId) {
     showDialog(
       context: context,
@@ -2482,6 +3091,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
+  
   void _onSearchSubmitted(String value) {
     if (value.isEmpty) return;
     final provider = Provider.of<ProductProvider>(context, listen: false);
@@ -2500,6 +3110,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       });
     }
   }
+  
   void _processPayment() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -2517,6 +3128,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       _calculateTotals();
     });
   }
+  
   Future<void> _showDiscountDialog({StateSetter? setModalState}) async {
     final discountController = TextEditingController(
       text: currentTicket.discount > 0
@@ -2626,6 +3238,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     );
   }
 
+  
   Future<void> _showWithdrawalDialog() async {
     showDialog(
       context: context,
