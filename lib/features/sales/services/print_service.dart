@@ -21,80 +21,79 @@ class PrintService {
     doc.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.roll80, // Estándar para tickets de 80mm
+        margin: const pw.EdgeInsets.all(2 * PdfPageFormat.mm), // Márgenes mínimos
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
+            mainAxisSize: pw.MainAxisSize.min, // Que use el mínimo espacio vertical posible
             children: [
               // Encabezado
               pw.Center(
                 child: pw.Column(
                   children: [
                     pw.Text('FECHA: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
-                        style: const pw.TextStyle(fontSize: 9)),
-                    pw.Divider(thickness: 0.5),
+                        style: const pw.TextStyle(fontSize: 8)),
+                    pw.Divider(thickness: 0.5, height: 4),
                   ],
                 ),
               ),
 
-              // Lista de productos
+              // Lista de productos sin padding extra
               ...items.map((item) {
-                return pw.Padding(
-                  padding: const pw.EdgeInsets.symmetric(vertical: 1),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Expanded(
-                        child: pw.Text('${item.quantity.toStringAsFixed(item.isBulk ? 3 : 0)} ${item.name}',
-                            style: const pw.TextStyle(fontSize: 10)),
-                      ),
-                      pw.Text('\$${(item.price * item.quantity).toStringAsFixed(2)}',
-                          style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                    ],
-                  ),
+                return pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Expanded(
+                      child: pw.Text('${item.quantity.toStringAsFixed(item.isBulk ? 3 : 0)} ${item.name}',
+                          style: const pw.TextStyle(fontSize: 9)),
+                    ),
+                    pw.Text('\$${(item.price * item.quantity).toStringAsFixed(2)}',
+                        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                  ],
                 );
               }).toList(),
-              pw.Divider(thickness: 0.5),
+              pw.Divider(thickness: 0.5, height: 4),
 
-              // Totales
+              // Totales más compactos
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text('TOTAL VENTA:',
                       style: pw.TextStyle(
-                          fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                          fontSize: 10, fontWeight: pw.FontWeight.bold)),
                   pw.Text('\$${total.toStringAsFixed(2)}',
                       style: pw.TextStyle(
-                          fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                          fontSize: 10, fontWeight: pw.FontWeight.bold)),
                 ],
               ),
-              pw.SizedBox(height: 10),
+              pw.SizedBox(height: 2),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('MÉTODO DE PAGO:', style: const pw.TextStyle(fontSize: 9)),
-                  pw.Text(paymentMethod.toUpperCase(), style: const pw.TextStyle(fontSize: 9)),
+                  pw.Text('MÉTODO DE PAGO:', style: const pw.TextStyle(fontSize: 8)),
+                  pw.Text(paymentMethod.toUpperCase(), style: const pw.TextStyle(fontSize: 8)),
                 ],
               ),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('EFECTIVO RECIBIDO:', style: const pw.TextStyle(fontSize: 9)),
+                  pw.Text('EFECTIVO RECIBIDO:', style: const pw.TextStyle(fontSize: 8)),
                   pw.Text('\$${received.toStringAsFixed(2)}',
-                      style: const pw.TextStyle(fontSize: 9)),
+                      style: const pw.TextStyle(fontSize: 8)),
                 ],
               ),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('SU CAMBIO:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('SU CAMBIO:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
                   pw.Text('\$${change.toStringAsFixed(2)}',
-                      style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
                 ],
               ),
-              pw.SizedBox(height: 15),
+              pw.SizedBox(height: 4),
               pw.Center(
                 child: pw.Text('¡Gracias por su preferencia!',
-                    style: const pw.TextStyle(fontSize: 9)),
+                    style: const pw.TextStyle(fontSize: 8)),
               ),
             ],
           );
