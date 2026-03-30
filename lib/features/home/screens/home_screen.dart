@@ -122,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (jsonStr != null) {
         setState(() {
           _onboarding = jsonDecode(jsonStr);
+          print(_onboarding);
          
         });
       }
