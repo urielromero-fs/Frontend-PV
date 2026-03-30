@@ -1,134 +1,153 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
+  import 'dart:convert';
+  import 'package:shared_preferences/shared_preferences.dart';
+  import 'package:http/http.dart' as http;
+  import '../providers/user_provider.dart';
+  import 'package:provider/provider.dart';
 
-class AuthService {
-  static const String _accessTokenKey = 'access_token';
-  static const String _refreshTokenKey = 'refresh_token';
-  static const String _userEmailKey = 'user_email';
-  static const String _userNameKey = 'user_name';
-  static const String _userRoleKey = 'user_role';
-  static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
+  class AuthService {
+    static const String _accessTokenKey = 'access_token';
+    static const String _refreshTokenKey = 'refresh_token';
+    static const String _userEmailKey = 'user_email';
+    static const String _userNameKey = 'user_name';
+    static const String _userRoleKey = 'user_role';
+    static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
+    static const String _userOnboardingKey = 'user_onboarding';
 
-  // Register with real API call
-  static Future<Map<String, dynamic>> register(
-    String name,
-    String email,
-    String password,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/register'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'name': name, 'email': email, 'password': password}),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-
-        return {
-          'success': true,
-          'message': 'Cuenta creada exitosamente',
-          'data': responseData,
-        };
-      } else if (response.statusCode == 400) {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Datos inválidos',
-        };
-      } else if (response.statusCode == 409) {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'El email ya está registrado',
-        };
-      } else {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Error en el servidor',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error de conexión: ${e.toString()}',
-      };
-    }
-  }
-
-  // Login with real API call
-  static Future<Map<String, dynamic>> login(
-    String email,
-    String password,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/login'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'email': email, 'password': password}),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        // Extract tokens from headers
-        final accessToken =
-            response.headers['x-access-token'] ??
-            response.headers['X-Access-Token'] ??
-            response.headers['authorization']?.replaceFirst('Bearer ', '') ??
-            '';
-        final refreshToken =
-            response.headers['x-refresh-token'] ??
-            response.headers['X-Refresh-Token'] ??
-            '';
-
-        // Extract user data from response body
-        final userData = responseData['user'] ?? {};
-        final userName = userData['userName'] ?? '';
-        final userEmail = userData['email'] ?? email;
-        final userRole =
-            userData['role'] ?? 'cajero'; // Default a cajero si no viene
-
-        // Store tokens and user data
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_accessTokenKey, accessToken);
-        await prefs.setString(_refreshTokenKey, refreshToken);
-        await prefs.setString(_userNameKey, userName);
-        await prefs.setString(_userEmailKey, userEmail);
-        await prefs.setString(_userRoleKey, userRole);
-
-        return {
-          'success': true,
-          'message': 'Login exitoso',
-          'data': {
-            'user': userData,
-            'accessToken': accessToken,
-            'refreshToken': refreshToken,
+    // Register with real API call
+    static Future<Map<String, dynamic>> register(
+      String name,
+      String email,
+      String password,
+    ) async {
+      try {
+        final response = await http.post(
+          Uri.parse('$_baseUrl/auth/register'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
-        };
-      } else if (response.statusCode == 401) {
-        return {'success': false, 'message': 'Credenciales incorrectas'};
-      } else {
-        final errorData = jsonDecode(response.body);
+          body: jsonEncode({'name': name, 'email': email, 'password': password}),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final responseData = jsonDecode(response.body);
+
+          return {
+            'success': true,
+            'message': 'Cuenta creada exitosamente',
+            'data': responseData,
+          };
+        } else if (response.statusCode == 400) {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Datos inválidos',
+          };
+        } else if (response.statusCode == 409) {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'El email ya está registrado',
+          };
+        } else {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Error en el servidor',
+          };
+        }
+      } catch (e) {
         return {
           'success': false,
-          'message': errorData['message'] ?? 'Error en el servidor',
+          'message': 'Error de conexión: ${e.toString()}',
         };
       }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error de conexión: ${e.toString()}',
-      };
     }
-  }
+
+    // Login with real API call
+    static Future<Map<String, dynamic>> login(
+      String email,
+      String password,
+    ) async {
+      try {
+        final response = await http.post(
+          Uri.parse('$_baseUrl/auth/login'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode({'email': email, 'password': password}),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final responseData = jsonDecode(response.body);
+          // Extract tokens from headers
+          final accessToken =
+              response.headers['x-access-token'] ??
+              response.headers['X-Access-Token'] ??
+              response.headers['authorization']?.replaceFirst('Bearer ', '') ??
+              '';
+          final refreshToken =
+              response.headers['x-refresh-token'] ??
+              response.headers['X-Refresh-Token'] ??
+              '';
+
+          // Extract user data from response body
+          final userData = responseData['user'] ?? {};
+
+          final userName = userData['userName'] ?? '';
+          final userEmail = userData['email'] ?? email;
+          final userRole =
+              userData['role'] ?? 'cajero'; // Default a cajero si no viene
+
+          final onboardingStatus = userData['onboarding'] ?? {
+            'isCompleted': false,
+            'stepsCompleted': {
+              'home': false,
+              'inventory': false,
+              'sales': false,
+              'users': false,
+              'reports': false,
+            }
+          };
+
+          // Store tokens and user data
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_accessTokenKey, accessToken);
+          await prefs.setString(_refreshTokenKey, refreshToken);
+          await prefs.setString(_userNameKey, userName);
+          await prefs.setString(_userEmailKey, userEmail);
+          await prefs.setString(_userRoleKey, userRole);
+          await prefs.setString(_userOnboardingKey, jsonEncode(onboardingStatus));
+
+
+       
+
+          return {
+            'success': true,
+            'message': 'Login exitoso',
+            'data': {
+              'user': userData,
+              'accessToken': accessToken,
+              'refreshToken': refreshToken,
+            },
+          };
+        } else if (response.statusCode == 401) {
+          return {'success': false, 'message': 'Credenciales incorrectas'};
+        } else {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Error en el servidor',
+          };
+        }
+      } catch (e) {
+        return {
+          'success': false,
+          'message': 'Error de conexión: ${e.toString()}',
+        };
+      }
+    }
 
   // Forgot password with real API call
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
@@ -363,4 +382,9 @@ class AuthService {
       return false;
     }
   }
+
+
+
 }
+
+

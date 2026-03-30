@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,6 +16,9 @@ import '../widgets/edit_product_dialog.dart';
 import '../widgets/add_stock_dialog.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import '../../users/services/users_service.dart'; 
+
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -78,51 +82,41 @@ class _InventoryScreenState extends State<InventoryScreen> {
   final GlobalKey _productOptionsKey = GlobalKey(); 
   final GlobalKey _addStockKey = GlobalKey(); 
 
+  Map<String, dynamic> _onboarding = {
+      'isCompleted': false,
+      'stepsCompleted': {
+        'inventory': false,
+      },
+    };
 
-  static const String _InventoryOnboardingKey = 'onboarding_inventory';
 
-  Future<bool> _shouldShowOnboarding() async {
-      final prefs = await SharedPreferences.getInstance();
-      return !(prefs.getBool(_InventoryOnboardingKey) ?? false);
-    }
 
-  Future<void> _setOnboardingShown() async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_InventoryOnboardingKey, true);
-    }
+
 
   @override
   void initState() {
 
-    // //Onboarding
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   Future.delayed(const Duration(milliseconds: 600), () {
-    //     ShowcaseView.get().startShowCase([
-    //       _addProductKey,
-    //       _refreshListKey,
-    //       _filterProductsKey,
-    //       _productOptionsKey,
-    //       _addStockKey,
-    //     ]);
-    //   });
-    // });
 
 
     super.initState();
 
+    _loadOnboarding().then((_) {
+      _initOnboarding(); 
+    });
+
     _loadUserRole();
-    
- 
-    // Onboarding
-    _initOnboarding();
+
 
   }
 
   
    
   Future<void> _initOnboarding() async {
-    final shouldShow = await _shouldShowOnboarding();
-    if (!shouldShow) return;
+
+
+    if(_onboarding['isCompleted'] == true) return;
+
+    if(_onboarding['stepsCompleted']['inventory'] == true) return; 
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 600), () {
@@ -136,9 +130,40 @@ class _InventoryScreenState extends State<InventoryScreen> {
       });
     });
 
-    await _setOnboardingShown();
+      await _markInventoryOnboardingCompleted(); 
   }
 
+
+  Future<void> _loadOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString('user_onboarding');
+      
+      if (jsonStr != null) {
+        setState(() {
+          _onboarding = jsonDecode(jsonStr);
+         
+        });
+      }
+  }
+
+  Future<void> _markInventoryOnboardingCompleted() async {
+
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _onboarding['stepsCompleted']['inventory'] = true;
+    });
+
+    await prefs.setString('user_onboarding', jsonEncode(_onboarding));
+
+    final result = await UsersService.updateOnboardingStep(step: 'inventory');
+
+    if (!result['success']) {
+      print('Error al actualizar onboarding: ${result['message']}');
+    }
+
+  }
+  
 
   Future<void> _loadUserRole() async {
     final role = await AuthService.getCurrentUserRole();
@@ -226,7 +251,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           description: 'Toca para agregar un producto.',
                           tooltipPadding: const EdgeInsets.all(12),
                           tooltipActions: [
-                                    
+                                    TooltipActionButton(
+                                                  type: TooltipDefaultActionType.skip,
+                                                  backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                  textStyle: TextStyle(color: Colors.white),
+                                                  name: 'Saltar',
+                                                
+                                                ),
                                     TooltipActionButton(
                                       type: TooltipDefaultActionType.next,
                                       backgroundColor: const Color.fromARGB(255, 53, 237, 59),
@@ -265,7 +296,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           description: "Toca para actualizar la lista de productos.", 
                           tooltipPadding: const EdgeInsets.all(12),
                           tooltipActions: [
-                                    
+                                    TooltipActionButton(
+                                                  type: TooltipDefaultActionType.skip,
+                                                  backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                  textStyle: TextStyle(color: Colors.white),
+                                                  name: 'Saltar',
+                                                
+                                                ),
                                     TooltipActionButton(
                                       type: TooltipDefaultActionType.next,
                                       backgroundColor: const Color.fromARGB(255, 53, 237, 59),
@@ -348,7 +385,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           description: "Toca para filtrar productos por stock o categoría, o para ordenarlos.", 
                           tooltipPadding: const EdgeInsets.all(12),
                           tooltipActions: [
-                                    
+                                    TooltipActionButton(
+                                                  type: TooltipDefaultActionType.skip,
+                                                  backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                  textStyle: TextStyle(color: Colors.white),
+                                                  name: 'Saltar',
+                                                
+                                                ),
                                     TooltipActionButton(
                                       type: TooltipDefaultActionType.next,
                                       backgroundColor: const Color.fromARGB(255, 53, 237, 59),
@@ -424,13 +467,43 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ),
                               ),
                               Expanded(
-                                child: Text(
-                                  'Stock',
-                                  style: GoogleFonts.poppins(
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                    fontWeight: FontWeight.w600,
+                                child: 
+                                   //actions products button 
+                              Showcase(
+                                      key: _addStockKey,
+                                      description: "Toca para agregar stock de forma más rápida.", 
+                                      tooltipPadding: const EdgeInsets.all(12),
+                                      tooltipActions: [
+                                                TooltipActionButton(
+                                                  type: TooltipDefaultActionType.skip,
+                                                  backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                  textStyle: TextStyle(color: Colors.white),
+                                                  name: 'Saltar',
+                                                
+                                                ),
+                                                TooltipActionButton(
+                                                  type: TooltipDefaultActionType.next,
+                                                  backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                  textStyle: TextStyle(color: Colors.white),
+                                                  name: 'Siguiente',
+                                                
+                                                )
+                                              ],
+                                      tooltipActionConfig: TooltipActionConfig(
+                                            alignment: MainAxisAlignment.center,
+                                          ),
+                                      child:  Text(
+                                              'Stock',
+                                              style: GoogleFonts.poppins(
+                                                color: Theme.of(context).colorScheme.onSurface,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                                        
+
                                   ),
-                                ),
+                                
+                                
                               ),
                               Expanded(
                                 child: Text(
@@ -454,13 +527,46 @@ class _InventoryScreenState extends State<InventoryScreen> {
                               ),
                               Expanded(
                                 child: Center(
-                                  child: Text(
-                                    'Acciones',
-                                    style: GoogleFonts.poppins(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                  child: 
+                                  
+                                //actions products button 
+                              Showcase(
+                                      key: _productOptionsKey,
+                                      description: "Toca para editar o eliminar el producto.", 
+                                      tooltipPadding: const EdgeInsets.all(12),
+                                      tooltipActions: [
+                                                TooltipActionButton(
+                                                  type: TooltipDefaultActionType.skip,
+                                                  backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                  textStyle: TextStyle(color: Colors.white),
+                                                  name: 'Saltar',
+                                                
+                                                ),
+                                                TooltipActionButton(
+                                                  type: TooltipDefaultActionType.next,
+                                                  backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                  textStyle: TextStyle(color: Colors.white),
+                                                  name: 'Siguiente',
+                                                
+                                                )
+                                              ],
+                                      tooltipActionConfig: TooltipActionConfig(
+                                            alignment: MainAxisAlignment.center,
+                                          ),
+                                      child:   Text(
+                                                'Acciones',
+                                                style: GoogleFonts.poppins(
+                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            
+
                                   ),
+
+    
+                                  
+                                 
                                 ),
                               ),
                             ],
@@ -493,9 +599,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 itemBuilder: (context, index) {
                                   final product = filteredProducts[index];
                                   
-                                  // Solo el primer producto tendrá showcase (por ejemplo)
-                                  final GlobalKey? addStockKey = index == 0 ? _addStockKey : null;
-                                  final GlobalKey? actionMenuKey = index == 0 ? _productOptionsKey : null;
+                                  // // Solo el primer producto tendrá showcase (por ejemplo)
+                                  // final GlobalKey? addStockKey = index == 0 ? _addStockKey : null;
+                                  // final GlobalKey? actionMenuKey = index == 0 ? _productOptionsKey : null;
 
 
 
@@ -520,9 +626,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     userRole: _userRole,
 
 
-                                    // SHOWCASE solo para este producto
-                                    addStockKey: addStockKey,
-                                    actionMenuKey: actionMenuKey,
+                                    // // SHOWCASE solo para este producto
+                                    // addStockKey: addStockKey,
+                                    // actionMenuKey: actionMenuKey,
 
                                     onDelete: () =>
                                         _deleteProduct(product['_id']),

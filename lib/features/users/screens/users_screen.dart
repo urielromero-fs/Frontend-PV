@@ -5,6 +5,8 @@ import '../services/users_service.dart';
 import 'package:intl/intl.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -24,48 +26,40 @@ class _UsersScreenState extends State<UsersScreen> {
   //Onboarding  
   final GlobalKey _addUserKey = GlobalKey(); 
   final GlobalKey _optionsUserKey = GlobalKey(); 
+
+
+    Map<String, dynamic> _onboarding = {
+      'isCompleted': false,
+      'stepsCompleted': {
+        'users': false,
+      },
+    };
+
   
-  static const String _usersOnboardingKey = 'onboarding_users';
-
-  Future<bool> _shouldShowOnboarding() async {
-      final prefs = await SharedPreferences.getInstance();
-      return !(prefs.getBool(_usersOnboardingKey) ?? false);
-    }
-
-  Future<void> _setOnboardingShown() async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_usersOnboardingKey, true);
-    }
 
 
   @override
   void initState() {
 
-    //     //Onboarding
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   Future.delayed(const Duration(milliseconds: 600), () {
-    //     ShowcaseView.get().startShowCase([
-    //       _addUserKey,
-    //       _optionsUserKey
-          
-    //     ]);
-    //   });
-    // });
-
-
     super.initState();
+
+    _loadOnboarding().then((_) {
+      _initOnboarding(); 
+    });
+
     _filteredUsers = users;
     _searchController.addListener(_onSearchChanged);
     _loadUsers(); 
 
-      // Onboarding
-    _initOnboarding();
+
 
   }
 
   Future<void> _initOnboarding() async {
-    final shouldShow = await _shouldShowOnboarding();
-    if (!shouldShow) return;
+
+    if(_onboarding['isCompleted'] == true) return;
+
+    if(_onboarding['stepsCompleted']['users'] == true) return; 
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 600), () {
@@ -77,9 +71,38 @@ class _UsersScreenState extends State<UsersScreen> {
       });
     });
 
-    await _setOnboardingShown();
+     await _markUsersOnboardingCompleted(); 
   }
 
+  Future<void> _loadOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString('user_onboarding');
+      
+      if (jsonStr != null) {
+        setState(() {
+          _onboarding = jsonDecode(jsonStr);
+          
+        });
+      }
+  }
+
+  Future<void> _markUsersOnboardingCompleted() async {
+
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _onboarding['stepsCompleted']['users'] = true;
+    });
+
+    await prefs.setString('user_onboarding', jsonEncode(_onboarding));
+
+    final result = await UsersService.updateOnboardingStep(step: 'users');
+
+    if (!result['success']) {
+      print('Error al actualizar onboarding: ${result['message']}');
+    }
+
+  }
 
   @override
   void dispose() {
@@ -649,13 +672,36 @@ class _UsersScreenState extends State<UsersScreen> {
                               ),
                               Expanded(
                                 child: Center(
-                                  child: Text(
-                                    'Acciones',
-                                    style: GoogleFonts.poppins(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  child:
+                                  
+                                  Showcase(
+                                      key: _optionsUserKey,
+                                      description: 'Toca para editar, eliminar o enviarle una nueva contraseña al usuario.',
+                                      tooltipPadding: const EdgeInsets.all(12),
+                                      tooltipActions: [
+                                                
+                                                TooltipActionButton(
+                                                  type: TooltipDefaultActionType.next,
+                                                  backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                                  textStyle: TextStyle(color: Colors.white),
+                                                  name: 'Siguiente',
+                                                
+                                                )
+                                              ],
+                                      tooltipActionConfig: TooltipActionConfig(
+                                            alignment: MainAxisAlignment.center,
+                                          ),
+                                      child:  
+                                          Text(
+                                            'Acciones',
+                                            style: GoogleFonts.poppins(
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                    ), 
+                                  
+
                                 ),
                               ),
                             ],
@@ -681,7 +727,7 @@ class _UsersScreenState extends State<UsersScreen> {
 
 
                                   // Solo el primer producto tendrá showcase (por ejemplo)
-                                  final GlobalKey? actionMenuKey = index == 0 ? _optionsUserKey : null;
+                                  //final GlobalKey? actionMenuKey = index == 0 ? _optionsUserKey : null;
 
 
                                   return _UserRow(
@@ -696,7 +742,7 @@ class _UsersScreenState extends State<UsersScreen> {
                                     onSendPassword: () => _sendPassword(user['email']),
                                     // SHOWCASE solo para este producto
                                   
-                                    actionMenuKey: actionMenuKey,
+                                    //actionMenuKey: actionMenuKey,
                                   );
                                 },
                               ),
@@ -789,7 +835,7 @@ class _UserRow extends StatelessWidget {
   final VoidCallback onSendPassword; 
 
   // SHOWCASE
-  final GlobalKey? actionMenuKey;
+  //final GlobalKey? actionMenuKey;
   
 
   const _UserRow({
@@ -802,7 +848,7 @@ class _UserRow extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onSendPassword,
-    this.actionMenuKey,
+    //this.actionMenuKey,
   });
 
 
@@ -830,32 +876,32 @@ class _UserRow extends StatelessWidget {
         child: const Icon(Icons.more_vert, color: Color(0xFF05e265), size: 20),
       );
 
-    if(actionMenuKey != null){
-      actionButton = Showcase(
-                          key: actionMenuKey!,
-                          description: 'Toca para editar, eliminar o enviarle una nueva contraseña al usuario.',
-                          tooltipPadding: const EdgeInsets.all(12),
-                          tooltipActions: [
+    // if(actionMenuKey != null){
+    //   actionButton = Showcase(
+    //                       key: actionMenuKey!,
+    //                       description: 'Toca para editar, eliminar o enviarle una nueva contraseña al usuario.',
+    //                       tooltipPadding: const EdgeInsets.all(12),
+    //                       tooltipActions: [
                                     
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.next,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Siguiente',
+    //                                 TooltipActionButton(
+    //                                   type: TooltipDefaultActionType.next,
+    //                                   backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+    //                                   textStyle: TextStyle(color: Colors.white),
+    //                                   name: 'Siguiente',
                                      
-                                    )
-                                  ],
-                          tooltipActionConfig: TooltipActionConfig(
-                                alignment: MainAxisAlignment.center,
-                              ),
-                          child:  
+    //                                 )
+    //                               ],
+    //                       tooltipActionConfig: TooltipActionConfig(
+    //                             alignment: MainAxisAlignment.center,
+    //                           ),
+    //                       child:  
                                
-                          actionButton
-                        ); 
+    //                       actionButton
+    //                     ); 
 
 
 
-    }
+    // }
 
     final actionsMenu = PopupMenuButton<String>(
       color: Theme.of(context).cardColor,

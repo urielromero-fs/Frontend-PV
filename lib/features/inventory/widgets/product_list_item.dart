@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:showcaseview/showcaseview.dart';
+
 
 
 
@@ -23,9 +23,6 @@ class ProductListItem extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onAddStock;
 
-  // SHOWCASE
-  final GlobalKey? addStockKey;
-  final GlobalKey? actionMenuKey;
 
   const ProductListItem({
     super.key,
@@ -44,8 +41,7 @@ class ProductListItem extends StatelessWidget {
     required this.hasWholesalePrice,
     required this.wholesalePrice,
     required this.wholesaleMinUnits,
-    this.addStockKey,
-    this.actionMenuKey,
+
   });
 
   @override
@@ -86,45 +82,7 @@ class ProductListItem extends StatelessWidget {
             ),
         ); 
 
-     
-      if (addStockKey != null) {
-        actionButton = Showcase(
-          key: actionMenuKey!,
-          description: "Toca para editar o eliminar el producto.",
-          tooltipPadding: const EdgeInsets.all(12),
-          tooltipActions: [
-            TooltipActionButton(
-              type: TooltipDefaultActionType.next,
-              backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-              textStyle: const TextStyle(color: Colors.white),
-              name: 'Siguiente',
-            )
-          ],
-          tooltipActionConfig: const TooltipActionConfig(
-            alignment: MainAxisAlignment.center,
-          ),
-          child: actionButton,
-        );
-
-
-        addStockButton = Showcase(
-          key: addStockKey!,
-          description: "Toca para agregar stock de forma más rápida.",
-          tooltipPadding: const EdgeInsets.all(12),
-          tooltipActions: [
-            TooltipActionButton(
-              type: TooltipDefaultActionType.next,
-              backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-              textStyle: const TextStyle(color: Colors.white),
-              name: 'Siguiente',
-            )
-          ],
-          tooltipActionConfig: const TooltipActionConfig(
-            alignment: MainAxisAlignment.center,
-          ),
-          child: addStockButton,
-        );
-      }
+  
 
 
     final actionsMenu = PopupMenuButton<String>(

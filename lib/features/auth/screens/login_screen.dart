@@ -5,6 +5,9 @@ import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pv26/features/inventory/providers/product_provider.dart';
+import '../providers/user_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -59,6 +62,11 @@ class _LoginScreenState extends State<LoginScreen>
         if (result['success']) {
           // Login successful
           if (mounted) {
+            final userData = result['data']['user'] as Map<String, dynamic>;
+            //Guardar en Provider
+            Provider.of<UserProvider>(context, listen: false).setUser(userData);
+
+          
             // Cargar productos después del login
             await context.read<ProductProvider>().fetchProducts();
             Navigator.pushReplacementNamed(context, '/home');

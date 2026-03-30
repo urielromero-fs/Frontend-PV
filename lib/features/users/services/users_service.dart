@@ -288,8 +288,41 @@ class UsersService {
   }
 
 
+  //Update onboarding step
+  static Future<Map<String, dynamic>> updateOnboardingStep({
+    required String step,
+  }) async {
+    try {
+      final response = await ApiHelper.request(
+        method: 'PATCH',
+        path: '/users/onboarding/step',
+        body: {
+          'step': step,
+        },
+      );
 
-    
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Step de onboarding actualizado exitosamente',
+          'data': responseData,
+        };
+      } else {
+        final errorData = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor (${response.statusCode})',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+  }
+      
 
 
 

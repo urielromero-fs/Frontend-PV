@@ -20,6 +20,9 @@ import '../../inventory/widgets/add_stock_dialog.dart';
 import 'package:pv26/core/utils/currency_formatter.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import '../../users/services/users_service.dart'; 
 
 String _f(double value) => CurrencyFormatter.format(value);
 class PaymentsScreen extends StatefulWidget {
@@ -82,104 +85,86 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   final GlobalKey _cobrarKey = GlobalKey(); 
   final GlobalKey _discountKey = GlobalKey(); 
 
-  static const String _paymentsOnboardingKey = 'onboarding_payments';
 
-  Future<bool> _shouldShowOnboarding() async {
-      final prefs = await SharedPreferences.getInstance();
-      return !(prefs.getBool(_paymentsOnboardingKey) ?? false);
-    }
-
-  Future<void> _setOnboardingShown() async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_paymentsOnboardingKey, true);
-    }
+  Map<String, dynamic> _onboarding = {
+      'isCompleted': false,
+      'stepsCompleted': {
+        'salesOpenCash': false,
+        'salesPostCash': false,
+      },
+  };
 
 
-  
-    Future<bool> _shouldShowOpenCashShowcase() async {
-      final prefs = await SharedPreferences.getInstance();
-      return !(prefs.getBool('onboarding_open_cash_shown') ?? false);
-    }
-
-    Future<void> _setOpenCashShowcaseShown() async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('onboarding_open_cash_shown', true);
-    }
-
-   
-    Future<bool> _shouldShowPostOpenCashShowcase() async {
-      final prefs = await SharedPreferences.getInstance();
-      return !(prefs.getBool('onboarding_post_open_cash_shown') ?? false);
-    }
-
-    Future<void> _setPostOpenCashShowcaseShown() async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('onboarding_post_open_cash_shown', true);
-    }
 
 
   @override
   void initState() {
 
-
-
-
     super.initState();
-    _addNewTicket();
-    _initCashSession();
 
-    //Onboarding
-    _initOnboarding();
+     _addNewTicket();
 
-    // WidgetsBinding.instance.addPostFrameCallback((_) async {
-    // await Future.delayed(const Duration(milliseconds: 600));
+    _initAllAsync();
 
-    //   if (!_isRegisterOpen) {
-    //     // Mostrar solo "apertura de caja"
-    //     ShowcaseView.get().startShowCase([_aperturaCajaKey]);
-    //   }
-      // } else {
-      //   // Mostrar las demás opciones si la caja ya está abierta
-      //   ShowcaseView.get().startShowCase([
-      //     _cerrarCajaKey,
-      //     _historialKey,
-      //     _salidaEfectivoKey,
-      //     _agregaTicketKey,
-      //     _cobrarKey,
-      //     _discountKey
-      //   ]);
-    //   // }
-    // });
+
   }
 
 
-  Future<void> _initOnboarding() async {
-        final shouldShow = await _shouldShowOnboarding();
-        if (!shouldShow) return;
+  
+    Future<void> _initOnboarding() async {
+      if (_onboarding['isCompleted'] == true) return;
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+      if(_onboarding['stepsCompleted']['salesOpenCash'] == true) return; 
+
+      if(!_isRegisterOpen){
+          WidgetsBinding.instance.addPostFrameCallback((_) {
           Future.delayed(const Duration(milliseconds: 600), () {
-           
-              if (!_isRegisterOpen) {
-                // Mostrar solo "apertura de caja"
+           if (mounted) {
                 ShowcaseView.get().startShowCase([_aperturaCajaKey]);
-              }  else {
-      
-                ShowcaseView.get().startShowCase([
-                  _cerrarCajaKey,
-                  _historialKey,
-                  _salidaEfectivoKey,
-                  _agregaTicketKey,
-                  _cobrarKey,
-                  _discountKey
-                ]);
               }
           });
         });
-
-        await _setOnboardingShown();
       }
 
+
+      await _markStepCompleted('salesOpenCash');
+    }
+
+ 
+  Future<void> _initAllAsync() async {
+    await _initCashSession();   // espera a que la sesión de caja se inicialice
+    await _loadOnboarding();    // carga los datos de onboarding desde SharedPreferences
+    await _initOnboarding();    // decide si mostrar el Showcase
+  }
+
+  Future<void> _loadOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString('user_onboarding');
+      
+      if (jsonStr != null) {
+        setState(() {
+          _onboarding = jsonDecode(jsonStr);
+          
+        });
+    }
+   }
+
+
+  Future<void> _markStepCompleted(String step) async {
+      final prefs = await SharedPreferences.getInstance();
+
+      setState(() {
+        _onboarding['stepsCompleted'][step] = true;
+      });
+
+      await prefs.setString('user_onboarding', jsonEncode(_onboarding));
+
+      final result = await UsersService.updateOnboardingStep(step: step);
+      if (!result['success']) {
+        print('Error al actualizar onboarding: ${result['message']}');
+      }
+
+  }
 
 
   void _startPostOpenShowcase() {
@@ -202,39 +187,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     await _checkOpenSession();
     // Solo mostrar diálogo si no hay sesión abierta
     if (!_isRegisterOpen) {
-
-      //  final shouldShow = await _shouldShowOpenCashShowcase();
-
-      //   // Mostrar modal con Showcase solo la primera vez
-      //   if (shouldShow) {
-      //    _showOpenRegisterDialog(showShowcase: true);
        _showOpenRegisterDialog();
     }
-  //         await _setOpenCashShowcaseShown();
-  //       } else {
-  //         _showOpenRegisterDialog(showShowcase: false);
-  //       }
-  //   } else {
-  //   // Si la caja ya está abierta, revisar si se deben mostrar los showcases post-apertura
-  //   final shouldShowPost = await _shouldShowPostOpenCashShowcase();
-  //   if (shouldShowPost) {
-  //     WidgetsBinding.instance.addPostFrameCallback((_) {
-  //       Future.delayed(const Duration(milliseconds: 400), () {
-  //         ShowcaseView.get().startShowCase([
-  //           _cerrarCajaKey,
-  //           _historialKey,
-  //           _salidaEfectivoKey,
-  //           _agregaTicketKey,
-  //           _cobrarKey,
-  //           _discountKey,
-  //         ]);
-  //       });
-  //     });
-  //     await _setPostOpenCashShowcaseShown();
-  //   }
-  // }
-     
-    
+   
   }
 
 
@@ -422,7 +377,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   Future<void> _showOpenRegisterDialog() async {
     final amountController = TextEditingController();
 
-    await  showDialog(
+      await  showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -514,33 +469,11 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                 });
                 Navigator.pop(context);
 
-                final shouldShowAfterOpen = await _shouldShowOnboarding();
+                  if (_onboarding['stepsCompleted']['salesPostCash'] != true) {
+                    _startPostOpenShowcase();   // Muestra los demás showcases
+                    await _markStepCompleted('salesPostCash'); // Marca como completado
+                  }
 
-                if (shouldShowAfterOpen){
-                    _startPostOpenShowcase();
-                }
-
-                await _setOnboardingShown(); 
-
-              //                 // Solo mostrar los demás showcases si no se habían mostrado aún
-              // final shouldShowPost = await _shouldShowPostOpenCashShowcase();
-              // if (shouldShowPost) {
-              //   WidgetsBinding.instance.addPostFrameCallback((_) {
-              //     Future.delayed(const Duration(milliseconds: 400), () {
-              //       ShowcaseView.get().startShowCase([
-              //         _cerrarCajaKey,
-              //         _historialKey,
-              //         _salidaEfectivoKey,
-              //         _agregaTicketKey,
-              //         _cobrarKey,
-              //         _discountKey,
-              //       ]);
-              //     });
-              //   });
-              //   await _setPostOpenCashShowcaseShown();
-              // }
-
-                 
               } else {
                 ScaffoldMessenger.of(
                   context,

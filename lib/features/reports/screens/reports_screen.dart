@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/reports_service.dart'; 
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import '../../users/services/users_service.dart'; 
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -21,44 +23,35 @@ class _ReportsScreenState extends State<ReportsScreen> {
   final GlobalKey _periodKey = GlobalKey(); 
   final GlobalKey _downloadReportKey = GlobalKey(); 
 
-  static const String _reportsOnboardingKey = 'onboarding_reports';
+  
+    Map<String, dynamic> _onboarding = {
+      'isCompleted': false,
+      'stepsCompleted': {
+        'reports': false,
+      },
+    };
 
-  Future<bool> _shouldShowOnboarding() async {
-      final prefs = await SharedPreferences.getInstance();
-      return !(prefs.getBool(_reportsOnboardingKey) ?? false);
-    }
 
-  Future<void> _setOnboardingShown() async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_reportsOnboardingKey, true);
-    }
+
 
   @override
   void initState() {
 
-        //Onboarding
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   Future.delayed(const Duration(milliseconds: 600), () {
-    //     ShowcaseView.get().startShowCase([
-    //         _periodKey,
-    //         _downloadReportKey
-          
-    //     ]);
-    //   });
-    // });
-
     super.initState();
+
+    _loadOnboarding().then((_) {
+      _initOnboarding(); 
+    });
    
     _loadMetrics(_selectedPeriod); 
 
-      // Onboarding
-    _initOnboarding();
   }
   
    
   Future<void> _initOnboarding() async {
-    final shouldShow = await _shouldShowOnboarding();
-    if (!shouldShow) return;
+    if(_onboarding['isCompleted'] == true) return;
+
+    if(_onboarding['stepsCompleted']['reports'] == true) return; 
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 600), () {
@@ -69,7 +62,37 @@ class _ReportsScreenState extends State<ReportsScreen> {
       });
     });
 
-    await _setOnboardingShown();
+     await _markReportsOnboardingCompleted(); 
+  }
+
+  Future<void> _loadOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString('user_onboarding');
+      
+      if (jsonStr != null) {
+        setState(() {
+          _onboarding = jsonDecode(jsonStr);
+          
+        });
+      }
+  }
+
+    Future<void> _markReportsOnboardingCompleted() async {
+
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _onboarding['stepsCompleted']['reports'] = true;
+    });
+
+    await prefs.setString('user_onboarding', jsonEncode(_onboarding));
+
+    final result = await UsersService.updateOnboardingStep(step: 'reports');
+
+    if (!result['success']) {
+      print('Error al actualizar onboarding: ${result['message']}');
+    }
+
   }
 
 

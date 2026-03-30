@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,6 +36,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
    Map<String, dynamic> metricData = {};
 
+  Map<String, dynamic> _onboarding = {
+      'isCompleted': false,
+      'stepsCompleted': {
+        'home': false,
+      },
+    };
+
+
+
   //Onboarding  
 
   final GlobalKey _sidebarDashboardMenuButtonKey = GlobalKey();
@@ -46,17 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey _settingsKey = GlobalKey();
   final GlobalKey _logoutKey = GlobalKey(); 
 
-  static const String _homeOnboardingKey = 'onboarding_home';
-
-    Future<bool> _shouldShowOnboarding() async {
-      final prefs = await SharedPreferences.getInstance();
-      return !(prefs.getBool(_homeOnboardingKey) ?? false);
-    }
-
-    Future<void> _setOnboardingShown() async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_homeOnboardingKey, true);
-    }
+ 
 
   @override
   void initState() {
@@ -67,7 +67,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
     _loadUserData();
-      // Carga inicial de productos
+    _loadOnboarding().then((_) {
+      _initOnboarding(); 
+    });
+
+
+    //Carga inicial de productos
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<ProductProvider>(context, listen: false); 
          
@@ -80,17 +85,17 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadMetrics(); 
 
   
-    // Onboarding
-    _initOnboarding();
-
 
   }
 
 
    
   Future<void> _initOnboarding() async {
-    final shouldShow = await _shouldShowOnboarding();
-    if (!shouldShow) return;
+   
+    if(_onboarding['isCompleted'] == true) return;
+
+    if(_onboarding['stepsCompleted']['home'] == true) return; 
+
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 600), () {
@@ -107,10 +112,39 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     });
 
-    await _setOnboardingShown();
+    await _markHomeOnboardingCompleted(); 
   }
 
-  
+  Future<void> _loadOnboarding() async {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString('user_onboarding');
+      
+      if (jsonStr != null) {
+        setState(() {
+          _onboarding = jsonDecode(jsonStr);
+         
+        });
+      }
+  }
+
+  Future<void> _markHomeOnboardingCompleted() async {
+
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _onboarding['stepsCompleted']['home'] = true;
+    });
+
+    await prefs.setString('user_onboarding', jsonEncode(_onboarding));
+
+    // Llamada al backend para marcar el step como completado
+    final result = await UsersService.updateOnboardingStep(step: 'home');
+
+    if (!result['success']) {
+      print('Error al actualizar onboarding: ${result['message']}');
+    }
+
+  }
   
   
   Future<void> _loadMetrics() async{
@@ -180,6 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final userName = prefs.getString('user_name') ?? '';
     final userEmail = prefs.getString('user_email') ?? '';
     final userRole = prefs.getString('user_role') ?? 'cajero';
+
 
     setState(() {
       _userName = userName;

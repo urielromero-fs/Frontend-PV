@@ -8,6 +8,8 @@ import 'package:pv26/features/inventory/providers/product_provider.dart';
 import 'package:pv26/core/providers/theme_provider.dart';
 import 'package:pv26/core/theme/app_theme.dart';
 import 'package:showcaseview/showcaseview.dart';
+import 'package:pv26/features/auth/providers/user_provider.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -18,6 +20,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: const MyApp(),
     ),

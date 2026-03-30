@@ -56,6 +56,9 @@
           return await http.post(url, headers: headers, body: body != null ? jsonEncode(body) : null);
         case 'PUT':
           return await http.put(url, headers: headers, body: body != null ? jsonEncode(body) : null);
+        case 'PATCH': 
+          return await http.patch(url, headers: headers, body: body != null ? jsonEncode(body) : null);
+
         case 'DELETE':
           return await http.delete(url, headers: headers);
         default:
