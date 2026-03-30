@@ -2864,12 +2864,33 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                           return 'Producto';
                         }).join(', ') + (items.length > 2 ? '...' : '')
                       : 'Sin detalles';
+
+
+
+                final Color primaryColor = sale['isActive'] == true
+                    ? const Color(0xFF05e265)
+                    : Colors.grey;
+
+                final Color textColor =
+                    sale['isActive'] == true ? Colors.white : Colors.white38;
+
+                final Color secondaryTextColor = sale['isActive'] == true
+                    ? Colors.white70
+                    : Colors.white38;
+
+                final Color containerColor = sale['isActive'] == true
+                    ? Colors.white.withOpacity(0.03)
+                    : Colors.grey.withOpacity(0.08);
+
+                final Color deleteColor = sale['isActive'] == true
+                    ? Colors.red.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.08);;
                
                   return Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.03),
+                      color: containerColor,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.white.withOpacity(0.05)),
                     ),
@@ -2878,10 +2899,10 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF05e265).withOpacity(0.1),
+                            color: primaryColor,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.receipt_long, color: Color(0xFF05e265), size: 20),
+                          child: const Icon(Icons.receipt_long, color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -2891,11 +2912,24 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                               Text(
                                 'Venta #$shortId',
                                 style: GoogleFonts.poppins(
-                                  color: Colors.white,
+                                  color: textColor,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 14,
                                 ),
                               ),
+
+
+                              if (!sale['isActive'])
+                                  Text(
+                                    'Cancelada',
+                                    style:
+                                        GoogleFonts.poppins(
+                                      color: secondaryTextColor,
+                                      fontSize: 11,
+                                      fontStyle:
+                                          FontStyle.italic,
+                                    ),
+                                  ),
                               const SizedBox(height: 4),
                               Text(
                                 itemsSummary,
@@ -2943,25 +2977,31 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                           child: Text(
                             '\$${total.toStringAsFixed(2)}',
                             style: GoogleFonts.poppins(
-                              color: const Color(0xFF05e265),
+                              color: primaryColor,
                               fontWeight: FontWeight.bold,
                               fontSize: 19,
                             ),
                           ),
                         ),
-                        InkWell(
-                          onTap: () => _confirmCancelSale(context, saleId),
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
-                            ),
-                            child: const Icon(Icons.delete_forever, color: Colors.redAccent, size: 20),
-                          ),
-                        ),
+
+                        sale['isActive'] == true
+                            ? InkWell(
+                                onTap: () => _confirmCancelSale(context, saleId),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: deleteColor,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: deleteColor),
+                                  ),
+                                  child: const Icon(Icons.delete_forever, color: Colors.redAccent, size: 20),
+                                ),
+                              )
+                            : const SizedBox.shrink(), 
+
+                    
+
                       ],
                     ),
                   );
