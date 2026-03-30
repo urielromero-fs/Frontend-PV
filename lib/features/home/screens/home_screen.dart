@@ -40,6 +40,11 @@ class _HomeScreenState extends State<HomeScreen> {
       'isCompleted': false,
       'stepsCompleted': {
         'home': false,
+        'salesOpenCash': false,
+        'salesPostCash': false,
+        'inventory': false,
+        'users': false,
+        'reports': false,
       },
     };
 
