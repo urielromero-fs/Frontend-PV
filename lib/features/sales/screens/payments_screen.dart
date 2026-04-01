@@ -38,6 +38,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   final FocusNode _searchFocusNode = FocusNode();
   String _barcodeBuffer = '';
   DateTime? _lastKeyPress;
+
+
   //Filtro
   String searchQuery = '';
   String selectedCategoryFilter = 'Todas';
@@ -95,7 +97,13 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   };
 
 
+  final FocusNode _keyboardFocusNode = FocusNode();
+  final FocusNode _scannerFocusNode = FocusNode();
 
+
+  DateTime _lastKeyEventTime = DateTime.now();
+
+  final ValueNotifier<String> searchQueryNotifier = ValueNotifier('');
 
   @override
   void initState() {
@@ -107,11 +115,57 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     _initAllAsync();
 
 
+    // Forzar que _keyboardFocusNode tenga foco
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (mounted) _keyboardFocusNode.requestFocus();
+    // });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FocusScope.of(context).requestFocus(_scannerFocusNode);
+      });
   }
 
 
+  void _handleKeyEvent(KeyEvent event) {
+      if (event is! KeyDownEvent) return;
+
+      final now = DateTime.now();
+      final character = event.character;
+
+      if (character == null || character.isEmpty) return;
+
+      // Asegurar foco en el TextField
+      // if (!_searchFocusNode.hasFocus) {
+      //   _searchFocusNode.requestFocus();
+      // }
+
+      // Diferencia entre eventos
+      final diff = now.difference(_lastKeyEventTime).inMilliseconds;
+      _lastKeyEventTime = now;
+
+      if (diff > 100) {
+        // Teclado normal: dejamos que el TextField lo maneje
+        return;
+      }
+
+      // Scanner: acumular en buffer
+      _barcodeBuffer += character;
+
+      // Enter del scanner
+      if (event.logicalKey == LogicalKeyboardKey.enter && _barcodeBuffer.isNotEmpty) {
+        final code = _barcodeBuffer;
+        _barcodeBuffer = '';
+        searchController.text = '';
+        searchQuery = '';
+
+        // Buscar producto y agregar al carrito
+        _onSearchSubmitted(code);
+        setState(() {});
+      }
+}
+
   
-    Future<void> _initOnboarding() async {
+  Future<void> _initOnboarding() async {
       if (_onboarding['isCompleted'] == true) return;
 
       if(_onboarding['stepsCompleted']['salesOpenCash'] == true) return; 
@@ -702,45 +756,50 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       onlyBulk: filterBulkOnly,
       sortOption: selectedSortOption,
     );
+    
     final bool isMobile = MediaQuery.of(context).size.width < 600;
-    return KeyboardListener(
-      focusNode: FocusNode(),
+    return 
+    
+    KeyboardListener(
+      // focusNode: FocusNode(),
+      //focusNode: _keyboardFocusNode, 
+      focusNode: _scannerFocusNode,
       autofocus: true,
-      onKeyEvent: (event) {
-        if (event is KeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.f12) {
-            if (currentTicket.items.isNotEmpty) {
-              if (currentTicket.amountTendered == null) {
-                _showPaymentDialog().then((success) {
-                  if (success == true) _processSale();
-                });
-              } else {
-                _processSale();
-              }
-            }
-          } else {
-            // Lógica para capturar ráfagas rápidas de caracteres (Escáner de código de barras)
-            final now = DateTime.now();
-            if (_lastKeyPress != null && now.difference(_lastKeyPress!).inMilliseconds > 200) {
-              _barcodeBuffer = ''; // Reiniciar si ha pasado mucho tiempo entre teclas (ej. escribiendo manual)
-            }
-            _lastKeyPress = now;
-            
-            if (event.logicalKey == LogicalKeyboardKey.enter) {
-              if (_barcodeBuffer.isNotEmpty) {
-                final scannedCode = _barcodeBuffer;
-                _barcodeBuffer = '';
-                // Si el input de búsqueda ya está enfocado, él mismo manejará el 'enter'.
-                // Evitamos agregarlo doble.
-                if (!_searchFocusNode.hasFocus) {
-                  _onSearchSubmitted(scannedCode);
-                }
-              }
-            } else if (event.character != null) {
-              _barcodeBuffer += event.character!;
-            }
-          }
+      onKeyEvent: (KeyEvent event) {
+      if (event is! KeyDownEvent) return;
+        final now = DateTime.now();
+
+
+        if (_searchFocusNode.hasFocus) return;
+        // Reinicia buffer si pasó mucho tiempo
+        if (_lastKeyPress == null || now.difference(_lastKeyPress!).inMilliseconds > 200) {
+          _barcodeBuffer = '';
         }
+        _lastKeyPress = now;
+
+            // Enter del scanner
+          if (event.logicalKey == LogicalKeyboardKey.enter) {
+            if (_barcodeBuffer.isNotEmpty) {
+              final scannedCode = _barcodeBuffer;
+              _barcodeBuffer = '';
+
+              // **Siempre llamar al método de búsqueda del scanner**
+              _onSearchSubmitted(scannedCode);
+
+              // Limpiar TextField para no confundir búsqueda manual
+              searchController.clear();
+              searchQuery = '';
+
+              // Devolver foco al scanner --> 
+              FocusScope.of(context).requestFocus(_scannerFocusNode);
+            }
+            return;
+          }
+
+          // Acumular caracteres del escáner
+          if (event.character != null && event.character!.isNotEmpty) {
+            _barcodeBuffer += event.character!;
+          }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -1057,12 +1116,33 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           ),
         ],
       ),
-      body: isMobile
+      body: 
+      isMobile
           ? _buildMobileLayout(filteredProducts)
           : Row(children: _buildDesktopLayout(filteredProducts)),
       floatingActionButton: isMobile ? _buildMobileCartBottomBar() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      // ValueListenableBuilder<String>(
+      //   valueListenable: searchQueryNotifier,
+      //   builder: (context, searchQueryValue, _) {
+      //     // Filtra los productos según el searchQuery actual
+      //     final filteredProducts = filterProducts(
+      //       products: provider.allProducts,
+      //       searchQuery: searchQueryValue,
+      //       category: selectedCategoryFilter,
+      //       onlyBulk: filterBulkOnly,
+      //       sortOption: selectedSortOption,
+      //     );
+
+      //     // Construye el layout según si es móvil o escritorio
+      //     return isMobile
+      //         ? _buildMobileLayout(filteredProducts)
+      //         : Row(children: _buildDesktopLayout(filteredProducts));
+      //   },
+      
     ),
+
+
   );
 }
   
@@ -1143,6 +1223,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     );
   }
   
+
+  
   List<Widget> _buildDesktopLayout(List<dynamic> filteredProducts) {
     return [
       // Left Panel - Product Search/Add
@@ -1175,8 +1257,32 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                             setState(() {
                               searchQuery = value;
                             });
+
+                            Future.delayed(Duration(milliseconds: 2500), () {
+                                        FocusScope.of(context).requestFocus(_scannerFocusNode);
+                            });
+
                           },
-                          onSubmitted: (value) => _onSearchSubmitted(value),
+                          // onChanged: (value) {
+                          //       searchQueryNotifier.value = value;
+
+                          //       Future.delayed(Duration(milliseconds: 2500), () {
+                          //         FocusScope.of(context).requestFocus(_scannerFocusNode);
+                          //       });
+                          //     },
+                          onSubmitted:
+                                  (value) {
+                                      _onSearchSubmitted(value);
+                                       // Limpiar textfield
+                                      //searchController.clear();
+
+
+                                    //this
+                                    //  Future.delayed(Duration(milliseconds: 50), () {
+                                    //       FocusScope.of(context).requestFocus(_scannerFocusNode);
+                                    //     });
+                                    },
+
                           decoration: InputDecoration(
                             hintText: 'Buscar producto...',
                             hintStyle: GoogleFonts.poppins(
@@ -2436,7 +2542,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     );
   }
   
-  void _addToCart(Map<String, dynamic> product) async {
+  void _addToCart(Map<String, dynamic> product, {double quantity = 1}) async {
     //double price = product['price'];
     final wholesaleMin = (product['wholesaleMinUnits'] as num?)?.toDouble() ?? 0;
     final wholesalePrice = (product['wholesalePrice'] as num?)?.toDouble() ?? 0;
@@ -2444,8 +2550,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     double price = (product['sellingPrice'] as num?)?.toDouble() ?? 0.0;
    // double price = normalPrice;
     double units = (product['units'] as num?)?.toDouble() ?? 0.0;
-    double quantity = 1;
+   // double quantity = 1;
     bool isBulk = product['isBulk'] ?? false;
+
     if (isBulk) {
       final result = await showDialog<Map<String, double>>(
         context: context,
@@ -3069,19 +3176,60 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     if (value.isEmpty) return;
     final provider = Provider.of<ProductProvider>(context, listen: false);
     final allProducts = provider.allProducts;
+
+    double quantity = 1; // cantidad por defecto
+    String barcode = value;
+
+   
+    // Detectar formato "6*CB"
+    if (value.contains('*')) {
+        
+      final parts = value.split('*');
+      if (parts.length == 2) {
+        
+        final qty = int.tryParse(parts[0]);
+        if (qty != null && qty > 0) {
+          quantity = qty.toDouble();
+          barcode = parts[1];
+        }
+      }
+    }
+
+
+
     // Buscar coincidencia exacta por código de barras primero
-    final product = allProducts.firstWhere(
-      (p) => p['barcode']?.toString() == value,
+    // final product = allProducts.firstWhere(
+    //   (p) => p['barcode']?.toString() == value,
+    //   orElse: () => null,
+    // );
+
+      final product = allProducts.firstWhere(
+      (p) => p['barcode']?.toString() == barcode,
       orElse: () => null,
     );
     if (product != null) {
-      _addToCart(product);
+     // _addToCart(product);
       // Limpiar búsqueda
+      // searchController.clear();
+      // setState(() {
+      //   searchQuery = '';
+      // });
+
+        _addToCart(product, quantity: quantity);
+    }
+
+     // limpiar SIEMPRE
       searchController.clear();
+
       setState(() {
         searchQuery = '';
       });
-    }
+
+      // 🔥 CLAVE: regresar foco al listener (scanner)
+     // FocusScope.of(context).requestFocus(_keyboardFocusNode);
+
+
+
   }
   
   void _processPayment() {

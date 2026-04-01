@@ -18,7 +18,7 @@ import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../users/services/users_service.dart'; 
-
+import 'dart:async';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -89,7 +89,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       },
     };
 
-
+  final FocusNode _searchFocusNode = FocusNode();
 
 
 
@@ -105,6 +105,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
     });
 
     _loadUserRole();
+
+
 
 
   }
@@ -178,44 +180,84 @@ class _InventoryScreenState extends State<InventoryScreen> {
     super.dispose();
   }
 
-  void _handleKeyEvent(KeyEvent event) {
-    if (event is KeyDownEvent) {
-      final now = DateTime.now();
+  // void _handleKeyEvent(KeyEvent event) {
+  //   if (event is KeyDownEvent) {
+  //     final now = DateTime.now();
 
-      // Detectamos si el foco actual NO es un TextField/EditableText
-      // Para no interferir si el usuario ya está escribiendo manualmente o si el scanner ya está escribiendo en el buscador
-      final primaryFocus = FocusManager.instance.primaryFocus;
-      bool isInputFocused = primaryFocus != null && 
-                            primaryFocus != _keyboardFocusNode &&
-                            (primaryFocus.children.isEmpty); // Simple heurística: los campos de texto suelen ser nodos hoja o manejados diferente
-      
-      // En Flutter, si el primaryFocus es el nodo del TextField, no queremos duplicar datos en nuestro buffer global
-      if (primaryFocus != null && primaryFocus.debugLabel != null && primaryFocus.debugLabel!.contains('EditableText')) {
-        _barcodeBuffer = '';
-        return;
-      }
+  //     // Detectamos si el foco actual NO es un TextField/EditableText
+  //     // Para no interferir si el usuario ya está escribiendo manualmente o si el scanner ya está escribiendo en el buscador
+  //     final primaryFocus = FocusManager.instance.primaryFocus;
+  //     bool isInputFocused = primaryFocus != null && 
+  //                           primaryFocus != _keyboardFocusNode &&
+  //                           (primaryFocus.children.isEmpty); // Simple heurística: los campos de texto suelen ser nodos hoja o manejados diferente
 
-      if (now.difference(_lastKeyEventTime).inMilliseconds > 100) {
-        _barcodeBuffer = '';
-      }
-      _lastKeyEventTime = now;
+  //     // En Flutter, si el primaryFocus es el nodo del TextField, no queremos duplicar datos en nuestro buffer global
+  //     // if (primaryFocus != null && primaryFocus.debugLabel != null && primaryFocus.debugLabel!.contains('EditableText')) {
+  //     //   _barcodeBuffer = '';
+  //     //   return;
+  //     // }
 
-      if (event.logicalKey == LogicalKeyboardKey.enter) {
-        if (_barcodeBuffer.isNotEmpty) {
-          setState(() {
-            searchQuery = _barcodeBuffer;
-            searchController.text = _barcodeBuffer;
-            _barcodeBuffer = '';
-          });
-        }
-      } else {
-        final character = event.character;
-        if (character != null && character.isNotEmpty) {
-          _barcodeBuffer += character;
-        }
-      }
-    }
+  //     if (now.difference(_lastKeyEventTime).inMilliseconds > 100) {
+  //       _barcodeBuffer = '';
+  //     }
+  //     _lastKeyEventTime = now;
+
+  //     if (event.logicalKey == LogicalKeyboardKey.enter) {
+  //       if (_barcodeBuffer.isNotEmpty) {
+  //         setState(() {
+  //           searchQuery = _barcodeBuffer;
+  //           searchController.text = _barcodeBuffer;
+  //           _barcodeBuffer = '';
+  //         });
+  //       }
+  //     } else {
+  //       final character = event.character;
+  //       if (character != null && character.isNotEmpty) {
+  //         _barcodeBuffer += character;
+  //       }
+  //     }
+  //   }
+  // }
+  
+void _handleKeyEvent(KeyEvent event) {
+  if (event is! KeyDownEvent) return;
+
+  final now = DateTime.now();
+  final character = event.character;
+
+  // Solo trabajamos si hay carácter válido
+  if (character == null || character.isEmpty) return;
+
+  // Detectamos foco
+  if (!_searchFocusNode.hasFocus) {
+    _searchFocusNode.requestFocus();
   }
+
+
+
+  // Detectamos si viene del scanner (teclas rápidas) o del teclado normal
+  final diff = now.difference(_lastKeyEventTime).inMilliseconds;
+  _lastKeyEventTime = now;
+
+  if (diff > 100) {
+    // Teclado normal: dejamos que el TextField lo maneje
+    return;
+  }
+
+  // Scanner: acumulamos en el buffer
+  _barcodeBuffer += character;
+
+  // Enter del scanner
+  if (event.logicalKey == LogicalKeyboardKey.enter && _barcodeBuffer.isNotEmpty) {
+    searchController.text = _barcodeBuffer;
+    searchQuery = _barcodeBuffer;
+    _barcodeBuffer = '';
+    setState(() {});
+  }
+}
+
+
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductProvider>(context);
@@ -328,10 +370,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ],
       ),
       /* Removed FloatingActionButton as requested and moved it to the top */
-      body: KeyboardListener(
+      body: 
+      KeyboardListener(
         focusNode: _keyboardFocusNode,
         autofocus: true,
         onKeyEvent: _handleKeyEvent,
+
         child: Container(
           color: Theme.of(context).scaffoldBackgroundColor,
           child: Padding(
@@ -356,6 +400,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
+                          focusNode: _searchFocusNode,
                           controller: searchController,
                           onChanged: (value) {
                             setState(() {
@@ -658,6 +703,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
     ));
   }
+  
+  
+  
   void _showAddStockModal(Map product) {
     showDialog(
       context: context,
