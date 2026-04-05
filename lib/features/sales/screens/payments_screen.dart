@@ -105,24 +105,34 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
   final ValueNotifier<String> searchQueryNotifier = ValueNotifier('');
 
+  String _userLogoUrl = '';
+
   @override
   void initState() {
 
     super.initState();
+
+      _loadUserLogo(); 
 
      _addNewTicket();
 
     _initAllAsync();
 
 
-    // Forzar que _keyboardFocusNode tenga foco
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   if (mounted) _keyboardFocusNode.requestFocus();
-    // });
-
       WidgetsBinding.instance.addPostFrameCallback((_) {
         FocusScope.of(context).requestFocus(_scannerFocusNode);
       });
+  }
+
+  Future<void> _loadUserLogo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userLogo = prefs.getString('user_logo') ?? '';
+
+    print(userLogo);
+
+    setState(() {
+      _userLogoUrl = userLogo;
+    });
   }
 
 
@@ -396,6 +406,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                     received: ticketData['received'],
                     change: ticketData['change'],
                     paymentMethod: ticketData['paymentMethod'],
+                    userLogoUrl: _userLogoUrl,
                   );
                 },
                 icon: const Icon(Icons.print, color: Colors.white),
@@ -1757,6 +1768,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                         received: currentTicket.amountTendered!,
                                         change: currentTicket.amountTendered! - currentTicket.total,
                                         paymentMethod: currentTicket.paymentMethod,
+                                        userLogoUrl: _userLogoUrl,
                                       );
                                     },
                                     icon: Icon(Icons.print, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
@@ -2426,6 +2438,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                           received: currentTicket.amountTendered!,
                                           change: currentTicket.amountTendered! - currentTicket.total,
                                           paymentMethod: currentTicket.paymentMethod,
+                                          userLogoUrl: _userLogoUrl,
                                         );
                                       },
                                       icon: Icon(Icons.print, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),

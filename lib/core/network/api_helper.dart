@@ -1,19 +1,24 @@
   import 'dart:convert';
   import 'package:http/http.dart' as http;
   import 'package:pv26/features/auth/services/auth_service.dart';
+  import 'dart:io';
+  import 'dart:typed_data';
+  import 'package:http_parser/http_parser.dart';
 
   class ApiHelper {
     static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
 
-    static Future<Map<String, String>> _getHeaders() async {
+    static Future<Map<String, String>> _getHeaders({bool isMultipart = false}) async {
 
       final token = await AuthService.getAccessToken();
-      
-      return {
-        'Content-Type': 'application/json',
+
+      final headers = <String, String>{
         'Accept': 'application/json',
+        if (!isMultipart) 'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       };
+      
+      return headers; 
     }
 
     static Future<http.Response> request({
@@ -65,4 +70,51 @@
           throw Exception('HTTP Method $method not supported');
       }
     }
+  
+
+   //mobile
+  static Future<http.StreamedResponse> requestMultipart({
+    required String path,
+    required File file,
+    String fileField = 'logo',
+  }) async {
+    final url = Uri.parse('$_baseUrl$path');
+    final headers = await _getHeaders(isMultipart: true);
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers.addAll(headers);
+
+    request.files.add(
+      await http.MultipartFile.fromPath(fileField, file.path),
+    );
+
+    return await request.send();
+  }
+
+   //web
+  static Future<http.StreamedResponse> requestMultipartWeb({
+    required String path,
+    required Uint8List bytes,
+    required String filename,
+    String fileField = 'logo',
+  }) async {
+    final url = Uri.parse('$_baseUrl$path');
+    final headers = await _getHeaders(isMultipart: true);
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers.addAll(headers);
+
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        fileField,
+        bytes,
+        filename: filename,
+        contentType: MediaType('image', 'png'),
+      ),
+    );
+
+    return await request.send();
+  }
+
+  
   }

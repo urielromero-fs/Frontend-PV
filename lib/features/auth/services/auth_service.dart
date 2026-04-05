@@ -12,6 +12,8 @@
     static const String _userRoleKey = 'user_role';
     static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
     static const String _userOnboardingKey = 'user_onboarding';
+    static const String _userLogoKey = 'user_logo';
+
 
     // Register with real API call
     static Future<Map<String, dynamic>> register(
@@ -97,8 +99,8 @@
 
           final userName = userData['userName'] ?? '';
           final userEmail = userData['email'] ?? email;
-          final userRole =
-              userData['role'] ?? 'cajero'; // Default a cajero si no viene
+          final userRole = userData['role'] ?? 'cajero'; 
+          final userLogo = userData['logoUrl'] ?? '';
 
           final onboardingStatus = userData['onboarding'] ?? {
             'isCompleted': false,
@@ -119,7 +121,7 @@
           await prefs.setString(_userEmailKey, userEmail);
           await prefs.setString(_userRoleKey, userRole);
           await prefs.setString(_userOnboardingKey, jsonEncode(onboardingStatus));
-
+          await prefs.setString(_userLogoKey, userLogo);
 
        
 

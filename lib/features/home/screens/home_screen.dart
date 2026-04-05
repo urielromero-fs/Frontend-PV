@@ -16,7 +16,9 @@ import 'package:pv26/core/providers/theme_provider.dart';
 import '../../users/services/users_service.dart'; 
 import '../../../core/utils/currency_formatter.dart';
 import 'package:showcaseview/showcaseview.dart';
-
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'dart:ui' as ui;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userEmail = '';
   String _userRole = 'cajero'; // Default restriction
   bool _isSidebarCollapsed = false;
+  String _userLogoUrl = '';
 
   bool get _isAdmin => _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'administrador';
   bool get _isCajero => _userRole.toLowerCase() == 'seller' || _userRole.toLowerCase() == 'cajero';
@@ -72,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
     _loadUserData();
+
     _loadOnboarding().then((_) {
       _initOnboarding(); 
     });
@@ -220,12 +224,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final userName = prefs.getString('user_name') ?? '';
     final userEmail = prefs.getString('user_email') ?? '';
     final userRole = prefs.getString('user_role') ?? 'cajero';
+    final userLogo = prefs.getString('user_logo') ?? '';
 
 
     setState(() {
       _userName = userName;
       _userEmail = userEmail;
       _userRole = userRole;
+      _userLogoUrl = userLogo;
     });
   }
 
@@ -233,226 +239,287 @@ class _HomeScreenState extends State<HomeScreen> {
     return MediaQuery.of(context).size.width < 768;
   }
 
-  void _showSettingsModal() {
-    final nameController = TextEditingController(text: _userName);
-    final emailController = TextEditingController(text: _userEmail);
-    final passwordController = TextEditingController();
 
-    Future<void> saveSettings() async {
+void _showSettingsModal() {
+  final nameController = TextEditingController(text: _userName);
+  final emailController = TextEditingController(text: _userEmail);
+  final passwordController = TextEditingController();
+
+  XFile? _selectedLogo;
+  Uint8List? _logoBytes;
+
+  final picker = ImagePicker();
+
+  // PICK LOGO 
+  Future<void> pickLogo(StateSetter setModalState) async {
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 100,
+    );
+
+    print(pickedFile);
+
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+
+      //Validar PNG
+      if (!pickedFile.name.toLowerCase().endsWith('.png')) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Solo se permiten imágenes PNG'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Validar dimensiones 
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+
+      if (image.width > 500 || image.height > 500) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('La imagen debe ser máximo 500x500 px'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+        return;
+      }
+
+      setModalState(() {
+        _selectedLogo = pickedFile;
+        _logoBytes = bytes;
+      });
+    }
+  }
+
+ 
+  Future<void> saveSettings() async {
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+
+    if (email.isNotEmpty && !emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Correo electrónico inválido'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    if (password.isNotEmpty && password.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La contraseña debe tener al menos 8 caracteres'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+   
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    if (_selectedLogo != null) {
+      final result = await UsersService.uploadLogo(
+        logo: _selectedLogo!, //XFile
+      );
+
+      if(result['success'] == true){
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_logo', result['data']['logoUrl'] ?? '');
+
+          setState(() {
+            _userLogoUrl = result['data']['logoUrl'] ?? '';
+          });
+      }
+
+      if (!result['success']) {
+        Navigator.pop(context);
+      
+       
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Error subiendo logo'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    
+    final result = await UsersService.updateAdminUser(
+      name: name.isNotEmpty ? name : null,
+      email: email.isNotEmpty ? email : null,
+      password: password.isNotEmpty ? password : null,
+    );
+
+    Navigator.pop(context);
+
+    if (result['success']) {
       setState(() {
-        _userName = nameController.text;
-        _userEmail = emailController.text;
+        if (name.isNotEmpty) _userName = name;
+        if (email.isNotEmpty) _userEmail = email;
       });
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_name', _userName);
-      await prefs.setString('user_email', _userEmail);
+      if (name.isNotEmpty) await prefs.setString('user_name', name);
+      if (email.isNotEmpty) await prefs.setString('user_email', email);
 
       if (context.mounted) {
         Navigator.pop(context);
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Perfil actualizado exitosamente'),
-            backgroundColor: Color(0xFF05e265),
+          SnackBar(
+            content: Text(result['message'] ?? 'Perfil actualizado'),
+            backgroundColor: const Color(0xFF05e265),
+          ),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Error al actualizar'),
+            backgroundColor: Colors.redAccent,
           ),
         );
       }
     }
+  }
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Focus(
-          autofocus: false,
-          onKeyEvent: (node, event) {
-            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
-              saveSettings();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: AlertDialog(
-            backgroundColor: Theme.of(context).cardColor,
-          title: Text(
-            'Configuración de Perfil',
-            style: GoogleFonts.poppins(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Actualiza tus datos de acceso.',
-                  style: GoogleFonts.poppins(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  autofocus: true,
-                  controller: nameController,
-                  onSubmitted: (_) => saveSettings(),
-                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
-                  decoration: InputDecoration(
-                    labelText: 'Nombre Completo',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                    ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF05e265)),
-                    ),
-                    prefixIcon: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: emailController,
-                  onSubmitted: (_) => saveSettings(),
-                  keyboardType: TextInputType.emailAddress,
-                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
-                  decoration: InputDecoration(
-                    labelText: 'Correo Electrónico',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                    ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF05e265)),
-                    ),
-                    prefixIcon: Icon(Icons.email, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: passwordController,
-                  onSubmitted: (_) => saveSettings(),
-                  obscureText: true,
-                  style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
-                  decoration: InputDecoration(
-                    labelText: 'Nueva Contraseña (opcional)',
-                    labelStyle: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                    ),
-                    focusedBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF05e265)),
-                    ),
-                    prefixIcon: Icon(Icons.lock, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Cancelar',
-                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final name = nameController.text.trim();
-                final email = emailController.text.trim();
-                final password = passwordController.text.trim();
-
-                // Regex simple para email
-                final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-
-                // Validar email solo si viene con valor
-                if (email.isNotEmpty && !emailRegex.hasMatch(email)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Correo electrónico inválido'),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
-                  return;
-                }
-
-                // Validar password solo si se escribe
-                if (password.isNotEmpty && password.length < 8) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('La contraseña debe tener al menos 8 caracteres'),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
-                  return;
-                }
-
-                // Loader
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => const Center(child: CircularProgressIndicator()),
-                );
-
-                final result = await UsersService.updateAdminUser(
-                  name: name.isNotEmpty ? name : null,
-                  email: email.isNotEmpty ? email : null,
-                  password: password.isNotEmpty ? password : null,
-                );
-
-                Navigator.pop(context); // cerrar loader
-
-                if (result['success']) {
-                  // Solo actualizar lo que cambió
-                  setState(() {
-                    if (name.isNotEmpty) _userName = name;
-                    if (email.isNotEmpty) _userEmail = email;
-                  });
-
-                  final prefs = await SharedPreferences.getInstance();
-                  if (name.isNotEmpty) {
-                    await prefs.setString('user_name', name);
-                  }
-                  if (email.isNotEmpty) {
-                    await prefs.setString('user_email', email);
-                  }
-
-                  if (context.mounted) {
-                    Navigator.pop(context);
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(result['message'] ?? 'Perfil actualizado'),
-                        backgroundColor: const Color(0xFF05e265),
-                      ),
-                    );
-                  }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(result['message'] ?? 'Error al actualizar'),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF05e265),
-              ),
-              child: Text(
-                'Guardar',
+  
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Focus(
+            autofocus: false,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.enter) {
+                saveSettings();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: AlertDialog(
+              backgroundColor: Theme.of(context).cardColor,
+              title: Text(
+                'Configuración de Perfil',
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Actualiza tus datos de acceso.',
+                      style: GoogleFonts.poppins(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                   
+                    Row(
+                      children: [
+                        _logoBytes != null
+                            ? Image.memory(_logoBytes!,
+                                width: 50, height: 50)
+                            : const Icon(Icons.image, size: 50),
+                        const SizedBox(width: 16),
+                        ElevatedButton(
+                          onPressed: () => pickLogo(setModalState),
+                          child: const Text('Seleccionar logo PNG'),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      autofocus: true,
+                      controller: nameController,
+                      onSubmitted: (_) => saveSettings(),
+                      style: GoogleFonts.poppins(
+                          color: Theme.of(context).colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        labelText: 'Nombre Completo',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: emailController,
+                      onSubmitted: (_) => saveSettings(),
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Correo Electrónico',
+                        prefixIcon: Icon(Icons.email),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      onSubmitted: (_) => saveSettings(),
+                      decoration: InputDecoration(
+                        labelText: 'Nueva Contraseña',
+                        prefixIcon: Icon(Icons.lock),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: saveSettings,
+                  child: const Text('Guardar'),
+                ),
+              ],
             ),
-          ],
-        ));
-      },
-    );
-  }
+          );
+        },
+      );
+    },
+  );
+}
 
   Future<void> _launchURL(Uri uri) async {
     try {
@@ -1008,10 +1075,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             shape: BoxShape.circle,
                             border: Border.all(color: const Color(0xFF05e265), width: 2),
                           ),
-                          child: const CircleAvatar(
+                          child:  CircleAvatar(
                             radius: 18,
                             backgroundColor: Color(0xFF1a1a1a),
-                            child: Icon(Icons.person, color: Colors.white70, size: 20),
+                            //child: Icon(Icons.person, color: Colors.white70, size: 20),
+                            child: _userLogoUrl.isNotEmpty
+                              ? ClipOval(
+                                  child: Image.network(
+                                    _userLogoUrl,
+                                    width: 36,
+                                    height: 36,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : const Icon(Icons.person, color: Colors.white70, size: 20),
+                        
                           ),
                         ),
                         const SizedBox(width: 12),

@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:pv26/core/network/api_helper.dart';
-
+import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class UsersService {
   
@@ -323,6 +326,58 @@ class UsersService {
     }
   }
       
+
+
+  static Future<Map<String, dynamic>> uploadLogo({
+    required dynamic logo, // File o XFile
+  }) async {
+    try {
+      http.StreamedResponse response;
+
+      if (kIsWeb) {
+        //WEB
+        final bytes = await logo.readAsBytes();
+        final filename = logo.name;
+
+        response = await ApiHelper.requestMultipartWeb(
+          path: '/users/upload-logo',
+          bytes: bytes,
+          filename: filename,
+          fileField: 'logo',
+        );
+      } else {
+        //MOBILE
+        response = await ApiHelper.requestMultipart(
+          path: '/users/upload-logo',
+          file: logo,
+          fileField: 'logo',
+        );
+      }
+
+      final respStr = await response.stream.bytesToString();
+      final data = jsonDecode(respStr);
+
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': 'Logo uploaded successfully',
+          'data': data,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Error (${response.statusCode})',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error: $e',
+      };
+    }
+  }
+
 
 
 

@@ -4,6 +4,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import '../models/sales_models.dart';
+import 'package:flutter/services.dart' show NetworkAssetBundle, rootBundle;
+import 'package:http/http.dart' as http;
 
 class PrintService {
   static Future<void> printTicket({
@@ -15,8 +17,24 @@ class PrintService {
     required String paymentMethod,
     String? address,
     String? phone,
+    String? userLogoUrl, 
   }) async {
     final doc = pw.Document();
+
+
+  Uint8List? logoBytes;
+  if (userLogoUrl != null && userLogoUrl.isNotEmpty) {
+    try {
+      final response = await http.get(Uri.parse(userLogoUrl));
+      if (response.statusCode == 200) {
+        logoBytes = response.bodyBytes;
+      } else {
+        logoBytes = null; // No se pudo cargar
+      }
+    } catch (e) {
+      logoBytes = null; // Error de red
+    }
+  }
 
     doc.addPage(
       pw.Page(
@@ -31,6 +49,21 @@ class PrintService {
               pw.Center(
                 child: pw.Column(
                   children: [
+                     if (logoBytes != null)
+                      pw.Center(
+                          child: pw.Image(
+                            pw.MemoryImage(logoBytes),
+                            width: 50,
+                            height: 50,
+                            fit: pw.BoxFit.contain,
+                          
+                          ),
+                      ), 
+                    if (logoBytes != null) pw.SizedBox(height: 4),
+                    pw.Text(
+                      businessName,
+                      style:  pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                    ),
                     pw.Text('FECHA: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
                         style: const pw.TextStyle(fontSize: 8)),
                     pw.Divider(thickness: 0.5, height: 4),
