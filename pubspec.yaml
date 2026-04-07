@@ -55,6 +55,9 @@ dependencies:
   url_launcher: ^6.3.2
   showcaseview: ^5.0.1
   image_picker: ^1.1.0
+  audioplayers: ^6.6.0
+  soundpool: ^2.4.1
+  flutter_beep: ^1.0.0
 
 dev_dependencies:
   flutter_test:
@@ -80,6 +83,7 @@ flutter:
 
   assets:
     - assets/images/logo.png
+    - assets/sounds/error.mp3
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
