@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../users/services/users_service.dart'; 
+
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_beep/flutter_beep.dart';
 
 String _f(double value) => CurrencyFormatter.format(value);
 class PaymentsScreen extends StatefulWidget {
@@ -99,6 +104,74 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
   final FocusNode _keyboardFocusNode = FocusNode();
   final FocusNode _scannerFocusNode = FocusNode();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+
+  void _playErrorSound() async {
+    // 1. Feedback táctil y Beep nativo (Móvil/Escritorio)
+    if (!kIsWeb) {
+      HapticFeedback.vibrate();
+      try {
+        FlutterBeep.beep(false); 
+      } catch (_) {
+        SystemSound.play(SystemSoundType.alert);
+      }
+    }
+    
+    // 2. Reproducción de Audio (Web y Móvil)
+    try {
+      // En Web, no esperamos al stop para evitar bloqueos del navegador
+      if (kIsWeb) {
+        _audioPlayer.play(UrlSource('https://www.myinstants.com/media/sounds/wrong-answer-sound-effect.mp3'));
+      } else {
+        _audioPlayer.stop().then((_) {
+          _audioPlayer.play(AssetSource('sounds/error.mp3'));
+        });
+      }
+    } catch (_) {
+      // Ignorar errores de audio
+    }
+  }
+
+  void _showStockAlert() {
+    _playErrorSound();
+    
+    ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
+    ScaffoldMessenger.of(context).showMaterialBanner(
+      MaterialBanner(
+        content: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '¡STOCK AGOTADO! No hay suficientes unidades.',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.redAccent,
+        actions: [
+          TextButton(
+            onPressed: () => ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+            child: const Text('CERRAR', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    // Auto-hide after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+      }
+    });
+  }
 
 
   DateTime _lastKeyEventTime = DateTime.now();
@@ -109,7 +182,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
   @override
   void initState() {
-
+    _audioPlayer.setVolume(1.0);
     super.initState();
 
     _loadUserLogo(); 
@@ -810,6 +883,7 @@ Future<void> loadTickets() async {
     searchController.dispose();
     _tabController.dispose();
     _searchFocusNode.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -1545,11 +1619,7 @@ Future<void> loadTickets() async {
                                         onQuantityChanged: (quantity) {
                                             final item = currentTicket.items[index];
                                             if (quantity > item.units) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('No hay suficiente stock disponible'),
-                                                ),
-                                              );
+                                              _showStockAlert();
                                               return;
                                             }
                                             if (quantity <= 0) {
@@ -1624,7 +1694,7 @@ Future<void> loadTickets() async {
                                     'Descuento',
                                     style: GoogleFonts.poppins(
                                       color: Colors.orange,
-                                      fontSize: 16,
+                                      fontSize: 20,
                                     ),
                                   ),
                                   Row(
@@ -1633,7 +1703,7 @@ Future<void> loadTickets() async {
                                         '-' + _f(currentTicket.discount),
                                         style: GoogleFonts.poppins(
                                           color: Colors.orange,
-                                          fontSize: 16,
+                                          fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -1663,7 +1733,7 @@ Future<void> loadTickets() async {
                                       'Total',
                                       style: GoogleFonts.poppins(
                                         color: Theme.of(context).colorScheme.onSurface,
-                                        fontSize: 22,
+                                        fontSize: 34,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -1748,7 +1818,7 @@ Future<void> loadTickets() async {
                                   _f(currentTicket.total),
                                   style: GoogleFonts.poppins(
                                     color: const Color(0xFF05e265),
-                                    fontSize: 32,
+                                    fontSize: 42,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -1794,7 +1864,7 @@ Future<void> loadTickets() async {
                                       style: GoogleFonts.poppins(
                                         color: Colors.orange,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 22,
+                                        fontSize: 28,
                                       ),
                                     ),
                                   ],
@@ -1887,6 +1957,7 @@ Future<void> loadTickets() async {
                                                                       : 'FINALIZAR VENTA',
                                                                   style: GoogleFonts.poppins(
                                                                     fontWeight: FontWeight.bold,
+                                                                    fontSize: 22,
                                                                   ),
                                                                 ),
                                                   
@@ -2183,11 +2254,7 @@ Future<void> loadTickets() async {
                                           onQuantityChanged: (quantity) {
                                                 final item = currentTicket.items[index];
                                                 if (quantity > item.units) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text('No hay suficiente stock disponible'),
-                                                    ),
-                                                  );
+                                                  _showStockAlert();
                                                   return;
                                                 }
                                                 if (quantity <= 0) {
@@ -2616,13 +2683,7 @@ Future<void> loadTickets() async {
          alreadyInCart = currentTicket.items[existingIndex].quantity;
       }
       if (alreadyInCart + quantity > units) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Stock insuficiente.',
-            ),
-          ),
-        );
+        _showStockAlert();
         return;
       }
       if (existingIndex != -1) {
