@@ -112,9 +112,19 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
     super.initState();
 
-      _loadUserLogo(); 
+    _loadUserLogo(); 
 
-     _addNewTicket();
+   
+      loadTickets().then((_) {
+        // Si no había tickets guardados, crear uno
+        if (_tickets.isEmpty) {
+          _addNewTicket();
+        }
+    }); 
+
+    
+    _tickets = [Ticket(id: 'Cargando...')];
+    _tabController = TabController(length: _tickets.length, vsync: this);
 
     _initAllAsync();
 
@@ -128,13 +138,57 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     final prefs = await SharedPreferences.getInstance();
     final userLogo = prefs.getString('user_logo') ?? '';
 
-    print(userLogo);
-
     setState(() {
       _userLogoUrl = userLogo;
     });
   }
 
+Future<void> saveTickets() async {
+  final prefs = await SharedPreferences.getInstance();
+  // Convertir lista de tickets a JSON
+  List<String> ticketsJson =
+      _tickets.map((ticket) => jsonEncode(ticket.toJson())).toList();
+  await prefs.setStringList('tickets', ticketsJson);
+  // Guardar índice activo
+  await prefs.setInt('active_ticket_index', _tabController.index);
+
+ 
+}
+
+Future<void> loadTickets() async {
+  final prefs = await SharedPreferences.getInstance();
+  final List<String>? ticketsJson = prefs.getStringList('tickets');
+  final int? activeIndex = prefs.getInt('active_ticket_index');
+
+  
+
+  if (ticketsJson != null && ticketsJson.isNotEmpty) {
+    _tickets = ticketsJson
+        .map((ticketStr) => Ticket.fromJson(jsonDecode(ticketStr)))
+        .toList();
+  } else {
+    // Si no hay tickets guardados, crear uno por defecto
+    _tickets = [Ticket(id: 'Ticket 1')];
+  }
+
+  // Crear el TabController después de cargar los tickets
+  //_tabController = TabController(length: _tickets.length, vsync: this);
+  _tabController.dispose(); // liberar el anterior
+  _tabController = TabController(length: _tickets.length, vsync: this);
+
+  if (activeIndex != null && activeIndex < _tickets.length) {
+    _tabController.index = activeIndex;
+  }
+
+  // Agregar listener para reconstruir la UI al cambiar de tab
+  _tabController.addListener(() {
+    if (_tabController.indexIsChanging) return; // evita rebuild mientras anima
+    setState(() {}); // reconstruye la UI con currentTicket actualizado
+  });
+
+  // Reconstruir la UI después de cargar tickets
+  setState(() {}); // Reconstruye la UI con tickets cargados
+}
 
   void _handleKeyEvent(KeyEvent event) {
       if (event is! KeyDownEvent) return;
@@ -325,6 +379,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           currentTicket.paymentMethod = 'Efectivo';
           _calculateTotals();
         });
+
+        await saveTickets();
 
         _showSuccessDialog(
           result['message'],
@@ -560,7 +616,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       ),
     );
   }
-  
+
   Future<void> _showCloseRegisterDialog() async {
     await showDialog(
       context: context,
@@ -731,6 +787,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       _tickets.add(Ticket(id: 'Ticket ${_tickets.length + 1}'));
       _updateTabController();
     });
+
+    saveTickets();
   }
   
   void _closeTicket(int index) {
@@ -739,6 +797,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       _tickets.removeAt(index);
       _updateTabController();
     });
+    saveTickets();
   }
   
   void _updateTabController() {
@@ -772,8 +831,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     return 
     
     KeyboardListener(
-      // focusNode: FocusNode(),
-      //focusNode: _keyboardFocusNode, 
       focusNode: _scannerFocusNode,
       autofocus: true,
       onKeyEvent: (KeyEvent event) {
@@ -794,14 +851,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
               final scannedCode = _barcodeBuffer;
               _barcodeBuffer = '';
 
-              // **Siempre llamar al método de búsqueda del scanner**
+              //Siempre llamar al método de búsqueda del scanner
               _onSearchSubmitted(scannedCode);
 
               // Limpiar TextField para no confundir búsqueda manual
               searchController.clear();
               searchQuery = '';
 
-              // Devolver foco al scanner --> 
+              // Devolver foco al scanner 
               FocusScope.of(context).requestFocus(_scannerFocusNode);
             }
             return;
@@ -1133,24 +1190,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
           : Row(children: _buildDesktopLayout(filteredProducts)),
       floatingActionButton: isMobile ? _buildMobileCartBottomBar() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      // ValueListenableBuilder<String>(
-      //   valueListenable: searchQueryNotifier,
-      //   builder: (context, searchQueryValue, _) {
-      //     // Filtra los productos según el searchQuery actual
-      //     final filteredProducts = filterProducts(
-      //       products: provider.allProducts,
-      //       searchQuery: searchQueryValue,
-      //       category: selectedCategoryFilter,
-      //       onlyBulk: filterBulkOnly,
-      //       sortOption: selectedSortOption,
-      //     );
-
-      //     // Construye el layout según si es móvil o escritorio
-      //     return isMobile
-      //         ? _buildMobileLayout(filteredProducts)
-      //         : Row(children: _buildDesktopLayout(filteredProducts));
-      //   },
-      
+ 
     ),
 
 
@@ -1198,7 +1238,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Category Filter Buttons (Example)
+                // Category Filter Buttons 
                 IconButton(
                   onPressed: _showFilterDialog,
                   icon: Icon(Icons.filter_list, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
@@ -1467,6 +1507,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                 currentTicket.items.clear();
                                 currentTicket.discount = 0.0;
                                 _calculateTotals();
+                                saveTickets(); 
                               });
                             },
                           ),
@@ -1529,12 +1570,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                 item.price = normalPrice;
                                               }
                                               _calculateTotals();
+                                               saveTickets();
                                             });
                                           },
                                     onRemove: () {
                                       setState(() {
                                         currentTicket.items.removeAt(index);
                                         _calculateTotals();
+                                         saveTickets();
                                       });
                                     },
                                   );
@@ -2155,32 +2198,9 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                     setState(() {}); 
                                                     return;
                                                 }
-                                                // final wholesaleMin = item.wholesaleMinUnits ?? 0;
-                                                //       final wholesalePrice = item.wholesalePrice ?? 0;
-                                                //       final normalPrice = item.originalPrice ?? item.price;
-                                                // if(quantity >= wholesaleMin && wholesaleMin > 0) {
-                                                //   item.price = wholesalePrice;
-                                                //   setModalState(() {
-                                                //       item.quantity = quantity;
-                                                //       _calculateTotals();
-                                                //     });
-                                                // } else {
-                                                //   item.price = normalPrice;
-                                                //   setModalState(() {
-                                                //       item.quantity = quantity;
-                                                //       _calculateTotals();
-                                                //     });
-                                                // }
+
                                                 setModalState(() {
-                                                      // item.quantity = quantity;
-                                                      // final wholesaleMin = item.wholesaleMinUnits ?? 0;
-                                                      // final wholesalePrice = item.wholesalePrice ?? 0;
-                                                      // final normalPrice = item.originalPrice ?? item.price;
-                                                      // if (wholesaleMin > 0 && quantity >= wholesaleMin) {
-                                                      //   item.price = wholesalePrice;
-                                                      // } else {
-                                                      //   item.price = normalPrice;
-                                                      // }
+        
                                                       item.quantity = quantity;
                                                       final wholesaleMin = item.wholesaleMinUnits ?? 0;
                                                       final wholesalePrice = item.wholesalePrice ?? 0;
@@ -2191,6 +2211,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                                         item.price = normalPrice;
                                                       }
                                                       _calculateTotals();
+                                                      saveTickets();
                                                 });
                                                 setState(() {
                                                 }); 
@@ -2199,6 +2220,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
                                             setModalState(() {
                                               currentTicket.items.removeAt(index);
                                               _calculateTotals();
+                                              saveTickets();
                                             });
                                             setState(() {});
                                           },
@@ -2556,14 +2578,14 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   }
   
   void _addToCart(Map<String, dynamic> product, {double quantity = 1}) async {
-    //double price = product['price'];
+    
     final wholesaleMin = (product['wholesaleMinUnits'] as num?)?.toDouble() ?? 0;
     final wholesalePrice = (product['wholesalePrice'] as num?)?.toDouble() ?? 0;
-    //final normalPrice = (product['sellingPrice'] as num?)?.toDouble() ?? 0;
+  
     double price = (product['sellingPrice'] as num?)?.toDouble() ?? 0.0;
-   // double price = normalPrice;
+   
     double units = (product['units'] as num?)?.toDouble() ?? 0.0;
-   // double quantity = 1;
+  
     bool isBulk = product['isBulk'] ?? false;
 
     if (isBulk) {
@@ -2633,6 +2655,8 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       // if (_currentModalSetState != null) {
       //   _currentModalSetState!(() {}); // reconstruye el modal
       // }
+
+      await saveTickets();
   }
   
   void _calculateTotals() {
@@ -3191,42 +3215,45 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     final allProducts = provider.allProducts;
 
     double quantity = 1; // cantidad por defecto
-    String barcode = value;
+    String barcode = value.trim();
 
-   
-    // Detectar formato "6*CB"
-    if (value.contains('*')) {
+    //formatos 6*CB123, 6xCB123, 6XCB123, 6* CB123, 6x CB123
+    final regex = RegExp(r'^(\d+)\s*[\*xX]\s*(.+)$');
+    
+    // if (value.contains('*')) {
         
-      final parts = value.split('*');
-      if (parts.length == 2) {
+    //   final parts = value.split('*');
+    //   if (parts.length == 2) {
         
-        final qty = int.tryParse(parts[0]);
+    //     final qty = int.tryParse(parts[0]);
+    //     if (qty != null && qty > 0) {
+    //       quantity = qty.toDouble();
+    //       barcode = parts[1];
+    //     }
+    //   }
+    // }
+
+
+    final match = regex.firstMatch(value);
+      if (match != null) {
+        final qty = int.tryParse(match.group(1)!);
         if (qty != null && qty > 0) {
           quantity = qty.toDouble();
-          barcode = parts[1];
+          barcode = match.group(2)!; // código de barras sin la cantidad
+         
         }
       }
-    }
 
 
 
-    // Buscar coincidencia exacta por código de barras primero
-    // final product = allProducts.firstWhere(
-    //   (p) => p['barcode']?.toString() == value,
-    //   orElse: () => null,
-    // );
 
-      final product = allProducts.firstWhere(
-      (p) => p['barcode']?.toString() == barcode,
-      orElse: () => null,
-    );
+    final product = allProducts.firstWhere(
+        (p) => p['barcode']?.toString() == barcode,
+        orElse: () => null,
+      );
+
     if (product != null) {
-     // _addToCart(product);
-      // Limpiar búsqueda
-      // searchController.clear();
-      // setState(() {
-      //   searchQuery = '';
-      // });
+
 
         _addToCart(product, quantity: quantity);
     }
@@ -3238,7 +3265,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         searchQuery = '';
       });
 
-      // 🔥 CLAVE: regresar foco al listener (scanner)
+      // regresar foco al listener (scanner)
      // FocusScope.of(context).requestFocus(_keyboardFocusNode);
 
 
