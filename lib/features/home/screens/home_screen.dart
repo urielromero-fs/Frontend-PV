@@ -1064,7 +1064,7 @@ void _showSettingsModal() {
               ),
               child: _isSidebarCollapsed
                   ? IconButton(
-                      icon: const Icon(Icons.logout_rounded, color: Colors.white54),
+                      icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                       onPressed: () => _handleLogout(context),
                     )
                   : Row(
@@ -1077,8 +1077,7 @@ void _showSettingsModal() {
                           ),
                           child:  CircleAvatar(
                             radius: 18,
-                            backgroundColor: Color(0xFF1a1a1a),
-                            //child: Icon(Icons.person, color: Colors.white70, size: 20),
+                            backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                             child: _userLogoUrl.isNotEmpty
                               ? ClipOval(
                                   child: Image.network(
@@ -1088,7 +1087,7 @@ void _showSettingsModal() {
                                     fit: BoxFit.cover,
                                   ),
                                 )
-                              : const Icon(Icons.person, color: Colors.white70, size: 20),
+                              : Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4), size: 20),
                         
                           ),
                         ),
@@ -1143,7 +1142,7 @@ void _showSettingsModal() {
                                         ),
                                     child:  
                                           IconButton(
-                                            icon: const Icon(Icons.logout_rounded, color: Colors.white54, size: 20),
+                                            icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), size: 20),
                                             onPressed: () => _handleLogout(context),
                                           ),
                           ),
@@ -1189,7 +1188,7 @@ void _showSettingsModal() {
                   onPressed: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.logout_rounded, color: Colors.white70),
+                  icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                   onPressed: () => _handleLogout(context),
                 ),
               ],

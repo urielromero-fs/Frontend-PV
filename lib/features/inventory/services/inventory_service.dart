@@ -16,6 +16,7 @@ class InventoryService {
     required bool hasWholesalePrice,
     required double wholesalePrice,
     required int wholesaleMinUnits,
+    List<dynamic>? components,
   }) async {
     try {
       final response = await ApiHelper.request(
@@ -34,6 +35,7 @@ class InventoryService {
           'hasWholesalePrice': hasWholesalePrice,
           'wholesalePrice': wholesalePrice,
           'wholesaleMinUnits': wholesaleMinUnits,
+          'components': components,
         },
       );
 
@@ -135,6 +137,7 @@ class InventoryService {
     required bool hasWholesalePrice,
     required double wholesalePrice,
     required int wholesaleMinUnits,
+    List<dynamic>? components,
   }) async {
     try {
       final response = await ApiHelper.request(
@@ -153,6 +156,7 @@ class InventoryService {
           'hasWholesalePrice': hasWholesalePrice,
           'wholesalePrice': wholesalePrice,
           'wholesaleMinUnits': wholesaleMinUnits,
+          'components': components,
         },
       );
 

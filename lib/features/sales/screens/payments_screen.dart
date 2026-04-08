@@ -108,7 +108,6 @@ class _PaymentsScreenState extends State<PaymentsScreen>
 
 
   void _playErrorSound() async {
-    // 1. Feedback táctil y Beep nativo (Móvil/Escritorio)
     if (!kIsWeb) {
       HapticFeedback.vibrate();
       try {
@@ -118,19 +117,27 @@ class _PaymentsScreenState extends State<PaymentsScreen>
       }
     }
     
-    // 2. Reproducción de Audio (Web y Móvil)
     try {
-      // En Web, no esperamos al stop para evitar bloqueos del navegador
       if (kIsWeb) {
-        _audioPlayer.play(UrlSource('https://www.myinstants.com/media/sounds/wrong-answer-sound-effect.mp3'));
+        // Sonido de error/alerta corto para web
+        _audioPlayer.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'));
       } else {
         _audioPlayer.stop().then((_) {
           _audioPlayer.play(AssetSource('sounds/error.mp3'));
         });
       }
-    } catch (_) {
-      // Ignorar errores de audio
-    }
+    } catch (_) {}
+  }
+
+  void _playSuccessSound() async {
+    try {
+      if (kIsWeb) {
+        // Beep de éxito para web
+        _audioPlayer.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'));
+      } else {
+        FlutterBeep.beep(true);
+      }
+    } catch (_) {}
   }
 
   void _showStockAlert() {
@@ -2694,6 +2701,7 @@ Future<void> loadTickets() async {
         } else {
           item.price = price;
         }
+        _playSuccessSound();
       }else {
         // double initialPrice = quantity >= wholesaleMin && wholesaleMin > 0
         //     ? wholesalePrice
@@ -2710,6 +2718,7 @@ Future<void> loadTickets() async {
           wholesalePrice: wholesalePrice, 
           wholesaleMinUnits: wholesaleMin, 
         ));
+        _playSuccessSound();
       }
       _calculateTotals();
     });
