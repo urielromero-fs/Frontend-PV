@@ -10,12 +10,14 @@ class ReportsService {
    
     //Get report 
     static Future<Map<String, dynamic>> getReport({
-      required String period
+      required String period,
+      String? branchId,
+      DateTime? date,
     })async {
 
       try{
 
-         DateTime ahora = DateTime.now();
+         DateTime fechaConsulta = date ?? DateTime.now();
 
   
 
@@ -23,8 +25,9 @@ class ReportsService {
           method: 'POST', 
           path: '/reports', 
           body: {
-            'date': ahora.toString(), 
-            'period': period
+            'date': fechaConsulta.toIso8601String().split('T')[0], 
+            'period': period,
+            if (branchId != null) 'branchId': branchId,
           }
         ); 
 
@@ -134,4 +137,31 @@ class ReportsService {
 
 
 
+    //Get branches
+    static Future<Map<String, dynamic>> getBranches() async {
+      try {
+        final response = await ApiHelper.request(
+          method: 'GET',
+          path: '/branches',
+        );
+
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+          return {
+            'success': true,
+            'data': responseData,
+          };
+        } else {
+          return {
+            'success': false,
+            'message': 'Error al cargar sucursales: ${response.statusCode}',
+          };
+        }
+      } catch (e) {
+        return {
+          'success': false,
+          'message': 'Error de conexión: ${e.toString()}',
+        };
+      }
+    }
 }

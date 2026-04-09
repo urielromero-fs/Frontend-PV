@@ -125,6 +125,7 @@ class _UsersScreenState extends State<UsersScreen> {
           'id': user['id'],
           'name': user['name'],
           'email': user['email'],
+          'sucursal': user['sucursal'] ?? 'Sucursal Principal', 
           'role': user['role'] == 'admin' 
           ? 'Administrador' 
           : user['role'] == 'seller' 
@@ -195,6 +196,9 @@ class _UsersScreenState extends State<UsersScreen> {
     final emailController = TextEditingController(
       text: isEditing ? user['email'] : '',
     );
+    final sucursalController = TextEditingController(
+      text: isEditing ? user['sucursal'] : '',
+    );
     String selectedRole = isEditing ? user['role'] : 'Cajero';
 
     bool isSubmitting = false;
@@ -211,12 +215,14 @@ class _UsersScreenState extends State<UsersScreen> {
             name: nameController.text,
             email: emailController.text,
             role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+            sucursal: sucursalController.text,
           );
         } else {
           result = await UsersService.createUser(
             name: nameController.text,
             email: emailController.text,
             role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+            sucursal: sucursalController.text,
           );
         }
 
@@ -308,6 +314,30 @@ class _UsersScreenState extends State<UsersScreen> {
                         style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
                         decoration: InputDecoration(
                           labelText: 'Correo Electrónico',
+                          labelStyle: GoogleFonts.poppins(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Theme.of(context).dividerColor,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Color(0xFF05e265),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: sucursalController,
+                        onSubmitted: (_) => submitForm(),
+                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Sucursal',
                           labelStyle: GoogleFonts.poppins(
                             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           ),
@@ -636,17 +666,19 @@ class _UsersScreenState extends State<UsersScreen> {
                                 child: Text(
                                   'Usuario',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                     fontWeight: FontWeight.w600,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
                               Expanded(
                                 child: Text(
-                                  'Rol',
+                                  'Rol / Sucursal',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                     fontWeight: FontWeight.w600,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
@@ -654,8 +686,9 @@ class _UsersScreenState extends State<UsersScreen> {
                                 child: Text(
                                   'Registro',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                     fontWeight: FontWeight.w600,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
@@ -734,15 +767,13 @@ class _UsersScreenState extends State<UsersScreen> {
                                     name: user['name'],
                                     email: user['email'],
                                     role: user['role'],
+                                    sucursal: user['sucursal'],
                                     joinDate: user['joinDate'],
                                     status: user['status'] ?? 'Activo',
                                     isMobile: isMobile,
                                     onEdit: () => _showUserForm(user),
                                     onDelete: () => _deleteUser(user['id']),
                                     onSendPassword: () => _sendPassword(user['email']),
-                                    // SHOWCASE solo para este producto
-                                  
-                                    //actionMenuKey: actionMenuKey,
                                   );
                                 },
                               ),
@@ -775,23 +806,24 @@ class _UserStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.1)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: 16),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -801,7 +833,7 @@ class _UserStatCard extends StatelessWidget {
                   value,
                   style: GoogleFonts.poppins(
                     color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -810,8 +842,8 @@ class _UserStatCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: 10,
                   ),
                 ),
               ],
@@ -827,6 +859,7 @@ class _UserRow extends StatelessWidget {
   final String name;
   final String email;
   final String role;
+  final String sucursal;
   final String joinDate;
   final String status;
   final bool isMobile;
@@ -834,77 +867,38 @@ class _UserRow extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onSendPassword; 
 
-  // SHOWCASE
-  //final GlobalKey? actionMenuKey;
-  
-
   const _UserRow({
     required this.name,
     required this.email,
     required this.role,
+    required this.sucursal,
     required this.joinDate,
     required this.status,
     required this.isMobile,
     required this.onEdit,
     required this.onDelete,
     required this.onSendPassword,
-    //this.actionMenuKey,
   });
-
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
-    final Color statusColor = status == 'Inactivo' ? const Color(0xFFE91E63) : const Color(0xFF05e265);
+    final Color statusColor = status == 'Inactivo' ? const Color(0xFFFF5252) : const Color(0xFF05e265);
     final bool isInactive = status == 'Inactivo';
 
-  
     Widget actionButton = Container(
-        width: 40,
-        height: 40,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
-          color: const Color(0xFF05e265).withAlpha(26),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           shape: BoxShape.circle,
-          border: Border.all(
-            color: const Color(0xFF05e265).withAlpha(51),
-            width: 1,
-          ),
         ),
-        child: const Icon(Icons.more_vert, color: Color(0xFF05e265), size: 20),
+        child: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.primary, size: 18),
       );
-
-    // if(actionMenuKey != null){
-    //   actionButton = Showcase(
-    //                       key: actionMenuKey!,
-    //                       description: 'Toca para editar, eliminar o enviarle una nueva contraseña al usuario.',
-    //                       tooltipPadding: const EdgeInsets.all(12),
-    //                       tooltipActions: [
-                                    
-    //                                 TooltipActionButton(
-    //                                   type: TooltipDefaultActionType.next,
-    //                                   backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-    //                                   textStyle: TextStyle(color: Colors.white),
-    //                                   name: 'Siguiente',
-                                     
-    //                                 )
-    //                               ],
-    //                       tooltipActionConfig: TooltipActionConfig(
-    //                             alignment: MainAxisAlignment.center,
-    //                           ),
-    //                       child:  
-                               
-    //                       actionButton
-    //                     ); 
-
-
-
-    // }
 
     final actionsMenu = PopupMenuButton<String>(
       color: Theme.of(context).cardColor,
+      elevation: 4,
+      offset: const Offset(0, 40),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (String value) {
         if (value == 'edit') {
@@ -920,11 +914,11 @@ class _UserRow extends StatelessWidget {
           value: 'send_password',
           child: Row(
             children: [
-              const Icon(Icons.send_rounded, color: Colors.blueAccent, size: 20),
+              const Icon(Icons.key_rounded, color: Colors.blueAccent, size: 18),
               const SizedBox(width: 12),
               Text(
                 'Enviar contraseña',
-                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+                style: GoogleFonts.poppins(fontSize: 13),
               ),
             ],
           ),
@@ -933,11 +927,11 @@ class _UserRow extends StatelessWidget {
           value: 'edit',
           child: Row(
             children: [
-              const Icon(Icons.edit, color: Color(0xFF05e265), size: 20),
+              const Icon(Icons.edit_rounded, color: Color(0xFF05e265), size: 18),
               const SizedBox(width: 12),
               Text(
                 'Editar',
-                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+                style: GoogleFonts.poppins(fontSize: 13),
               ),
             ],
           ),
@@ -946,20 +940,17 @@ class _UserRow extends StatelessWidget {
           value: 'delete',
           child: Row(
             children: [
-              const Icon(Icons.delete, color: Color(0xFFE91E63), size: 20),
+              const Icon(Icons.delete_rounded, color: Color(0xFFFF5252), size: 18),
               const SizedBox(width: 12),
               Text(
                 'Eliminar',
-                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
+                style: GoogleFonts.poppins(fontSize: 13),
               ),
             ],
           ),
         ),
       ],
-      child: 
-        actionButton
-
-
+      child: actionButton,
     );
 
     final Widget actionsMenuDisabled = Opacity(
@@ -970,31 +961,32 @@ class _UserRow extends StatelessWidget {
       ),
     );
 
-
-
     if (isMobile) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.5)),
-          ),
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
         ),
         child: Column(
           children: [
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF05e265).withOpacity(0.2),
+                  radius: 18,
+                  backgroundColor: const Color(0xFF05e265).withOpacity(0.1),
                   child: Text(
                     name.substring(0, 1).toUpperCase(),
                     style: GoogleFonts.poppins(
                       color: const Color(0xFF05e265),
                       fontWeight: FontWeight.bold,
+                      fontSize: 14,
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1002,60 +994,43 @@ class _UserRow extends StatelessWidget {
                       Text(
                         name,
                         style: GoogleFonts.poppins(
-                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
+                          fontSize: 14,
                         ),
                       ),
                       Text(
                         email,
                         style: GoogleFonts.poppins(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Rol: $role',
-                        style: GoogleFonts.poppins(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                           fontSize: 12,
                         ),
                       ),
                     ],
                   ),
                 ),
-                 actionsMenuDisabled,
+                actionsMenuDisabled,
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildInfoTag(context, Icons.work_outline, role),
+                const SizedBox(width: 8),
+                _buildInfoTag(context, Icons.business_outlined, sucursal),
+              ],
+            ),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Registro: $joinDate',
+                  'Registrado: $joinDate',
                   style: GoogleFonts.poppins(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                    fontSize: 11,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    status,
-                    style: GoogleFonts.poppins(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                _buildStatusBadge(status, statusColor),
               ],
             ),
           ],
@@ -1063,11 +1038,12 @@ class _UserRow extends StatelessWidget {
       );
     }
 
+    // DESKTOP VIEW
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+          bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.05)),
         ),
       ),
       child: Row(
@@ -1077,18 +1053,18 @@ class _UserRow extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF05e265).withOpacity(0.2),
-                  radius: 16,
+                  radius: 14,
+                  backgroundColor: const Color(0xFF05e265).withOpacity(0.1),
                   child: Text(
                     name.substring(0, 1).toUpperCase(),
                     style: GoogleFonts.poppins(
                       color: const Color(0xFF05e265),
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      fontSize: 10,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1096,8 +1072,8 @@ class _UserRow extends StatelessWidget {
                       Text(
                         name,
                         style: GoogleFonts.poppins(
-                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w600,
+                          fontSize: 13,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1105,8 +1081,8 @@ class _UserRow extends StatelessWidget {
                       Text(
                         email,
                         style: GoogleFonts.poppins(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                          fontSize: 11,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1118,42 +1094,86 @@ class _UserRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              role,
-              style: GoogleFonts.poppins(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                fontWeight: FontWeight.w500,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  role,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  sucursal,
+                  style: GoogleFonts.poppins(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
             child: Text(
               joinDate,
-              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                fontSize: 12,
+              ),
             ),
           ),
           Expanded(
             child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  status,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              child: _buildStatusBadge(status, statusColor),
             ),
           ),
           Expanded(child: Center(child: actionsMenuDisabled)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInfoTag(BuildContext context, IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).dividerColor.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

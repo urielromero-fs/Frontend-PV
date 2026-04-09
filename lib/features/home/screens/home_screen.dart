@@ -7,13 +7,15 @@ import 'package:provider/provider.dart';
 import 'package:pv26/features/inventory/screens/inventory_screen.dart';
 import 'package:pv26/features/sales/screens/payments_screen.dart';
 import 'package:pv26/features/reports/screens/reports_screen.dart';
+import 'package:pv26/features/reports/screens/branches_screen.dart';
 import 'package:pv26/features/users/screens/users_screen.dart';
 import 'package:pv26/features/auth/services/auth_service.dart';
 import 'package:pv26/features/inventory/providers/product_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../reports/services/reports_service.dart';
 import 'package:pv26/core/providers/theme_provider.dart';
-import '../../users/services/users_service.dart'; 
+import 'package:pv26/features/users/services/users_service.dart'; 
+import 'package:pv26/features/home/screens/users_panel_screen.dart';
 import '../../../core/utils/currency_formatter.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'dart:io';
@@ -34,8 +36,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSidebarCollapsed = false;
   String _userLogoUrl = '';
 
-  bool get _isAdmin => _userRole.toLowerCase() == 'admin' || _userRole.toLowerCase() == 'administrador';
-  bool get _isCajero => _userRole.toLowerCase() == 'seller' || _userRole.toLowerCase() == 'cajero';
+  bool get _isAdmin => _userRole.trim().toLowerCase() == 'admin' || _userRole.trim().toLowerCase() == 'administrador';
+  bool get _isMaster => _userRole.trim().toLowerCase() == 'master';
+  bool get _isCajero => _userRole.trim().toLowerCase() == 'seller' || _userRole.trim().toLowerCase() == 'cajero';
 
    Map<String, dynamic> metricData = {};
 
@@ -61,6 +64,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey _salesKey = GlobalKey();
   final GlobalKey _usersKey = GlobalKey();
   final GlobalKey _reportsKey = GlobalKey();
+  final GlobalKey _branchesPanelKey = GlobalKey();
+  final GlobalKey _usersPanelKey = GlobalKey();
+  final GlobalKey _reportsSubKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
   final GlobalKey _logoutKey = GlobalKey(); 
 
@@ -233,6 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _userRole = userRole;
       _userLogoUrl = userLogo;
     });
+    print('DEBUG: User role loaded: $_userRole');
   }
 
   bool _isMobile(BuildContext context) {
@@ -681,6 +688,266 @@ void _showSettingsModal() {
     );
   }
 
+  void _showUsersPanelModal() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).cardColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Gestión de Usuarios y Red',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildModalOption(
+                title: 'Crear Nuevo Usuario',
+                subtitle: 'Agrega administradores o cajeros',
+                icon: Icons.person_add_rounded,
+                color: const Color(0xFF05e265),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showNewUserForm();
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildModalOption(
+                title: 'Nueva Sucursal',
+                subtitle: 'Registra una nueva sede de tu negocio',
+                icon: Icons.add_business_rounded,
+                color: Colors.blueAccent,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showNewBranchForm();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildModalOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.outfit(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: Theme.of(context).dividerColor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNewUserForm() {
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final sucursalController = TextEditingController();
+    String selectedRole = 'Cajero';
+    bool isSubmitting = false;
+
+    Future<void> submitForm(StateSetter setModalState) async {
+      if (isSubmitting) return;
+      if (nameController.text.isNotEmpty && emailController.text.isNotEmpty) {
+        setModalState(() => isSubmitting = true);
+        
+        final result = await UsersService.createUser(
+          name: nameController.text,
+          email: emailController.text,
+          role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+          sucursal: sucursalController.text,
+        );
+
+        if (mounted) {
+          if (result['success']) {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Usuario creado exitosamente'),
+                backgroundColor: Color(0xFF05e265),
+              ),
+            );
+          } else {
+            setModalState(() => isSubmitting = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result['message']),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              backgroundColor: Theme.of(context).cardColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                'Nuevo Usuario',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              ),
+              content: SizedBox(
+                width: 450,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        autofocus: true,
+                        controller: nameController,
+                        style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Nombre Completo',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Correo Electrónico',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: sucursalController,
+                        style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Sucursal',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedRole,
+                        dropdownColor: Theme.of(context).cardColor,
+                        style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Rol',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        items: ['Administrador', 'Cajero'].map((val) => DropdownMenuItem(value: val, child: Text(val))).toList(),
+                        onChanged: (val) => setModalState(() => selectedRole = val!),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () => submitForm(setModalState),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF05e265),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: isSubmitting 
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Crear', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showNewBranchForm() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Nueva Sucursal', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Nombre de la Sucursal',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Ubicación / Dirección',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Crear Sucursal', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
@@ -805,7 +1072,7 @@ void _showSettingsModal() {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 children: [
-                  if (_isAdmin)
+                  if (_isAdmin && !_isMaster)
 
                   //Dashboard button 
                   Showcase(
@@ -842,77 +1109,78 @@ void _showSettingsModal() {
                                   ),
                     ),
 
-                  //Inventory button 
-                  Showcase(
-                          key: _inventoryKey,
-                          description: 'En el inventario puedes agregar, editar, eliminar y ver tus productos.',
-                          tooltipPadding: const EdgeInsets.all(12),
-                          tooltipActions: [
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.skip,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Saltar',
-                                     
-                                    ),                                   
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.next,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Siguiente',
-                                     
-                                    ), 
+                    if (!_isMaster) ...[
+                      //Inventory button 
+                      Showcase(
+                              key: _inventoryKey,
+                              description: 'En el inventario puedes agregar, editar, eliminar y ver tus productos.',
+                              tooltipPadding: const EdgeInsets.all(12),
+                              tooltipActions: [
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.skip,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Saltar',
+                                         
+                                        ),                                   
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.next,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Siguiente',
+                                         
+                                        ), 
 
 
-                                  ],
-                          tooltipActionConfig: TooltipActionConfig(
-                                alignment: MainAxisAlignment.center,
-                              ),
-                          child:  _NavItem(
-                                icon: Icons.inventory_2_rounded,
-                                title: 'Inventario',
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen())),
-                                isCollapsed: _isSidebarCollapsed,
-                              ),
-                  ),
+                                      ],
+                              tooltipActionConfig: TooltipActionConfig(
+                                    alignment: MainAxisAlignment.center,
+                                  ),
+                              child:  _NavItem(
+                                    icon: Icons.inventory_2_rounded,
+                                    title: 'Inventario',
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen())),
+                                    isCollapsed: _isSidebarCollapsed,
+                                  ),
+                      ),
 
-                //Sales button 
-                Showcase(
-                          key: _salesKey,
-                          description: 'Dirígete a Cobros para comenzar a vender.',
-                          tooltipPadding: const EdgeInsets.all(12),
-                          tooltipActions: [
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.skip,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Saltar',
-                                     
-                                    )  ,                                 
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.next,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Siguiente',
-                                     
-                                    ), 
+                    //Sales button 
+                    Showcase(
+                              key: _salesKey,
+                              description: 'Dirígete a Cobros para comenzar a vender.',
+                              tooltipPadding: const EdgeInsets.all(12),
+                              tooltipActions: [
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.skip,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Saltar',
+                                         
+                                        )  ,                                 
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.next,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Siguiente',
+                                         
+                                        ), 
 
-                                  ],
-                          tooltipActionConfig: TooltipActionConfig(
-                                alignment: MainAxisAlignment.center,
-                              ),
-                          child:  _NavItem(
-                                icon: Icons.point_of_sale_rounded,
-                                title: 'Cobros',
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentsScreen())),
-                                isCollapsed: _isSidebarCollapsed,
-                              ),
-                ),
+                                      ],
+                              tooltipActionConfig: TooltipActionConfig(
+                                    alignment: MainAxisAlignment.center,
+                                  ),
+                              child:  _NavItem(
+                                    icon: Icons.point_of_sale_rounded,
+                                    title: 'Cobros',
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentsScreen())),
+                                    isCollapsed: _isSidebarCollapsed,
+                                  ),
+                    ),
+                  ],
                     
 
 
-                  
-                  if (_isAdmin) ...[
+                     if (_isAdmin && !_isMaster) ...[
 
                     
                     //Users button 
@@ -981,9 +1249,35 @@ void _showSettingsModal() {
                                         isCollapsed: _isSidebarCollapsed,
                                       ),
                     ),
-                    
-
                   ],
+
+                    if (_isMaster) ...[
+                      const Divider(color: Colors.white10),
+
+                      // Usuarios P -> Pantalla con Cards
+                      _NavItem(
+                        icon: Icons.admin_panel_settings_rounded,
+                        title: 'Usuarios',
+                        onTap: _showUsersPanelModal,
+                        isCollapsed: _isSidebarCollapsed,
+                      ),
+
+                      // Reportes S (Con filtrado por sucursal)
+                      _NavItem(
+                        icon: Icons.assessment_rounded,
+                        title: 'Reportes ',
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen(showBranchFilter: true))),
+                        isCollapsed: _isSidebarCollapsed,
+                      ),
+
+                      // Sucursales
+                      _NavItem(
+                        icon: Icons.store_rounded,
+                        title: 'Sucursales',
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchesScreen())),
+                        isCollapsed: _isSidebarCollapsed,
+                      ),
+                    ],
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Divider(color: Colors.white10),
@@ -1578,6 +1872,63 @@ class _StatCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SubMenu extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final List<Widget> children;
+  final bool isCollapsed;
+
+  const _SubMenu({
+    required this.icon,
+    required this.title,
+    required this.children,
+    required this.isCollapsed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isCollapsed) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Tooltip(
+          message: title,
+          child: Icon(
+            icon,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            size: 24,
+          ),
+        ),
+      );
+    }
+
+    return Theme(
+      data: Theme.of(context).copyWith(
+        dividerColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+      ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+        leading: Icon(
+          icon,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          size: 24,
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.outfit(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            fontSize: 15,
+          ),
+        ),
+        iconColor: const Color(0xFF05e265),
+        collapsedIconColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        children: children,
       ),
     );
   }

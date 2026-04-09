@@ -10,8 +10,13 @@ import 'package:pv26/core/theme/app_theme.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:pv26/features/auth/providers/user_provider.dart';
 
-void main() {
+import 'package:intl/date_symbol_data_local.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar localización para fechas
+  await initializeDateFormatting('es', null);
 
   // Inicializar Showcase (nuevo API)
   ShowcaseView.register();

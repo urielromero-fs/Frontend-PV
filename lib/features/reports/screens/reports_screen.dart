@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../services/reports_service.dart'; 
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,7 +8,8 @@ import 'dart:convert';
 import '../../users/services/users_service.dart'; 
 
 class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({super.key});
+  final bool showBranchFilter;
+  const ReportsScreen({super.key, this.showBranchFilter = false});
 
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
@@ -15,6 +17,11 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   String _selectedPeriod = 'Este Día';
+  DateTime _selectedDate = DateTime.now();
+  String? _selectedBranchId;
+  String _selectedBranchName = 'Global';
+  List<dynamic> _branches = [];
+  bool _isLoadingBranches = false;
 
 
   Map<String, dynamic> metricData = {};
@@ -43,8 +50,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
       _initOnboarding(); 
     });
    
+    if (widget.showBranchFilter) {
+      _loadBranches();
+    }
+    
     _loadMetrics(_selectedPeriod); 
 
+  }
+
+  Future<void> _loadBranches() async {
+    setState(() => _isLoadingBranches = true);
+    final result = await ReportsService.getBranches();
+    if (mounted) {
+      setState(() {
+        _isLoadingBranches = false;
+        if (result['success']) {
+          _branches = result['data'];
+        }
+      });
+    }
   }
   
    
@@ -106,7 +130,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }; 
 
 
-    final result = await ReportsService.getReport(period: days[period]);
+    final result = await ReportsService.getReport(
+      period: days[period],
+      branchId: _selectedBranchId,
+      date: _selectedDate,
+    );
 
 
     if(result['success']){
@@ -114,9 +142,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
     
 
 
-      final data = result['data'];
-      final actualReport = data['actualReport'] ?? {};
-      final growth = data['growth'] ?? {};
+      final data = result['data'] ?? {};
+      final actualReport = data['actualReport'] as Map<String, dynamic>? ?? {};
+      final growth = data['growth'] as Map<String, dynamic>? ?? {};
 
       String formatCurrency(dynamic value) {
         if (value == null) return '\$0';
@@ -188,6 +216,32 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
 
+  Widget _buildPeriodChip(String period) {
+    final bool isSelected = _selectedPeriod == period;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: FilterChip(
+        label: Text(period),
+        selected: isSelected,
+        onSelected: (bool selected) {
+          if (selected) {
+            setState(() {
+              _selectedPeriod = period;
+            });
+            _loadMetrics(period);
+          }
+        },
+        selectedColor: const Color(0xFFFF9800),
+        labelStyle: GoogleFonts.poppins(
+          color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+        backgroundColor: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    );
+  }
+
   void _showPeriodSelector() {
     showModalBottomSheet(
       context: context,
@@ -247,6 +301,72 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
 
 
+      },
+    );
+  }
+
+  void _showBranchSelector() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Seleccionar Sucursal',
+                style: GoogleFonts.poppins(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                title: Text(
+                  'Todas las Sucursales (Global)',
+                  style: GoogleFonts.poppins(
+                    color: _selectedBranchId == null ? const Color(0xFF2196F3) : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: _selectedBranchId == null ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                onTap: () {
+                  setState(() {
+                    _selectedBranchId = null;
+                    _selectedBranchName = 'Global';
+                  });
+                  _loadMetrics(_selectedPeriod);
+                  Navigator.pop(context);
+                },
+              ),
+              ..._branches.map((branch) => ListTile(
+                title: Text(
+                  branch['name'] ?? 'Sucursal sin nombre',
+                  style: GoogleFonts.poppins(
+                    color: _selectedBranchId == branch['id'].toString() ? const Color(0xFF2196F3) : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: _selectedBranchId == branch['id'].toString() ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                onTap: () {
+                  setState(() {
+                    _selectedBranchId = branch['id'].toString();
+                    _selectedBranchName = branch['name'];
+                  });
+                  _loadMetrics(_selectedPeriod);
+                  Navigator.pop(context);
+                },
+              )).toList(),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
       },
     );
   }
@@ -345,79 +465,145 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        'Período: $_selectedPeriod',
-                        style: GoogleFonts.poppins(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Fecha Seleccionada',
+                            style: GoogleFonts.poppins(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            DateFormat('dd MMMM, yyyy', 'es').format(_selectedDate),
+                            style: GoogleFonts.poppins(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     InkWell(
-                      onTap: _showPeriodSelector,
-                      child:  
-
-                    //Period selector
-                    Showcase(
-                          key: _periodKey,
-                          description: 'Toca para cambiar el periodo a dia, semana o mes.',
-                          tooltipPadding: const EdgeInsets.all(12),
-                          tooltipActions: [
-                                    
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.next,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Siguiente',
-                                     
-                                    )
-                                  ],
-                          tooltipActionConfig: TooltipActionConfig(
-                                alignment: MainAxisAlignment.center,
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now(),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: Theme.of(context).colorScheme.copyWith(
+                                  primary: const Color(0xFFFF9800),
+                                ),
                               ),
-                          child:  
-                               Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (picked != null && picked != _selectedDate) {
+                          setState(() {
+                            _selectedDate = picked;
+                          });
+                          _loadMetrics(_selectedPeriod);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFF9800),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child:
-                                Row(
-        
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.calendar_today,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Cambiar',
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-
-                        )
-
-
-                        
-
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Cambiar',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+              // Period Selectors
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildPeriodChip('Este Día'),
+                    _buildPeriodChip('Esta Semana'),
+                    _buildPeriodChip('Este Mes'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (widget.showBranchFilter) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sucursal',
+                              style: GoogleFonts.poppins(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              _selectedBranchName,
+                              style: GoogleFonts.poppins(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _isLoadingBranches 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : InkWell(
+                            onTap: _showBranchSelector,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.blueAccent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Filtrar',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Key Metrics

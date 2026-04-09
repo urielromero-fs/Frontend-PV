@@ -13,6 +13,7 @@ class UsersService {
     required String name,
     required String email, 
     required String role,
+    String? sucursal,
   }) async {
     try {
       final response = await ApiHelper.request(
@@ -22,6 +23,7 @@ class UsersService {
           'name': name,
           'email': email,
           'role': role,
+          if (sucursal != null) 'sucursal': sucursal,
         }
       );
 
@@ -123,7 +125,7 @@ class UsersService {
     String? name,
     String? email, 
     String? role,
-    
+    String? sucursal,
   }) async {
 
   
@@ -136,6 +138,7 @@ class UsersService {
           if (name != null) 'name': name,
           if (email != null) 'email': email,
           if (role != null) 'role': role,
+          if (sucursal != null) 'sucursal': sucursal,
         }
       ); 
 
