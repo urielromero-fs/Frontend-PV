@@ -66,6 +66,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     "Artículos para Bebé",
     "Mascotas",
     "General",
+    "Paquetes",
     "Otros",
   ];
 
@@ -272,6 +273,8 @@ void _handleKeyEvent(KeyEvent event) {
       sortOption: selectedSortOption,
       stockStatus: selectedStockFilter,
     );
+
+
     return Scaffold(
       appBar: AppBar(
         title: Text(

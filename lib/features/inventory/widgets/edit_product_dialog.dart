@@ -1,3 +1,5 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -58,16 +60,16 @@ class _EditProductDialogState extends State<EditProductDialog> {
     "Mascotas",
     "General",
     "Otros",
-    "Paquetes",
+   
   ];
 
   @override
   void initState() {
     super.initState();
-    isPackage = widget.product['category'] == 'Paquetes';
+   
     
     nameController.text = widget.product['name']?.toString() ?? '';
-    barcodeController.text = widget.product['barcode']?.toString() ?? '';
+    barcodeController.text = (widget.product['barcode'] ?? '').toString();
     unitsController.text = (widget.product['units'] ?? 0).toString();
     packageUnitsController.text = (widget.product['units'] ?? 0).toString();
     purchasePriceController.text = (widget.product['buyingPrice'] ?? 0).toString();
@@ -78,12 +80,15 @@ class _EditProductDialogState extends State<EditProductDialog> {
     mayoreoUnitsController.text = (widget.product['wholesaleMinUnits'] ?? 0).toString();
     isBulk = widget.product['isBulk'] ?? false;
     hasMayoreo = widget.product['hasWholesalePrice'] ?? false;
+    isPackage = widget.product['isPackage'] ?? false;
+
+    //print(widget.product); 
 
     if (isPackage) {
-      final components = widget.product['components'] as List<dynamic>?;
-      if (components != null) {
+      final packageContents = widget.product['packageContents'] as List<dynamic>?;
+      if (packageContents != null) {
         selectedPackageProducts = List<Map<String, dynamic>>.from(
-          components.map((c) => Map<String, dynamic>.from(c))
+          packageContents.map((c) => Map<String, dynamic>.from(c))
         );
         _calculateSuggestedPrice();
       }
@@ -93,7 +98,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
   void _calculateSuggestedPrice() {
     double total = 0;
     for (var p in selectedPackageProducts) {
-      final price = (p['sellingPrice'] as num?)?.toDouble() ?? 0.0;
+      final price = (p['product']['sellingPrice'] as num?)?.toDouble() ?? 0.0;
       final qty = (p['quantity'] as num?)?.toDouble() ?? 1.0;
       total += price * qty;
     }
@@ -118,12 +123,12 @@ class _EditProductDialogState extends State<EditProductDialog> {
       isLoading = true;
     });
 
-    double totalBuyingPrice = 0;
-    if (isPackage) {
-      for (var p in selectedPackageProducts) {
-        totalBuyingPrice += ((p['buyingPrice'] as num?)?.toDouble() ?? 0.0) * (p['quantity'] ?? 1);
-      }
-    }
+    // double totalBuyingPrice = 0;
+    // if (isPackage) {
+    //   for (var p in selectedPackageProducts) {
+    //     totalBuyingPrice += ((p['buyingPrice'] as num?)?.toDouble() ?? 0.0) * (p['quantity'] ?? 1);
+    //   }
+    // }
 
     final result = await InventoryService.updateProduct(
       id: id,
@@ -133,13 +138,16 @@ class _EditProductDialogState extends State<EditProductDialog> {
       weight: isPackage ? 1.0 : (double.tryParse(weightController.text) ?? 0.0),
       category: isPackage ? 'Paquetes' : selectedCategory,
       units: double.tryParse(isPackage ? packageUnitsController.text : unitsController.text) ?? 0,
-      buyingPrice: isPackage ? totalBuyingPrice : (double.tryParse(purchasePriceController.text.replaceAll(",", "")) ?? 0.0),
+      buyingPrice:  (double.tryParse(purchasePriceController.text.replaceAll(",", "")) ?? 0.0),
       sellingPrice: double.tryParse(salePriceController.text.replaceAll(",", "")) ?? 0.0,
       bulkPrice: isPackage ? 0.0 : (double.tryParse(weightController.text) ?? 0.0),
       hasWholesalePrice: isPackage ? false : hasMayoreo,
       wholesalePrice: isPackage ? 0.0 : (double.tryParse(mayoreoController.text.replaceAll(",", "")) ?? 0.0),
       wholesaleMinUnits: isPackage ? 0 : (int.tryParse(mayoreoUnitsController.text) ?? 0),
-      components: isPackage ? selectedPackageProducts : null,
+      packageContents: isPackage ? selectedPackageProducts.map((p) => {
+        'product': p['product']['_id'] ,
+        'quantity': p['quantity'],
+      }).toList() : null,
     );
 
     setState(() {
@@ -270,9 +278,14 @@ class _EditProductDialogState extends State<EditProductDialog> {
                         },
                         onSelected: (product) {
                           setState(() {
-                            final pWithQty = Map<String, dynamic>.from(product);
-                            pWithQty['quantity'] = 1;
-                            selectedPackageProducts.add(pWithQty);
+                            // final pWithQty = Map<String, dynamic>.from(product);
+                            // pWithQty['quantity'] = 1;
+                            // selectedPackageProducts.add(pWithQty);
+
+                             selectedPackageProducts.add({
+                              'product': product,
+                              'quantity': 1,
+                            });
                             _calculateSuggestedPrice();
                             salePriceController.text = suggestedPackagePrice.toStringAsFixed(2);
                             _internalPackageSearchController?.clear();
@@ -319,11 +332,14 @@ class _EditProductDialogState extends State<EditProductDialog> {
                             itemCount: selectedPackageProducts.length,
                             itemBuilder: (context, index) {
                               final p = selectedPackageProducts[index];
-                              final stock = (p['units'] ?? 0);
+                              final stock = (p['product']['units'] ?? 0);
                               final qty = p['quantity'] ?? 1;
 
+
+                              print(p); 
+
                               return ListTile(
-                                title: Text(p['name'], style: GoogleFonts.poppins(fontSize: 14)),
+                                title: Text(p['product']['name'] ?? '', style: GoogleFonts.poppins(fontSize: 14)),
                                 subtitle: Text('Estado: ${stock == 0 ? "Sin Stock" : stock < 5 ? "Bajo Stock ($stock)" : "En Stock ($stock)"}', 
                                   style: GoogleFonts.poppins(fontSize: 11, color: stock == 0 ? Colors.red : stock < 5 ? Colors.orange : Colors.green)),
                                 trailing: Row(
@@ -351,7 +367,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                                       },
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(CurrencyFormatter.format(((p['sellingPrice'] as num?)?.toDouble() ?? 0.0) * qty), 
+                                    Text(CurrencyFormatter.format(((p['product']['sellingPrice'] as num?)?.toDouble() ?? 0.0) * qty), 
                                       style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF05e265))),
                                     IconButton(
                                       icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 20),

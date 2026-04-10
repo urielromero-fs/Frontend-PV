@@ -25,6 +25,7 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
       setState(() {});
     });
   }
+
   final nameController = TextEditingController();
   final purchasePriceController = TextEditingController();
   final salePriceController = TextEditingController();
@@ -90,6 +91,7 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
       hasWholesalePrice: hasMayoreo,
       wholesalePrice: double.tryParse(mayoreoController.text.replaceAll(",", "")) ?? 0.0,
       wholesaleMinUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
+      isPackage: false,
     );
     setState(() {
       isLoading = false;
@@ -149,7 +151,8 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
       hasWholesalePrice: false,
       wholesalePrice: 0.0,
       wholesaleMinUnits: 0,
-      components: selectedPackageProducts,
+      isPackage: true,
+      packageContents: selectedPackageProducts,
     );
 
     setState(() {
@@ -500,9 +503,18 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
                               onSelected: (product) {
                                 setState(() {
                                   // Añadimos con cantidad inicial 1
-                                  final pWithQty = Map<String, dynamic>.from(product);
-                                  pWithQty['quantity'] = 1;
-                                  selectedPackageProducts.add(pWithQty);
+                                  // final pWithQty = Map<String, dynamic>.from(product);
+                                  // pWithQty['quantity'] = 1;
+                                  // selectedPackageProducts.add(pWithQty);
+
+                                    selectedPackageProducts.add({
+                                      'product': product['_id'], 
+                                      'name': product['name'],  
+                                      'sellingPrice': (product['sellingPrice'] as num).toDouble(),
+                                      'quantity': 1,
+                                      'units': product['units'] ?? 0,
+                                    });
+
                                   
                                   suggestedPackagePrice += (product['sellingPrice'] as num).toDouble();
                                   packageSalePriceController.text = suggestedPackagePrice.toStringAsFixed(2);
@@ -553,6 +565,8 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
                                     final stock = (p['units'] ?? 0);
                                     final qty = p['quantity'] ?? 1;
 
+                                 
+
                                     return ListTile(
                                       title: Text(p['name'], style: GoogleFonts.poppins(fontSize: 14)),
                                       subtitle: Text('Estado: ${stock == 0 ? "Sin Stock" : stock < 5 ? "Bajo Stock ($stock)" : "En Stock ($stock)"}', 
@@ -565,6 +579,7 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
                                             icon: const Icon(Icons.remove, size: 18),
                                             onPressed: qty > 1 ? () {
                                               setState(() {
+                                                selectedPackageProducts[index]['quantity'] += 1;
                                                 p['quantity'] = qty - 1;
                                                 suggestedPackagePrice -= (p['sellingPrice'] as num).toDouble();
                                                 packageSalePriceController.text = suggestedPackagePrice.toStringAsFixed(2);
@@ -576,6 +591,9 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
                                             icon: const Icon(Icons.add, size: 18),
                                             onPressed: () {
                                               setState(() {
+                                                if (selectedPackageProducts[index]['quantity'] > 1) {
+                                                  selectedPackageProducts[index]['quantity'] -= 1;
+                                                }
                                                 p['quantity'] = qty + 1;
                                                 suggestedPackagePrice += (p['sellingPrice'] as num).toDouble();
                                                 packageSalePriceController.text = suggestedPackagePrice.toStringAsFixed(2);
