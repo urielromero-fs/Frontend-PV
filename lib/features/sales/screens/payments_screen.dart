@@ -129,6 +129,32 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     } catch (_) {}
   }
 
+  /// Sonido distinto para cuando se alcanza el límite de stock
+  void _playLimitSound() async {
+    if (!kIsWeb) {
+      HapticFeedback.heavyImpact();
+      try {
+        // Doble beep negativo para diferenciarlo del éxito (1 beep)
+        FlutterBeep.beep(false);
+        await Future.delayed(const Duration(milliseconds: 180));
+        FlutterBeep.beep(false);
+      } catch (_) {
+        SystemSound.play(SystemSoundType.alert);
+      }
+      try {
+        // También reproducir el asset local de error
+        await _audioPlayer.stop();
+        await _audioPlayer.play(AssetSource('sounds/notiError.mp3'));
+      } catch (_) {}
+    } else {
+      // Web: URL diferente al error general
+      try {
+        await _audioPlayer.stop();
+        _audioPlayer.play(AssetSource('sounds/notiError.mp3'));
+      } catch (_) {}
+    }
+  }
+
   void _playSuccessSound() async {
     try {
       if (kIsWeb) {
@@ -141,7 +167,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   }
 
   void _showStockAlert() {
-    _playErrorSound();
+    _playLimitSound();
     
     ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
     ScaffoldMessenger.of(context).showMaterialBanner(
