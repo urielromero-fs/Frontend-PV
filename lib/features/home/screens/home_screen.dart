@@ -456,21 +456,22 @@ void _showSettingsModal() {
                     const SizedBox(height: 16),
 
                    
-                    Row(
-                      children: [
-                        _logoBytes != null
-                            ? Image.memory(_logoBytes!,
-                                width: 50, height: 50)
-                            : const Icon(Icons.image, size: 50),
-                        const SizedBox(width: 16),
-                        ElevatedButton(
-                          onPressed: () => pickLogo(setModalState),
-                          child: const Text('Seleccionar logo PNG'),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
+                    if (_isAdmin) ...[
+                      Row(
+                        children: [
+                          _logoBytes != null
+                              ? Image.memory(_logoBytes!,
+                                  width: 50, height: 50)
+                              : const Icon(Icons.image, size: 50),
+                          const SizedBox(width: 16),
+                          ElevatedButton(
+                            onPressed: () => pickLogo(setModalState),
+                            child: const Text('Seleccionar logo PNG'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     TextField(
                       autofocus: true,
@@ -1258,7 +1259,7 @@ void _showSettingsModal() {
                       _NavItem(
                         icon: Icons.admin_panel_settings_rounded,
                         title: 'Usuarios',
-                        onTap: _showUsersPanelModal,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersPanelScreen())),
                         isCollapsed: _isSidebarCollapsed,
                       ),
 
@@ -1282,7 +1283,7 @@ void _showSettingsModal() {
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Divider(color: Colors.white10),
                   ),
-                  if (_isAdmin)
+                  if (_isAdmin || _isMaster)
 
                     //Reports button 
                     Showcase(
