@@ -6,6 +6,7 @@ import '../../sales/screens/payments_screen.dart';
 import '../services/reports_service.dart';
 import 'reports_screen.dart';
 import 'package:pv26/core/utils/currency_formatter.dart';
+import '../services/branches_service.dart';
 
 class BranchesScreen extends StatefulWidget {
   const BranchesScreen({super.key});
@@ -16,7 +17,6 @@ class BranchesScreen extends StatefulWidget {
 
 class _BranchesScreenState extends State<BranchesScreen> {
   List<dynamic> _branches = [];
-  Map<String, double> _dailySales = {}; // branchId -> dailyTotal
   bool _isLoading = false;
 
   @override
@@ -28,49 +28,34 @@ class _BranchesScreenState extends State<BranchesScreen> {
   Future<void> _loadBranches() async {
     setState(() => _isLoading = true);
     
-    final result = await ReportsService.getBranches();
-    
-    if (mounted) {
-      if (result['success'] && (result['data'] as List).isNotEmpty) {
+    final result = await BranchesService.getLocations();
+
+      if (!mounted) return;
+
+      final data = result['data'];
+
+   
+      if (result['success'] == true &&
+          data is Map &&
+          data['locations'] is List &&
+          (data['locations'] as List).isNotEmpty) {
+
         setState(() {
-          _branches = result['data'];
+          _branches = List.from(data['locations']);
           _isLoading = false;
         });
+
       } else {
-        // Fallback to test data if empty
         setState(() {
-          _branches = [
-            {'_id': 'b1', 'name': 'Sucursal Centro', 'location': 'Av. Reforma 123, CDMX'},
-            {'_id': 'b2', 'name': 'Sucursal Poniente', 'location': 'Plaza Satélite, EdoMex'},
-            {'_id': 'b3', 'name': 'Sucursal Norte', 'location': 'Torres de Satélite'},
-          ];
+          _branches = [];
           _isLoading = false;
         });
-      }
       
-      // Fetch daily sales for each branch
-      for (var branch in _branches) {
-        final branchId = branch['_id'] ?? branch['id'];
-        if (branchId != null) {
-          _loadDailySales(branchId.toString());
-        }
-      }
+    
     }
   }
 
-  Future<void> _loadDailySales(String branchId) async {
-    final report = await ReportsService.getReport(
-      period: 'day',
-      branchId: branchId,
-    );
 
-    if (mounted && report['success']) {
-      final total = report['data']['actualReport']['totalSales'] ?? 0.0;
-      setState(() {
-        _dailySales[branchId] = total.toDouble();
-      });
-    }
-  }
 
   String _f(double value) => CurrencyFormatter.format(value);
 
@@ -122,8 +107,9 @@ class _BranchesScreenState extends State<BranchesScreen> {
                           itemBuilder: (context, index) {
                             final branch = _branches[index];
                             final branchId = (branch['_id'] ?? branch['id']).toString();
-                            final dailyTotal = _dailySales[branchId] ?? 0.0;
-                            
+                            final dailyTotal =  (branch['todaySalesTotal'] ?? 0).toDouble();
+                             
+                          
                             // Assign consistent colors/icons for design
                             final List<Color> colors = [Colors.blueAccent, const Color(0xFF05e265), Colors.orangeAccent, Colors.purpleAccent];
                             final color = colors[index % colors.length];
@@ -170,7 +156,7 @@ class _BranchesScreenState extends State<BranchesScreen> {
                                               ),
                                             ),
                                             Text(
-                                              branch['location'] ?? 'Sin ubicación',
+                                              branch['address'] ?? 'Sin ubicación',
                                               style: GoogleFonts.outfit(
                                                 fontSize: 13,
                                                 color: theme.colorScheme.onSurface.withOpacity(0.5),

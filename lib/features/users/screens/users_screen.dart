@@ -215,14 +215,14 @@ class _UsersScreenState extends State<UsersScreen> {
             name: nameController.text,
             email: emailController.text,
             role: selectedRole == 'Administrador' ? 'admin' : 'seller',
-            sucursal: sucursalController.text,
+            currentLocation: sucursalController.text,
           );
         } else {
           result = await UsersService.createUser(
             name: nameController.text,
             email: emailController.text,
             role: selectedRole == 'Administrador' ? 'admin' : 'seller',
-            sucursal: sucursalController.text,
+            currentLocation: sucursalController.text,
           );
         }
 

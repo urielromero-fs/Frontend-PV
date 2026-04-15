@@ -336,7 +336,6 @@ class _EditProductDialogState extends State<EditProductDialog> {
                               final qty = p['quantity'] ?? 1;
 
 
-                              print(p); 
 
                               return ListTile(
                                 title: Text(p['product']['name'] ?? '', style: GoogleFonts.poppins(fontSize: 14)),

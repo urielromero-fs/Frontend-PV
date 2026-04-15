@@ -799,7 +799,7 @@ void _showSettingsModal() {
           name: nameController.text,
           email: emailController.text,
           role: selectedRole == 'Administrador' ? 'admin' : 'seller',
-          sucursal: sucursalController.text,
+          currentLocation: sucursalController.text,
         );
 
         if (mounted) {

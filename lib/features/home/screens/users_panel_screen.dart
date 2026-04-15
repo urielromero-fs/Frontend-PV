@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pv26/features/users/services/users_service.dart';
 import 'package:pv26/features/reports/services/reports_service.dart';
+import 'package:pv26/features/reports/services/branches_service.dart';
 
 class UsersPanelScreen extends StatefulWidget {
   const UsersPanelScreen({super.key});
@@ -124,7 +125,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
           name: nameController.text,
           email: emailController.text,
           role: selectedRole == 'Administrador' ? 'admin' : 'seller',
-          sucursal: selectedBranch ?? 'Principal',
+          currentLocation: selectedBranch ?? 'Principal',
         );
 
         if (mounted) {
@@ -307,7 +308,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
         name: nameController.text,
         email: emailController.text,
         role: selectedRole == 'Administrador' ? 'admin' : 'seller',
-        sucursal: selectedBranch,
+        currentLocation: selectedBranch,
       );
 
       if (mounted) {
@@ -445,49 +446,173 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
     );
   }
 
+  // void _showBranchForm() {
+
+  //   final TextEditingController nameController = TextEditingController();
+  //   final TextEditingController addressController = TextEditingController();
+  //   bool isLoading = false;
+
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       backgroundColor: Theme.of(context).cardColor,
+  //       title: Text('Nueva Sucursal',
+  //           style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+  //       content: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         children: [
+  //           TextField(
+  //             decoration: InputDecoration(
+  //               labelText: 'Nombre de la Sucursal',
+  //               border: OutlineInputBorder(
+  //                   borderRadius: BorderRadius.circular(12)),
+  //             ),
+  //           ),
+  //           const SizedBox(height: 16),
+  //           TextField(
+  //             decoration: InputDecoration(
+  //               labelText: 'Ubicación / Dirección',
+  //               border: OutlineInputBorder(
+  //                   borderRadius: BorderRadius.circular(12)),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //             onPressed: () => Navigator.pop(context),
+  //             child: const Text('Cancelar')),
+  //         ElevatedButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           style: ElevatedButton.styleFrom(
+  //               backgroundColor: Colors.blueAccent),
+  //           child:
+  //               const Text('Crear', style: TextStyle(color: Colors.white)),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+
   void _showBranchForm() {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController addressController = TextEditingController();
+    bool isLoading = false;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardColor,
-        title: Text('Nueva Sucursal',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Nombre de la Sucursal',
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Theme.of(context).cardColor,
+              title: Text(
+                'Nueva Sucursal',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Ubicación / Dirección',
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nombre de la Sucursal',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: addressController,
+                    decoration: InputDecoration(
+                      labelText: 'Ubicación / Dirección',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent),
-            child:
-                const Text('Crear', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          final name = nameController.text.trim();
+                          final address = addressController.text.trim();
+
+                          // 🔴 Validación
+                          if (name.isEmpty || address.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Completa todos los campos'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          // 🔄 Loading ON
+                          setState(() => isLoading = true);
+
+                          final result =
+                              await BranchesService.createLocation(
+                            name: name,
+                            address: address,
+                          );
+
+                          // 🔄 Loading OFF
+                          setState(() => isLoading = false);
+
+                          Navigator.pop(context);
+
+                          // ✅ Feedback
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result['message']),
+                              backgroundColor: result['success']
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          );
+
+                          // 🔁 Opcional: refrescar lista
+                          if (result['success']) {
+                            // _loadLocations(); // si tienes lista de sucursales
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Crear',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -514,17 +639,44 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
             const SizedBox(height: 20),
 
             // Action card
-            SizedBox(
-              width: 320,
-              child: _PanelCard(
-                title: 'Crear Usuario',
-                icon: Icons.person_add_rounded,
-                color: const Color(0xFF05e265),
-                onTap: _showUserForm,
-              ),
+            // SizedBox(
+            //   width: 320,
+            //   child: _PanelCard(
+            //     title: 'Crear Usuario',
+            //     icon: Icons.person_add_rounded,
+            //     color: const Color(0xFF05e265),
+            //     onTap: _showUserForm,
+            //   ),
+            // ),
+
+            // const SizedBox(height: 28),
+
+            Row(
+              children: [
+                SizedBox(
+                  width: 320,
+                  child: _PanelCard(
+                    title: 'Crear Usuario',
+                    icon: Icons.person_add_rounded,
+                    color: const Color(0xFF05e265),
+                    onTap: _showUserForm,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                SizedBox(
+                  width: 320,
+                  child: _PanelCard(
+                    title: 'Crear Sucursal',
+                    icon: Icons.store_rounded,
+                    color: Colors.blueAccent,
+                    onTap: _showBranchForm,
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 28),
+
 
             // Users list header
             Row(
@@ -594,6 +746,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
       ),
     );
   }
+  
   Widget _buildUserList(ThemeData theme) {
     final filteredUsers = _users.where((user) {
       final name = (user['name'] ?? '').toString().toLowerCase();
