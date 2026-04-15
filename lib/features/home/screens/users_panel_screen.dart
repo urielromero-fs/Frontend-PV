@@ -1,9 +1,12 @@
+
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pv26/features/users/services/users_service.dart';
 import 'package:pv26/features/reports/services/reports_service.dart';
 import 'package:pv26/features/reports/services/branches_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UsersPanelScreen extends StatefulWidget {
   const UsersPanelScreen({super.key});
@@ -18,6 +21,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
   bool _isLoadingBranches = false;
   bool _isLoadingUsers = false;
 
+
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -26,31 +30,41 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
     super.initState();
     _loadBranches();
     _loadUsers();
+   
   }
+
+
 
   Future<void> _loadBranches() async {
     setState(() => _isLoadingBranches = true);
-    final result = await ReportsService.getBranches();
-    if (mounted) {
-      final List<dynamic> fetchedBranches = (result['success'] && result['data'] is List) 
-          ? result['data'] 
-          : [];
 
-      if (fetchedBranches.isNotEmpty) {
+    final result = await BranchesService.getLocations();
+
+    if (!mounted) return;
+
+    final data = result['data'];
+
+     if (result['success'] == true &&
+          data is Map &&
+          data['locations'] is List &&
+          (data['locations'] as List).isNotEmpty) {
+
         setState(() {
-          _branches = fetchedBranches;
-          _isLoadingBranches = false;
+          _branches = List.from(data['locations']);
+           _isLoadingBranches = false; 
         });
+      
       } else {
         setState(() {
-          _branches = [
-            {'name': 'Sucursal Centro'},
-            {'name': 'Sucursal Poniente'},
-          ];
-          _isLoadingBranches = false;
+          _branches = [];
+         _isLoadingBranches = false;
         });
-      }
+      
+    
     }
+
+
+
   }
 
   Future<void> _loadUsers() async {
@@ -107,11 +121,24 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
   }
 
   void _showUserForm() {
+
+
+    if (_branches.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Primero debes crear al menos una sucursal'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
     final nameController = TextEditingController();
     final emailController = TextEditingController();
     String? selectedBranch;
+    String? selectedBranchId;
     if (_branches.isNotEmpty) {
       selectedBranch = _branches[0]['name'];
+      selectedBranchId = _branches[0]['_id'];
     }
     String selectedRole = 'Cajero';
     bool isSubmitting = false;
@@ -125,7 +152,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
           name: nameController.text,
           email: emailController.text,
           role: selectedRole == 'Administrador' ? 'admin' : 'seller',
-          currentLocation: selectedBranch ?? 'Principal',
+          currentLocation: selectedBranchId ?? 'Principal',
         );
 
         if (mounted) {
@@ -550,7 +577,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                           final name = nameController.text.trim();
                           final address = addressController.text.trim();
 
-                          // 🔴 Validación
+                          // Validación
                           if (name.isEmpty || address.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -560,7 +587,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                             return;
                           }
 
-                          // 🔄 Loading ON
+                          //  Loading ON
                           setState(() => isLoading = true);
 
                           final result =
@@ -569,12 +596,12 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                             address: address,
                           );
 
-                          // 🔄 Loading OFF
+                          // Loading OFF
                           setState(() => isLoading = false);
 
                           Navigator.pop(context);
 
-                          // ✅ Feedback
+                          // Feedback
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(result['message']),
@@ -584,9 +611,9 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                             ),
                           );
 
-                          // 🔁 Opcional: refrescar lista
+                          // lista
                           if (result['success']) {
-                            // _loadLocations(); // si tienes lista de sucursales
+                             await _loadBranches();
                           }
                         },
                   style: ElevatedButton.styleFrom(
@@ -613,6 +640,8 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
       },
     );
   }
+  
+  
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -638,18 +667,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Action card
-            // SizedBox(
-            //   width: 320,
-            //   child: _PanelCard(
-            //     title: 'Crear Usuario',
-            //     icon: Icons.person_add_rounded,
-            //     color: const Color(0xFF05e265),
-            //     onTap: _showUserForm,
-            //   ),
-            // ),
 
-            // const SizedBox(height: 28),
 
             Row(
               children: [

@@ -13,6 +13,8 @@
     static const String _baseUrl = 'https://punto-de-venta-mu.vercel.app/api';
     static const String _userOnboardingKey = 'user_onboarding';
     static const String _userLogoKey = 'user_logo';
+    static const String _userLocations = 'user_locations';
+    static const String _userCurrentLocation = 'user_current_location';
 
 
     // Register with real API call
@@ -101,6 +103,8 @@
           final userEmail = userData['email'] ?? email;
           final userRole = userData['role'] ?? 'cajero'; 
           final userLogo = userData['logoUrl'] ?? '';
+          final userLocations = userData['locations'] ?? [];
+          final userCurrentLocation = userData['currentLocation'] ?? '';
 
           final onboardingStatus = userData['onboarding'] ?? {
             'isCompleted': false,
@@ -122,6 +126,8 @@
           await prefs.setString(_userRoleKey, userRole);
           await prefs.setString(_userOnboardingKey, jsonEncode(onboardingStatus));
           await prefs.setString(_userLogoKey, userLogo);
+          await prefs.setString(_userLocations, jsonEncode(userLocations));
+          await prefs.setString(_userCurrentLocation, userCurrentLocation);
 
        
 
