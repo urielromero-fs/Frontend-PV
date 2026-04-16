@@ -70,10 +70,17 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
   Future<void> _loadUsers() async {
     setState(() => _isLoadingUsers = true);
     final result = await UsersService.getUsers();
+
+
+    final data = result['data'];
+    
     if (mounted) {
-      final List<dynamic> fetchedUsers = (result['success'] && result['data'] is List) 
-          ? result['data'] 
+      final List<dynamic> fetchedUsers = (result['success'] && data['users'] is List) 
+          ? data['users'] 
           : [];
+
+
+      print(fetchedUsers);
 
       if (fetchedUsers.isNotEmpty) {
         setState(() {
@@ -83,11 +90,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
       } else {
         // Fallback or Dummy data
         setState(() {
-          _users = [
-            {'_id': 'u1', 'name': 'Uriel Romero', 'email': 'uriel@ejemplo.com', 'role': 'admin', 'sucursal': 'Sucursal Centro'},
-            {'_id': 'u2', 'name': 'Carlos Pérez', 'email': 'carlos@ejemplo.com', 'role': 'seller', 'sucursal': 'Sucursal Poniente'},
-            {'_id': 'u3', 'name': 'Ana García', 'email': 'ana@ejemplo.com', 'role': 'seller', 'sucursal': 'Sucursal Centro'},
-          ];
+          _users = [];
           _isLoadingUsers = false;
         });
       }
@@ -249,8 +252,18 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                                     child: Text(branch['name'].toString()),
                                   ))
                               .toList(),
-                          onChanged: (val) =>
-                              setModalState(() => selectedBranch = val),
+                          // onChanged: (val) =>
+                          //     setModalState(() => selectedBranch = val),
+                          onChanged: (val) {
+                            final branch = _branches.firstWhere(
+                              (b) => b['name'].toString() == val,
+                            );
+
+                            setModalState(() {
+                              selectedBranch = val;
+                              selectedBranchId = branch['_id'];
+                            });
+                          },
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
@@ -317,11 +330,14 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
     String selectedRole =
         currentRole == 'admin' ? 'Administrador' : 'Cajero';
 
-    String? selectedBranch = user['sucursal']?.toString();
+    String? selectedBranch = user['currentLocation']['name']?.toString();
+     String? selectedBranchId;
     // If branch not found in list, fallback to first
     if (_branches.isNotEmpty &&
         !_branches.any((b) => b['name'] == selectedBranch)) {
       selectedBranch = _branches[0]['name'];
+      selectedBranchId = _branches[0]['_id'];
+      
     }
 
     bool isSubmitting = false;
@@ -335,7 +351,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
         name: nameController.text,
         email: emailController.text,
         role: selectedRole == 'Administrador' ? 'admin' : 'seller',
-        currentLocation: selectedBranch,
+        currentLocation: selectedBranchId,
       );
 
       if (mounted) {
@@ -419,8 +435,18 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                                 child: Text(branch['name'].toString()),
                               ))
                           .toList(),
-                      onChanged: (val) =>
-                          setModalState(() => selectedBranch = val),
+                      // onChanged: (val) =>
+                      //     setModalState(() => selectedBranch = val),
+                         onChanged: (val) {
+                            final branch = _branches.firstWhere(
+                              (b) => b['name'].toString() == val,
+                            );
+
+                            setModalState(() {
+                              selectedBranch = val;
+                              selectedBranchId = branch['_id'];
+                            });
+                          },
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
@@ -769,7 +795,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
     final filteredUsers = _users.where((user) {
       final name = (user['name'] ?? '').toString().toLowerCase();
       final email = (user['email'] ?? '').toString().toLowerCase();
-      final sucursal = (user['sucursal'] ?? '').toString().toLowerCase();
+      final sucursal = (user['currentLocation']['name'] ?? '').toString().toLowerCase();
       final query = _searchQuery.toLowerCase();
       return name.contains(query) ||
           email.contains(query) ||
@@ -804,7 +830,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
         final role = user['role']?.toString();
         final name = user['name']?.toString() ?? 'Sin nombre';
         final email = user['email']?.toString() ?? '';
-        final sucursal = user['sucursal']?.toString() ?? '—';
+        final sucursal = user['currentLocation']['name']?.toString() ?? '—';
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
