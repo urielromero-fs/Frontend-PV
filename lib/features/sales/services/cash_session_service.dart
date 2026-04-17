@@ -3,13 +3,26 @@ import 'package:pv26/core/network/api_helper.dart';
 
 class CashSessionService {
   // Open cash session
-  static Future<Map<String, dynamic>> startSession(double openingAmount) async {
+  static Future<Map<String, dynamic>> startSession(
+    double openingAmount, 
+    String locationId
+
+    ) async {
     try {
+
+      print({
+        'openingAmount': openingAmount,
+        'locationId': locationId
+      });
+
       final response = await ApiHelper.request(
         method: 'POST',
-        path: '/cash-sessions/open',
+        path: '/cash-sessions/open/$locationId',
         body: {'openingAmount': openingAmount},
-      );
+      );  
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
@@ -65,12 +78,16 @@ class CashSessionService {
   }
 
   // Get current open session
-  static Future<Map<String, dynamic>> getOpenSession() async {
+  static Future<Map<String, dynamic>> getOpenSession(String locationId) async {
     try {
+
+      print(locationId);
       final response = await ApiHelper.request(
         method: 'GET',
-        path: '/cash-sessions/open',
+        path: '/cash-sessions/open/$locationId',
       );
+
+      print(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);

@@ -7,6 +7,7 @@ class SaleService {
     required List<Map<String, dynamic>> products,
     String? paymentMethod,
     double? discount,
+    required String locationId, 
   }) async {
     try {
 
@@ -17,6 +18,7 @@ class SaleService {
         path: '/sale',
         body: {
           'products': products,
+          'locationId': locationId,
           if (paymentMethod != null) 'paymentMethod': paymentMethod,
           if (discount != null) 'discount': discount,
           'date': ahora.toString()

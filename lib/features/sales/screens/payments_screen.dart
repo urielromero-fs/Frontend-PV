@@ -24,7 +24,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../users/services/users_service.dart'; 
-
+import 'package:pv26/features/auth/services/auth_service.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_beep/flutter_beep.dart';
@@ -43,6 +43,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   final FocusNode _searchFocusNode = FocusNode();
   String _barcodeBuffer = '';
   DateTime? _lastKeyPress;
+  String _locationId = ''; 
 
 
   //Filtro
@@ -219,6 +220,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
     super.initState();
 
     _loadUserLogo(); 
+   // _loadUserLocation(); 
 
    
       loadTickets().then((_) {
@@ -239,6 +241,20 @@ class _PaymentsScreenState extends State<PaymentsScreen>
         FocusScope.of(context).requestFocus(_scannerFocusNode);
       });
   }
+
+      
+      
+
+
+
+
+    Future<void> _loadUserLocation() async {
+      final location = await AuthService.getCurrentUserLocation();
+      setState(() {
+        _locationId = location ?? '';
+      });
+    }
+
 
   Future<void> _loadUserLogo() async {
     final prefs = await SharedPreferences.getInstance();
@@ -356,9 +372,15 @@ Future<void> loadTickets() async {
 
  
   Future<void> _initAllAsync() async {
+    await _loadUserLocation(); 
     await _initCashSession();   // espera a que la sesión de caja se inicialice
     await _loadOnboarding();    // carga los datos de onboarding desde SharedPreferences
-    await _initOnboarding();    // decide si mostrar el Showcase
+    await _initOnboarding(); 
+    
+    
+    Provider.of<ProductProvider>(context, listen: false)
+          .fetchProducts(branchId: _locationId);
+      // decide si mostrar el Showcase
   }
 
   Future<void> _loadOnboarding() async {
@@ -419,7 +441,7 @@ Future<void> loadTickets() async {
 
 
   Future<void> _checkOpenSession() async {
-    final result = await CashSessionService.getOpenSession();
+    final result = await CashSessionService.getOpenSession(_locationId);
     if (!result['success']) {
       return;
     }
@@ -463,13 +485,14 @@ Future<void> loadTickets() async {
         products: productsPayload,
         paymentMethod: currentTicket.paymentMethod,
         discount: currentTicket.discount,
+        locationId: _locationId,
       );
 
       Navigator.pop(context);
 
       if (result['success']) {
         await Provider.of<ProductProvider>(context, listen: false)
-            .fetchProducts();
+            .fetchProducts(branchId: _locationId);
 
         final ticketItems = List<CartItem>.from(currentTicket.items);
         final ticketTotal = currentTicket.total;
@@ -685,7 +708,7 @@ Future<void> loadTickets() async {
             onPressed: () async {
               final amount = double.tryParse(amountController.text.replaceAll(",", "")) ?? 0.0;
               setState(() => _isLoadingSession = true);
-              final result = await CashSessionService.startSession(amount);
+              final result = await CashSessionService.startSession(amount, _locationId);
               setState(() => _isLoadingSession = false);
               if (result['success']) {
                 final data = result['data'];
@@ -2672,7 +2695,7 @@ Future<void> loadTickets() async {
       builder: (context) => AddStockDialog(
         product: product,
         onSaved: () =>
-            Provider.of<ProductProvider>(context, listen: false).fetchProducts(),
+            Provider.of<ProductProvider>(context, listen: false).fetchProducts(branchId: _locationId),
       ),
     );
   }
