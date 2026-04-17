@@ -285,6 +285,12 @@
     return prefs.getString(_userRoleKey);
   }
 
+    // Get current user role
+  static Future<String?> getCurrentUserLocation() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userCurrentLocation);
+  }
+
   // Get user data object
   static Future<Map<String, String>?> getCurrentUserData() async {
     final prefs = await SharedPreferences.getInstance();

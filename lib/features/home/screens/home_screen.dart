@@ -165,8 +165,10 @@ class _HomeScreenState extends State<HomeScreen> {
   
   Future<void> _loadMetrics() async{
 
+     final location = await AuthService.getCurrentUserLocation(); 
 
-    final result = await ReportsService.getReport(period: 'day');
+
+    final result = await ReportsService.getReport(period: 'day', mode: 'period', locationId: location );
 
 
     if(result['success']){

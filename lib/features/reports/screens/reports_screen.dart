@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../users/services/users_service.dart'; 
 import '../services/branches_service.dart';
+import 'package:pv26/features/auth/services/auth_service.dart';
 
 class ReportsScreen extends StatefulWidget {
   final bool showBranchFilter;
@@ -54,8 +55,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     super.initState();
 
-    _selectedBranchId = widget.branchId ?? 'all';
+    // _selectedBranchId = widget.branchId ?? 'all';
     _selectedBranchName = widget.branchName ?? 'Global';
+     
 
 
     _loadOnboarding().then((_) {
@@ -66,9 +68,34 @@ class _ReportsScreenState extends State<ReportsScreen> {
       _loadBranches();
     }
     
-    _loadMetrics(_selectedPeriod); 
+   // _loadMetrics(_selectedPeriod); 
+   _initBranch();
 
   }
+
+  Future<void> _initBranch() async {
+    await _resolveBranch();
+
+    _loadMetrics(_selectedPeriod);
+  }
+
+  Future<void> _resolveBranch() async {
+      final widgetBranch = widget.branchId;
+
+      if (widgetBranch != null && widgetBranch.isNotEmpty) {
+        _selectedBranchId = widgetBranch;
+        return;
+      }
+
+      final location = await AuthService.getCurrentUserLocation();
+
+      if (location != null && location.isNotEmpty) {
+       _selectedBranchId = location;
+        return;
+      }
+
+      _selectedBranchId = 'all';
+    }
 
   Future<void> _loadBranches() async {
     setState(() => _isLoadingBranches = true);

@@ -112,18 +112,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     _loadUserRole();
 
-    branchId = widget.branchId;
+     _initBranch();
 
-    Future.microtask(() {
+
+
+
+  }
+
+  Future<void> _initBranch() async {
+      if (widget.branchId != null) {
+        branchId = widget.branchId;
+      } else {
+        branchId = await AuthService.getCurrentUserLocation();
+      }
+
+      print('BranchId listo: $branchId');
+
       Provider.of<ProductProvider>(context, listen: false)
           .fetchProducts(branchId: branchId);
-    });
-
-    print('BranchId recibido: $branchId');
-
-
-
-
   }
 
   
@@ -188,6 +194,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
       _userRole = role ?? 'cajero';
     });
   }
+
+
 
   @override
   void dispose() {
