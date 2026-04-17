@@ -9,7 +9,8 @@ import '../../../core/utils/currency_formatter.dart';
 
 class AddProductDialog extends StatefulWidget {
   final VoidCallback onProductAdded;
-  const AddProductDialog({super.key, required this.onProductAdded});
+  final String? branchId; 
+  const AddProductDialog({super.key, required this.onProductAdded,this.branchId});
   @override
   State<AddProductDialog> createState() => _AddProductDialogState();
 }
@@ -92,6 +93,7 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
       wholesalePrice: double.tryParse(mayoreoController.text.replaceAll(",", "")) ?? 0.0,
       wholesaleMinUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
       isPackage: false,
+      locationId: widget.branchId,
     );
     setState(() {
       isLoading = false;
@@ -153,6 +155,7 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
       wholesaleMinUnits: 0,
       isPackage: true,
       packageContents: selectedPackageProducts,
+      locationId: widget.branchId,
     );
 
     setState(() {

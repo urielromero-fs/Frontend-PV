@@ -6,10 +6,18 @@ import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../users/services/users_service.dart'; 
+import '../services/branches_service.dart';
 
 class ReportsScreen extends StatefulWidget {
   final bool showBranchFilter;
-  const ReportsScreen({super.key, this.showBranchFilter = false});
+  final String? branchId; 
+  final String? branchName; 
+  const ReportsScreen({
+    super.key, 
+    this.showBranchFilter = false, 
+    this.branchId, 
+    this.branchName});
+  
 
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
@@ -46,6 +54,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     super.initState();
 
+    _selectedBranchId = widget.branchId ?? 'all';
+    _selectedBranchName = widget.branchName ?? 'Global';
+
+
     _loadOnboarding().then((_) {
       _initOnboarding(); 
     });
@@ -60,14 +72,29 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Future<void> _loadBranches() async {
     setState(() => _isLoadingBranches = true);
-    final result = await ReportsService.getBranches();
-    if (mounted) {
-      setState(() {
-        _isLoadingBranches = false;
-        if (result['success']) {
-          _branches = result['data'];
-        }
-      });
+    final result = await BranchesService.getLocations();
+
+    if (!mounted) return;
+
+    final data = result['data'];
+
+     if (result['success'] == true &&
+          data is Map &&
+          data['locations'] is List &&
+          (data['locations'] as List).isNotEmpty) {
+
+        setState(() {
+          _branches = List.from(data['locations']);
+           _isLoadingBranches = false; 
+        });
+      
+      } else {
+        setState(() {
+          _branches = [];
+         _isLoadingBranches = false;
+        });
+      
+    
     }
   }
   
@@ -129,12 +156,30 @@ class _ReportsScreenState extends State<ReportsScreen> {
       'Este Mes': 'month',
     }; 
 
+     bool isSameDay(DateTime a, DateTime b) {
+      return a.year == b.year &&
+            a.month == b.month &&
+            a.day == b.day;
+    }
+
+     final String mode = (_selectedDate != null &&
+          !isSameDay(_selectedDate!, DateTime.now()))
+      ? 'date'
+      : 'period'; 
+
+
+    
+
+
 
     final result = await ReportsService.getReport(
       period: days[period],
-      branchId: _selectedBranchId,
+      locationId: _selectedBranchId,
       date: _selectedDate,
+      mode: mode
     );
+
+    //print("Reporte obtenido: $result");
 
 
     if(result['success']){
@@ -143,8 +188,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
 
       final data = result['data'] ?? {};
-      final actualReport = data['actualReport'] as Map<String, dynamic>? ?? {};
-      final growth = data['growth'] as Map<String, dynamic>? ?? {};
+      // final actualReport = data['actualReport'] as Map<String, dynamic>? ?? {};
+      // final growth = data['growth'] as Map<String, dynamic>? ?? {};
+      final actualReport = data['actualReport'] != null
+          ? Map<String, dynamic>.from(data['actualReport'])
+          : {};
+
+      final growth = data['growth'] != null
+          ? Map<String, dynamic>.from(data['growth'])
+          : {};
 
       String formatCurrency(dynamic value) {
         if (value == null) return '\$0';
@@ -168,18 +220,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
 
            
-      List<Map<String, dynamic>> salesWeekData = [];
+      // List<Map<String, dynamic>> salesWeekData = [];
 
-      final rawSalesWeek = data['salesWeek'];
-      if (rawSalesWeek != null && rawSalesWeek is List) {
-        salesWeekData = rawSalesWeek.map<Map<String, dynamic>>((e) {
-          final map = e as Map<String, dynamic>? ?? {};
-          return {
-            'day': map['day']?.toString() ?? '',
-            'total': map['total'] ?? 0,
-          };
-        }).toList();
-      }
+      // final rawSalesWeek = data['salesWeek'];
+      // if (rawSalesWeek != null && rawSalesWeek is List) {
+      //   salesWeekData = rawSalesWeek.map<Map<String, dynamic>>((e) {
+      //     final map = e as Map<String, dynamic>? ?? {};
+      //     return {
+      //       'day': map['day']?.toString() ?? '',
+      //       'total': map['total'] ?? 0,
+      //     };
+      //   }).toList();
+      // }
 
       Map<String, dynamic> mappedData = {
         'ventas': formatCurrency(actualReport['totalSales']),
@@ -190,7 +242,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         'ordenes_change': formatChange(growth['ordersGrowth']),
         'products_change': formatChange(growth['productsGrowth'] ?? 0),
         'ticket_change': formatChange(growth['ticketGrowth']),
-        'salesWeek': salesWeekData,
+        //'salesWeek': salesWeekData,
         'categoryCount': actualReport['categoryCount'] ?? {},
       };
 
@@ -331,14 +383,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 title: Text(
                   'Todas las Sucursales (Global)',
                   style: GoogleFonts.poppins(
-                    color: _selectedBranchId == null ? const Color(0xFF2196F3) : Theme.of(context).colorScheme.onSurface,
-                    fontWeight: _selectedBranchId == null ? FontWeight.bold : FontWeight.normal,
+                    color: _selectedBranchId == 'all' ? const Color(0xFF2196F3) : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: _selectedBranchId == 'all' ? FontWeight.bold : FontWeight.normal,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 onTap: () {
                   setState(() {
-                    _selectedBranchId = null;
+                    _selectedBranchId = 'all';
                     _selectedBranchName = 'Global';
                   });
                   _loadMetrics(_selectedPeriod);
@@ -349,14 +401,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 title: Text(
                   branch['name'] ?? 'Sucursal sin nombre',
                   style: GoogleFonts.poppins(
-                    color: _selectedBranchId == branch['id'].toString() ? const Color(0xFF2196F3) : Theme.of(context).colorScheme.onSurface,
-                    fontWeight: _selectedBranchId == branch['id'].toString() ? FontWeight.bold : FontWeight.normal,
+                    color: _selectedBranchId == branch['_id'].toString() ? const Color(0xFF2196F3) : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: _selectedBranchId == branch['_id'].toString() ? FontWeight.bold : FontWeight.normal,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 onTap: () {
                   setState(() {
-                    _selectedBranchId = branch['id'].toString();
+                    _selectedBranchId = branch['_id'].toString();
                     _selectedBranchName = branch['name'];
                   });
                   _loadMetrics(_selectedPeriod);

@@ -10,16 +10,22 @@ class ReportsService {
    
     //Get report 
     static Future<Map<String, dynamic>> getReport({
-      required String period,
-      String? branchId,
+      String? period,
+      String? locationId,
       DateTime? date,
+      String? mode, 
     })async {
 
       try{
 
          DateTime fechaConsulta = date ?? DateTime.now();
 
-  
+         print({
+          'date': fechaConsulta.toIso8601String().split('T')[0], 
+          'period': period, 
+          'locationId': locationId, 
+          'mode': mode
+         });
 
         final response = await ApiHelper.request(
           method: 'POST', 
@@ -27,9 +33,15 @@ class ReportsService {
           body: {
             'date': fechaConsulta.toIso8601String().split('T')[0], 
             'period': period,
-            if (branchId != null) 'branchId': branchId,
+            if (locationId != null) 'locationId': locationId,
+            if (mode != null) 'mode': mode,
+
           }
         ); 
+
+
+
+        print(response.body);
 
 
        

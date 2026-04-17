@@ -21,7 +21,8 @@ import '../../users/services/users_service.dart';
 import 'dart:async';
 
 class InventoryScreen extends StatefulWidget {
-  const InventoryScreen({super.key});
+  final String? branchId; 
+  const InventoryScreen({super.key,this.branchId});
   @override
   State<InventoryScreen> createState() => _InventoryScreenState();
 }
@@ -48,6 +49,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
     'Bajo Stock',
     'Sin Stock',
   ];
+
+
 
   final List<String> categoryFilters = [
     'Todas',
@@ -91,6 +94,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
     };
 
   final FocusNode _searchFocusNode = FocusNode();
+  
+  String? branchId; 
 
 
 
@@ -106,6 +111,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
     });
 
     _loadUserRole();
+
+    branchId = widget.branchId;
+
+    Future.microtask(() {
+      Provider.of<ProductProvider>(context, listen: false)
+          .fetchProducts(branchId: branchId);
+    });
+
+    print('BranchId recibido: $branchId');
 
 
 
@@ -181,44 +195,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     super.dispose();
   }
 
-  // void _handleKeyEvent(KeyEvent event) {
-  //   if (event is KeyDownEvent) {
-  //     final now = DateTime.now();
 
-  //     // Detectamos si el foco actual NO es un TextField/EditableText
-  //     // Para no interferir si el usuario ya está escribiendo manualmente o si el scanner ya está escribiendo en el buscador
-  //     final primaryFocus = FocusManager.instance.primaryFocus;
-  //     bool isInputFocused = primaryFocus != null && 
-  //                           primaryFocus != _keyboardFocusNode &&
-  //                           (primaryFocus.children.isEmpty); // Simple heurística: los campos de texto suelen ser nodos hoja o manejados diferente
-
-  //     // En Flutter, si el primaryFocus es el nodo del TextField, no queremos duplicar datos en nuestro buffer global
-  //     // if (primaryFocus != null && primaryFocus.debugLabel != null && primaryFocus.debugLabel!.contains('EditableText')) {
-  //     //   _barcodeBuffer = '';
-  //     //   return;
-  //     // }
-
-  //     if (now.difference(_lastKeyEventTime).inMilliseconds > 100) {
-  //       _barcodeBuffer = '';
-  //     }
-  //     _lastKeyEventTime = now;
-
-  //     if (event.logicalKey == LogicalKeyboardKey.enter) {
-  //       if (_barcodeBuffer.isNotEmpty) {
-  //         setState(() {
-  //           searchQuery = _barcodeBuffer;
-  //           searchController.text = _barcodeBuffer;
-  //           _barcodeBuffer = '';
-  //         });
-  //       }
-  //     } else {
-  //       final character = event.character;
-  //       if (character != null && character.isNotEmpty) {
-  //         _barcodeBuffer += character;
-  //       }
-  //     }
-  //   }
-  // }
   
 void _handleKeyEvent(KeyEvent event) {
   if (event is! KeyDownEvent) return;
@@ -362,7 +339,7 @@ void _handleKeyEvent(KeyEvent event) {
                           child:  
                                  IconButton(
                                   icon: const Icon(Icons.refresh),
-                                  onPressed: () => provider.fetchProducts(),
+                                  onPressed: () => provider.fetchProducts(branchId: branchId),
                                 ),
 
                   ),
@@ -715,7 +692,7 @@ void _handleKeyEvent(KeyEvent event) {
       builder: (context) => AddStockDialog(
         product: product,
         onSaved: () =>
-            Provider.of<ProductProvider>(context, listen: false).fetchProducts(),
+            Provider.of<ProductProvider>(context, listen: false).fetchProducts(branchId: branchId),
       ),
     );
   }
@@ -725,8 +702,9 @@ void _handleKeyEvent(KeyEvent event) {
       builder: (_) => AddProductDialog(
         onProductAdded: () {
           final provider = Provider.of<ProductProvider>(context, listen: false);
-          provider.fetchProducts();
+          provider.fetchProducts(branchId: branchId);
         },
+        branchId: branchId,
       ),
     );
   }
@@ -737,7 +715,7 @@ void _handleKeyEvent(KeyEvent event) {
         product: product,
         onProductUpdated: () {
           final provider = Provider.of<ProductProvider>(context, listen: false);
-          provider.fetchProducts();
+          provider.fetchProducts(branchId: branchId);
         },
       ),
     );
@@ -764,7 +742,7 @@ void _handleKeyEvent(KeyEvent event) {
     final result = await InventoryService.deleteProduct(id);
     final provider = Provider.of<ProductProvider>(context, listen: false);
     if (result['success'] == true) {
-      provider.fetchProducts();
+      provider.fetchProducts(branchId: branchId);
     } else {
       ScaffoldMessenger.of(
         context,

@@ -18,6 +18,7 @@ class InventoryService {
     required int wholesaleMinUnits,
     required bool isPackage,
     List<Map<String, dynamic>>? packageContents,
+    String? locationId,
   }) async {
     try {
       final response = await ApiHelper.request(
@@ -37,9 +38,12 @@ class InventoryService {
           'wholesalePrice': wholesalePrice,
           'wholesaleMinUnits': wholesaleMinUnits,
           'isPackage': isPackage,
+          'location': locationId,
          
           if (packageContents != null && packageContents.isNotEmpty)
             'packageContents': packageContents,
+
+           
         },
       );
 
@@ -66,12 +70,16 @@ class InventoryService {
   }
 
   // Get all products using ApiHelper
-  static Future<Map<String, dynamic>> getProducts() async {
+  static Future<Map<String, dynamic>> getProducts(
+    String? locationId,
+  ) async {
     try {
+      
       final response = await ApiHelper.request(
         method: 'GET',
-        path: '/products',
+        path: '/products/location/$locationId',
       );
+
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -142,6 +150,7 @@ class InventoryService {
     required double wholesalePrice,
     required int wholesaleMinUnits,
     List<Map<String, dynamic>>? packageContents,
+
   }) async {
     try {
       final response = await ApiHelper.request(
@@ -162,6 +171,8 @@ class InventoryService {
           'wholesaleMinUnits': wholesaleMinUnits,
           if (packageContents != null && packageContents.isNotEmpty)
             'packageContents': packageContents,
+          
+
         },
       );
 

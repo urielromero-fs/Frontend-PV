@@ -13,7 +13,7 @@ class ProductProvider extends ChangeNotifier {
 
   //Initial load
 
-  Future<void> fetchInitialProducts() async {
+  Future<void> fetchInitialProducts({String? branchId}) async {
 
       _isLoading = true;
       _errorMessage = '';
@@ -38,15 +38,17 @@ class ProductProvider extends ChangeNotifier {
       notifyListeners(); 
 
       //Start load of all products in background
-       _fetchAllProductsInBackground();
+       _fetchAllProductsInBackground(branchId);
 
   }
 
 
   // Background load of all products
-  Future<void> _fetchAllProductsInBackground() async {
+  Future<void> _fetchAllProductsInBackground(String? branchId) async {
     try {
-      final result = await InventoryService.getProducts();
+      final result = await InventoryService.getProducts(branchId);
+
+      
       if (result['success'] == true) {
         _allProducts = result['data'];
         notifyListeners();
@@ -60,13 +62,15 @@ class ProductProvider extends ChangeNotifier {
 
 
   // Fetch global
-  Future<void> fetchProducts() async {
+  Future<void> fetchProducts({String? branchId}) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      final result = await InventoryService.getProducts();
+      final result = await InventoryService.getProducts(branchId);
+
+
       if (result['success'] == true) {
         _allProducts = result['data'];
       } else {

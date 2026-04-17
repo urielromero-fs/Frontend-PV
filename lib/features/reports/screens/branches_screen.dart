@@ -200,7 +200,7 @@ class _BranchesScreenState extends State<BranchesScreen> {
                                           title: 'Inventario',
                                           icon: Icons.inventory_2_rounded,
                                           color: Colors.blueAccent,
-                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen())),
+                                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => InventoryScreen(branchId: branchId))),
                                         ),
                                       ),
                                       const SizedBox(width: 16),
@@ -214,6 +214,8 @@ class _BranchesScreenState extends State<BranchesScreen> {
                                               builder: (context) => ReportsScreen(
                                                 // Assuming ReportsScreen can receive a branchId to filter
                                                 showBranchFilter: true,
+                                                branchId: branchId,
+                                                branchName: branch['name']
                                               ),
                                             ));
                                           },

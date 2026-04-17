@@ -189,7 +189,7 @@ class ProductListItem extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (userRole == 'admin' || userRole == 'administrador') ...[
+                if (userRole == 'admin' || userRole == 'administrador' || userRole == 'master') ...[
                   const SizedBox(width: 8),
                   actionsMenu,
                 ],
@@ -340,7 +340,7 @@ class ProductListItem extends StatelessWidget {
               ),
             ),
           ),
-          if (userRole == 'admin' || userRole == 'administrador')
+          if (userRole == 'admin' || userRole == 'administrador'  || userRole == 'master')
             Expanded(child: Center(child: actionsMenu))
           else
             const Spacer(),
