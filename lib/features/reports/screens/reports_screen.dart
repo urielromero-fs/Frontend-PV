@@ -225,6 +225,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ? Map<String, dynamic>.from(data['growth'])
           : {};
 
+      num clampGrowth(dynamic value) {
+        final num number =
+            value is num ? value : num.tryParse(value.toString()) ?? 0;
+
+        return number < 0 ? 0 : number;
+      }
+
       String formatCurrency(dynamic value) {
         if (value == null) return '\$0';
         final num number = value is num ? value : num.tryParse(value.toString()) ?? 0;
@@ -247,29 +254,31 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
 
            
-      // List<Map<String, dynamic>> salesWeekData = [];
+      List<Map<String, dynamic>> salesWeekData = [];
 
-      // final rawSalesWeek = data['salesWeek'];
-      // if (rawSalesWeek != null && rawSalesWeek is List) {
-      //   salesWeekData = rawSalesWeek.map<Map<String, dynamic>>((e) {
-      //     final map = e as Map<String, dynamic>? ?? {};
-      //     return {
-      //       'day': map['day']?.toString() ?? '',
-      //       'total': map['total'] ?? 0,
-      //     };
-      //   }).toList();
-      // }
+      final rawSalesWeek = data['salesWeek'];
+      if (rawSalesWeek != null && rawSalesWeek is List) {
+        salesWeekData = rawSalesWeek.map<Map<String, dynamic>>((e) {
+          final map = e as Map<String, dynamic>? ?? {};
+          return {
+            'day': map['day']?.toString() ?? '',
+            'total': map['total'] ?? 0,
+          };
+        }).toList();
+      }
 
       Map<String, dynamic> mappedData = {
         'ventas': formatCurrency(actualReport['totalSales']),
         'ordenes': formatNumber(actualReport['ordersCount']),
         'productos': formatNumber(actualReport['productsSold']),
         'ticket': formatCurrency(actualReport['averageTicket']),
-        'ventas_change': formatChange(growth['salesGrowth']),
-        'ordenes_change': formatChange(growth['ordersGrowth']),
-        'products_change': formatChange(growth['productsGrowth'] ?? 0),
-        'ticket_change': formatChange(growth['ticketGrowth']),
-        //'salesWeek': salesWeekData,
+
+        'ventas_change': formatChange(clampGrowth(growth['salesGrowth'])),
+        'ordenes_change': formatChange(clampGrowth(growth['ordersGrowth'])),
+        'products_change': formatChange(clampGrowth(growth['productsGrowth'])),
+        'ticket_change': formatChange(clampGrowth(growth['ticketGrowth'])),
+
+        'salesWeek': salesWeekData,
         'categoryCount': actualReport['categoryCount'] ?? {},
       };
 
@@ -392,7 +401,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
+        return ConstrainedBox(
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.of(context).size.height * 0.7,
+    ),
+    child: SingleChildScrollView( 
+      child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 24.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -445,7 +459,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               const SizedBox(height: 16),
             ],
           ),
-        );
+        ), 
+    ), 
+        ); 
       },
     );
   }
@@ -471,75 +487,70 @@ class _ReportsScreenState extends State<ReportsScreen> {
       );
   }
 
+
+
   @override
-  Widget build(BuildContext context) {
-    final currentData = metricData[_selectedPeriod] ?? {} ;
+Widget build(BuildContext context) {
+  final currentData = metricData[_selectedPeriod] ?? {};
+
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(
+        'Reportes',
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      ),
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
+      actions: [
+        Showcase(
+          key: _downloadReportKey,
+          description: 'Toca para descargar el historico de ventas.',
+          tooltipPadding: const EdgeInsets.all(12),
+          tooltipActions: [
+            TooltipActionButton(
+              type: TooltipDefaultActionType.next,
+              backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+              textStyle: const TextStyle(color: Colors.white),
+              name: 'Siguiente',
+            )
+          ],
+          tooltipActionConfig: const TooltipActionConfig(
+            alignment: MainAxisAlignment.center,
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _exportReport,
+          ),
+        )
+      ],
+    ),
 
    
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Reportes',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        actions: [
-
-
-          Showcase(
-                          key: _downloadReportKey,
-                          description: 'Toca para descargar el historico de ventas.',
-                          tooltipPadding: const EdgeInsets.all(12),
-                          tooltipActions: [
-                                    
-                                    TooltipActionButton(
-                                      type: TooltipDefaultActionType.next,
-                                      backgroundColor: const Color.fromARGB(255, 53, 237, 59),
-                                      textStyle: TextStyle(color: Colors.white),
-                                      name: 'Siguiente',
-                                     
-                                    )
-                                  ],
-                          tooltipActionConfig: TooltipActionConfig(
-                                alignment: MainAxisAlignment.center,
-                              ),
-                          child:  
-                               
-                                IconButton(
-                                        icon: const Icon(Icons.download),
-                                        onPressed: _exportReport,
-                                      ),
-                        )
-
-
-         
-
-
-        ],
-      ),
-      body: Container(
+    body: SingleChildScrollView(
+      child: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Period Selector
+
+              // ================= PERIOD SELECTOR =================
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor.withOpacity(0.1),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -550,14 +561,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           Text(
                             'Fecha Seleccionada',
                             style: GoogleFonts.poppins(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                               fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.5),
                             ),
                           ),
                           Text(
-                            DateFormat('dd MMMM, yyyy', 'es').format(_selectedDate),
+                            DateFormat('dd MMMM, yyyy', 'es')
+                                .format(_selectedDate),
                             style: GoogleFonts.poppins(
-                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
@@ -565,47 +579,38 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ],
                       ),
                     ),
+
                     InkWell(
                       onTap: () async {
-                        final DateTime? picked = await showDatePicker(
+                        final picked = await showDatePicker(
                           context: context,
                           initialDate: _selectedDate,
                           firstDate: DateTime(2020),
                           lastDate: DateTime.now(),
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: Theme.of(context).colorScheme.copyWith(
-                                  primary: const Color(0xFFFF9800),
-                                ),
-                              ),
-                              child: child!,
-                            );
-                          },
                         );
+
                         if (picked != null && picked != _selectedDate) {
-                          setState(() {
-                            _selectedDate = picked;
-                          });
+                          setState(() => _selectedDate = picked);
                           _loadMetrics(_selectedPeriod);
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFF9800),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
+                        child: const Row(
                           children: [
-                            const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
-                            const SizedBox(width: 8),
+                            Icon(Icons.calendar_month_rounded,
+                                color: Colors.white, size: 20),
+                            SizedBox(width: 8),
                             Text(
                               'Cambiar',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: TextStyle(color: Colors.white),
                             ),
                           ],
                         ),
@@ -614,8 +619,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ],
                 ),
               ),
+
               const SizedBox(height: 16),
-              // Period Selectors
+
+              // ================= PERIOD CHIPS =================
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -626,66 +633,58 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ],
                 ),
               ),
+
               const SizedBox(height: 16),
+
+              // ================= BRANCH =================
               if (widget.showBranchFilter) ...[
-                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                   ),
                   child: Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Sucursal',
-                              style: GoogleFonts.poppins(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              _selectedBranchName,
-                              style: GoogleFonts.poppins(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          _selectedBranchName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      _isLoadingBranches 
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : InkWell(
-                            onTap: _showBranchSelector,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.blueAccent,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Filtrar',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
+                      _isLoadingBranches
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : InkWell(
+                              onTap: _showBranchSelector,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blueAccent,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'Filtrar',
+                                  style: TextStyle(color: Colors.white),
                                 ),
                               ),
                             ),
-                          ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
-              const SizedBox(height: 24),
 
-              // Key Metrics
+              // ================= METRICS =================
               Row(
                 children: [
                   Expanded(
@@ -709,12 +708,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ],
               ),
+
               const SizedBox(height: 16),
+
               Row(
                 children: [
                   Expanded(
                     child: _MetricCard(
-                      title: 'Productos Vendidos',
+                      title: 'Productos',
                       value: currentData['productos'] ?? '0',
                       icon: Icons.inventory,
                       color: const Color(0xFFFF9800),
@@ -733,87 +734,91 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ],
               ),
+
               const SizedBox(height: 24),
 
-              // Charts Section
               Text(
                 'Análisis de Ventas',
                 style: GoogleFonts.poppins(
-                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
               const SizedBox(height: 16),
-              Expanded(
-                child: Row(
-                  children: [
-                    // Sales Chart
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ventas Diarias',
-                              style: GoogleFonts.poppins(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+
+              // ================= CHARTS  =================
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+
+                  // SALES CHART
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Ventas Diarias',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 16),
+
+                          SizedBox(
+                            height: 220, // 🔥 CLAVE: evita overflow
+                            child: _SalesChart(
+                              currentData['salesWeek'] ?? [],
                             ),
-                            const SizedBox(height: 16),
-                            
-                            Expanded(
-                              
-                              child: _SalesChart(currentData['salesWeek']  ?? []),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    // Category Breakdown
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ventas por Categoría',
-                              style: GoogleFonts.poppins(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                  ),
+
+                  const SizedBox(width: 16),
+
+                  // CATEGORY CHART
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Ventas por Categoría',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 16),
+
+                          SizedBox(
+                            height: 220, // 🔥 CLAVE
+                            child: _CategoryChart(
+                              categoryData: currentData['categoryCount'],
                             ),
-                            const SizedBox(height: 16),
-                            Expanded(child: _CategoryChart( categoryData: currentData['categoryCount'])),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
 
 class _MetricCard extends StatelessWidget {
