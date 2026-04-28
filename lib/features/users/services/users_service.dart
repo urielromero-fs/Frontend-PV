@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:pv26/core/network/api_helper.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class UsersService {

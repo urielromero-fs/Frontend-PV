@@ -4,7 +4,6 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import '../models/sales_models.dart';
-import 'package:flutter/services.dart' show NetworkAssetBundle, rootBundle;
 import 'package:http/http.dart' as http;
 
 class PrintService {

@@ -211,7 +211,7 @@ class _UsersScreenState extends State<UsersScreen> {
 
         if (isEditing) {
           result = await UsersService.updateUser(
-            id: user!['id'],
+            id: user['id'],
             name: nameController.text,
             email: emailController.text,
             role: selectedRole == 'Administrador' ? 'admin' : 'seller',
