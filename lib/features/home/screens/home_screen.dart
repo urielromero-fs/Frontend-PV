@@ -51,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'inventory': false,
         'users': false,
         'reports': false,
+        'locations':  false,
       },
     };
 
@@ -69,6 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey _reportsSubKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
   final GlobalKey _logoutKey = GlobalKey(); 
+  final GlobalKey _locationsKey = GlobalKey(); 
 
  
 
@@ -111,21 +113,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if(_onboarding['stepsCompleted']['home'] == true) return; 
 
+    if(_isMaster){
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+              Future.delayed(const Duration(milliseconds: 600), () {
+                ShowcaseView.get().startShowCase([   
+                  _usersKey,
+                  _reportsKey,
+                  _locationsKey,
+                  _settingsKey,
+                  _logoutKey,
+                  _sidebarDashboardMenuButtonKey,
+                
+                ]);
+              });
+            });
+    }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 600), () {
-        ShowcaseView.get().startShowCase([   
-          _dashboardKey,
-          _inventoryKey,
-          _salesKey,
-          _usersKey,
-          _reportsKey,
-          _settingsKey,
-          _logoutKey,
-          _sidebarDashboardMenuButtonKey,
-        ]);
-      });
-    });
+
+    if(_isAdmin){
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Future.delayed(const Duration(milliseconds: 600), () {
+            ShowcaseView.get().startShowCase([   
+              _dashboardKey,
+              _inventoryKey,
+              _salesKey,
+              _usersKey,
+              _reportsKey,
+              _settingsKey,
+              _logoutKey,
+              _sidebarDashboardMenuButtonKey,
+              //_locationsKey
+            ]);
+          });
+        });
+    }
+
+
 
     await _markHomeOnboardingCompleted(); 
   }
@@ -133,7 +156,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadOnboarding() async {
       final prefs = await SharedPreferences.getInstance();
       final jsonStr = prefs.getString('user_onboarding');
-      
+
+
       if (jsonStr != null) {
         setState(() {
           _onboarding = jsonDecode(jsonStr);
@@ -1257,29 +1281,127 @@ void _showSettingsModal() {
                     if (_isMaster) ...[
                       const Divider(color: Colors.white10),
 
-                      // Usuarios P -> Pantalla con Cards
-                      _NavItem(
-                        icon: Icons.admin_panel_settings_rounded,
-                        title: 'Usuarios',
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersPanelScreen())),
-                        isCollapsed: _isSidebarCollapsed,
-                      ),
+                    
 
+
+                       Showcase(
+                              key: _usersKey,
+                              description: 'Toca para agregar, ver y editar usuarios o agregar una sucursal.',
+                              tooltipPadding: const EdgeInsets.all(12),
+                              tooltipActions: [
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.skip,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Saltar',
+                                        
+                                        ),
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.next,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Siguiente',
+                                        
+                                        ), 
+
+                                  
+                                      ],
+                              tooltipActionConfig: TooltipActionConfig(
+                                    alignment: MainAxisAlignment.center,
+                                  ),
+                              child: 
+                              
+                               _NavItem(
+                                  icon: Icons.admin_panel_settings_rounded,
+                                  title: 'Usuarios',
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersPanelScreen())),
+                                  isCollapsed: _isSidebarCollapsed,
+                                ),
+
+                            ),
+                         
+ 
                       // Reportes S (Con filtrado por sucursal)
-                      _NavItem(
-                        icon: Icons.assessment_rounded,
-                        title: 'Reportes ',
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen(showBranchFilter: true))),
-                        isCollapsed: _isSidebarCollapsed,
-                      ),
+ 
+                       Showcase(
+                              key: _reportsKey,
+                              description: 'Toca para ver los reportes de cada sucursal.',
+                              tooltipPadding: const EdgeInsets.all(12),
+                              tooltipActions: [
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.skip,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Saltar',
+                                        
+                                        ),
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.next,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Siguiente',
+                                        
+                                        ), 
 
-                      // Sucursales
-                      _NavItem(
-                        icon: Icons.store_rounded,
-                        title: 'Sucursales',
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchesScreen())),
-                        isCollapsed: _isSidebarCollapsed,
-                      ),
+                                  
+                                      ],
+                              tooltipActionConfig: TooltipActionConfig(
+                                    alignment: MainAxisAlignment.center,
+                                  ),
+                              child: 
+                              
+                                  _NavItem(
+                                    icon: Icons.assessment_rounded,
+                                    title: 'Reportes ',
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen(showBranchFilter: true))),
+                                    isCollapsed: _isSidebarCollapsed,
+                                  ),
+
+                            ),
+                         
+                     
+                     
+                     
+
+                       Showcase(
+                              key: _locationsKey,
+                              description: 'Toca para gestionar las sucursales.',
+                              tooltipPadding: const EdgeInsets.all(12),
+                              tooltipActions: [
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.skip,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Saltar',
+                                        
+                                        ),
+                                        TooltipActionButton(
+                                          type: TooltipDefaultActionType.next,
+                                          backgroundColor: const Color.fromARGB(255, 53, 237, 59),
+                                          textStyle: TextStyle(color: Colors.white),
+                                          name: 'Siguiente',
+                                        
+                                        ), 
+
+                                  
+                                      ],
+                              tooltipActionConfig: TooltipActionConfig(
+                                    alignment: MainAxisAlignment.center,
+                                  ),
+                              child: 
+                              
+                                  // Sucursales
+                                _NavItem(
+                                  icon: Icons.store_rounded,
+                                  title: 'Sucursales',
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchesScreen())),
+                                  isCollapsed: _isSidebarCollapsed,
+                                ),
+
+                            ),
+                         
+                     
+
                     ],
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
