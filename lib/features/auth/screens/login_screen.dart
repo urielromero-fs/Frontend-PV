@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 import 'forgot_password_screen.dart';
-import 'register_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pv26/features/inventory/providers/product_provider.dart';
 import '../providers/user_provider.dart';
-import 'package:provider/provider.dart';
+
 
 
 class LoginScreen extends StatefulWidget {

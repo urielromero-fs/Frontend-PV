@@ -16,9 +16,7 @@ import '../../reports/services/reports_service.dart';
 import 'package:pv26/core/providers/theme_provider.dart';
 import 'package:pv26/features/users/services/users_service.dart'; 
 import 'package:pv26/features/home/screens/users_panel_screen.dart';
-import '../../../core/utils/currency_formatter.dart';
 import 'package:showcaseview/showcaseview.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dart:ui' as ui;
 
@@ -38,8 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool get _isAdmin => _userRole.trim().toLowerCase() == 'admin' || _userRole.trim().toLowerCase() == 'administrador';
   bool get _isMaster => _userRole.trim().toLowerCase() == 'master';
-  bool get _isCajero => _userRole.trim().toLowerCase() == 'seller' || _userRole.trim().toLowerCase() == 'cajero';
-
+ 
    Map<String, dynamic> metricData = {};
 
   Map<String, dynamic> _onboarding = {
@@ -65,9 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey _salesKey = GlobalKey();
   final GlobalKey _usersKey = GlobalKey();
   final GlobalKey _reportsKey = GlobalKey();
-  final GlobalKey _branchesPanelKey = GlobalKey();
-  final GlobalKey _usersPanelKey = GlobalKey();
-  final GlobalKey _reportsSubKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
   final GlobalKey _logoutKey = GlobalKey(); 
   final GlobalKey _locationsKey = GlobalKey(); 

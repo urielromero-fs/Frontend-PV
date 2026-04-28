@@ -1,8 +1,7 @@
   import 'dart:convert';
   import 'package:shared_preferences/shared_preferences.dart';
   import 'package:http/http.dart' as http;
-  import '../providers/user_provider.dart';
-  import 'package:provider/provider.dart';
+
 
   class AuthService {
     static const String _accessTokenKey = 'access_token';
