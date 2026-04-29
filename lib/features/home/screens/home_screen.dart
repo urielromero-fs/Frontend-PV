@@ -20,6 +20,7 @@ import 'package:pv26/features/home/screens/companies_screen.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:ui' as ui;
+import 'package:pv26/core/utils/role_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1576,7 +1577,7 @@ void _showSettingsModal() {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                _isAdmin ? 'ADMINISTRADOR' : (_isMaster ? 'MASTER' : (_isCreator ? 'CREADOR' : 'CAJERO')),
+                                RoleUtils.getRoleLabel(_userRole).toUpperCase(),
                                 style: GoogleFonts.outfit(color: const Color(0xFF05e265), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
                               ),
                             ],

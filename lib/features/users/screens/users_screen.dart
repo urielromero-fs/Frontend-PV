@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pv26/core/utils/role_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/users_service.dart';
@@ -126,11 +127,7 @@ class _UsersScreenState extends State<UsersScreen> {
           'name': user['name'],
           'email': user['email'],
           'sucursal': user['sucursal'] ?? 'Sucursal Principal', 
-          'role': user['role'] == 'admin' 
-          ? 'Administrador' 
-          : user['role'] == 'seller' 
-                ? 'Cajero' 
-                : 'Vendedor',
+          'role': RoleUtils.getRoleLabel(user['role']),
 
           'status': user['state'] == 'active' ? 'Activo' : 'Inactivo',
           'joinDate':  user['createdAt'] != null
@@ -199,9 +196,7 @@ class _UsersScreenState extends State<UsersScreen> {
     final sucursalController = TextEditingController(
       text: isEditing ? user['sucursal'] : '',
     );
-    String selectedRole = isEditing 
-        ? (user['role'] == 'admin' ? 'Administrador' : (user['role'] == 'creator' ? 'Creador' : 'Cajero'))
-        : 'Cajero';
+    String selectedRole = RoleUtils.getRoleLabel(user?['role'] ?? 'seller');
 
     bool isSubmitting = false;
 

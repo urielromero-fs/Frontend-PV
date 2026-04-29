@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:pv26/core/utils/role_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pv26/features/users/services/users_service.dart';
@@ -95,35 +96,9 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
     }
   }
 
-  String _roleLabel(String? role) {
-    switch (role) {
-      case 'admin':
-        return 'Administrador';
-      case 'seller':
-        return 'Cajero';
-      case 'master':
-        return 'Master';
-      case 'creator':
-        return 'Creador';
-      default:
-        return role ?? 'Sin rol';
-    }
-  }
+  String _roleLabel(String? role) => RoleUtils.getRoleLabel(role);
 
-  Color _roleColor(String? role) {
-    switch (role) {
-      case 'admin':
-        return Colors.blueAccent;
-      case 'seller':
-        return const Color(0xFF05e265);
-      case 'master':
-        return Colors.deepPurpleAccent;
-      case 'creator':
-        return Colors.orangeAccent;
-      default:
-        return Colors.grey;
-    }
-  }
+  Color _roleColor(String? role) => RoleUtils.getRoleColor(role);
 
   void _showUserForm() {
 
@@ -328,9 +303,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
         TextEditingController(text: user['email'] ?? '');
 
     // Map API role to display role
-    String currentRole = user['role'] ?? 'seller';
-    String selectedRole =
-        currentRole == 'admin' ? 'Administrador' : (currentRole == 'creator' ? 'Creador' : 'Cajero');
+    String selectedRole = RoleUtils.getRoleLabel(user['role']);
 
     String? selectedBranch = user['currentLocation']['name']?.toString();
      String? selectedBranchId;
