@@ -126,7 +126,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
         branchId = await AuthService.getCurrentUserLocation();
       }
 
-      print('BranchId listo: $branchId');
 
       Provider.of<ProductProvider>(context, listen: false)
           .fetchProducts(branchId: branchId);

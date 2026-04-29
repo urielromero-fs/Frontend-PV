@@ -34,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userRole = 'cajero'; // Default restriction
   bool _isSidebarCollapsed = false;
   String _userLogoUrl = '';
+  String? _branchId = ''; 
 
   bool get _isAdmin => _userRole.trim().toLowerCase() == 'admin' || _userRole.trim().toLowerCase() == 'administrador';
   bool get _isMaster => _userRole.trim().toLowerCase() == 'master';
@@ -78,27 +79,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
 
-    _loadUserData();
+    //_loadUserData();
 
     _loadOnboarding().then((_) {
       _initOnboarding(); 
     });
 
 
-    //Carga inicial de productos
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<ProductProvider>(context, listen: false); 
+    // //Carga inicial de productos
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   final provider = Provider.of<ProductProvider>(context, listen: false); 
          
-      if (provider.allProducts.isEmpty) {
-          provider.fetchInitialProducts();    
-      }
+    //   if (provider.allProducts.isEmpty) {
+    //       provider.fetchInitialProducts();    
+    //   }
       
-    });
+    // });
 
-    _loadMetrics(); 
 
-  
 
+
+    _initData(); 
+
+  }
+
+
+
+
+
+  Future<void> _initData() async{
+
+    await _loadUserData(); 
+    if(_isAdmin){
+      await _loadMetrics(); 
+         
+    }
+    
   }
 
 
@@ -185,10 +201,16 @@ class _HomeScreenState extends State<HomeScreen> {
   
   Future<void> _loadMetrics() async{
 
-     final location = await AuthService.getCurrentUserLocation(); 
+    final location = await AuthService.getCurrentUserLocation(); 
 
 
-    final result = await ReportsService.getReport(period: 'day', mode: 'period', locationId: location );
+          
+    Provider.of<ProductProvider>(context, listen: false)
+     .fetchProducts(branchId: location);
+
+    
+
+    final result = await ReportsService.getReport(period: 'day', mode: 'period', locationId: location, );
 
 
     if(result['success']){
@@ -196,6 +218,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final data = result['data'];
       final actualReport = data['actualReport'] ?? {};
       final growth = data['growth'] ?? {};
+
+      num clampGrowth(dynamic value) {
+        final num number =
+            value is num ? value : num.tryParse(value.toString()) ?? 0;
+
+        return number < 0 ? 0 : number;
+      }
 
       String formatCurrency(dynamic value) {
         if (value == null) return '\$0';
@@ -221,8 +250,8 @@ class _HomeScreenState extends State<HomeScreen> {
       Map<String, dynamic> mappedData = {
         'ventas': formatCurrency(actualReport['totalSales']),
         'productos': formatNumber(actualReport['productsSold']),
-        'ventas_change': formatChange(growth['salesGrowth']),
-        'products_change': formatChange(growth['productsGrowth'] ?? 0),
+        'ventas_change': formatChange(clampGrowth(growth['salesGrowth'])),
+        'products_change': formatChange(clampGrowth(growth['productsGrowth'] ?? 0)),
      
       };
 
@@ -286,7 +315,6 @@ void _showSettingsModal() {
       imageQuality: 100,
     );
 
-    print(pickedFile);
 
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
@@ -975,23 +1003,32 @@ void _showSettingsModal() {
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
     final sidebarWidth = _isSidebarCollapsed ? 80.0 : 280.0;
-
-    final provider = Provider.of<ProductProvider>(context); // listen: true por defecto
-    final products = provider.allProducts; // List<dynamic> o List<Object>
-
+    //final provider = Provider.of<ProductProvider>(context);
+    //final products = provider.fetchProducts(branchId: _branchId);  // listen: true por defecto
+    //final products = provider.allProducts; // List<dynamic> o List<Object>
+    final provider = context.watch<ProductProvider>();
+    final products = provider.allProducts;
+    
 
     
 
     final productsEnStock = products
-        .where((producto) => (producto as Map<String, dynamic>)['units'] > 5)
-        .toList();
+         .where((producto) => (producto as Map<String, dynamic>)['units'] > 5)
+         .toList();
 
-   final porcentageStock = products.isNotEmpty
-    ? ((productsEnStock.length * 100) / products.length).round()
-    : 0;
+    final porcentageStock = products.isNotEmpty
+     ? ((productsEnStock.length * 100) / products.length).round()
+     : 0;
 
 
     Widget buildSidebar() {
+
+      final Map<String, String> roleLabels = {
+          'master': 'MASTER',
+          'admin': 'ADMINISTRADOR',
+          'seller': 'CAJERO',
+        };
+
       return Container(
         width: sidebarWidth,
         decoration: BoxDecoration(
@@ -1810,9 +1847,11 @@ void _showSettingsModal() {
                                   _StatCard(
                                     title: 'Productos en Stock',
                                     value: productsEnStock.length.toString(),
+                                   
                                     icon: Icons.inventory_2_rounded,
                                     color: const Color(0xFF2196F3),
-                                    change: '%' + porcentageStock.toString(),
+                                    change: '${porcentageStock.toString()}%',
+                                    
                                   ),
                                   _StatCard(
                                     title: 'Productos Vendidos',

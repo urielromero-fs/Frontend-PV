@@ -67,11 +67,12 @@ class ProductProvider extends ChangeNotifier {
     _errorMessage = '';
     notifyListeners();
 
+    
+
     try {
       final result = await InventoryService.getProducts(branchId);
 
-
-      if (result['success'] == true) {
+      if (result['success'] == true) {   
         _allProducts = result['data'];
       } else {
         _errorMessage = result['message'] ?? 'Error desconocido';
