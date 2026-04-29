@@ -33,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userRole = 'cajero'; // Default restriction
   bool _isSidebarCollapsed = false;
   String _userLogoUrl = '';
+  String? _branchId = ''; 
 
   bool get _isAdmin => _userRole.trim().toLowerCase() == 'admin' || _userRole.trim().toLowerCase() == 'administrador';
   bool get _isMaster => _userRole.trim().toLowerCase() == 'master';
@@ -93,10 +94,24 @@ class _HomeScreenState extends State<HomeScreen> {
       
     });
 
-    _loadMetrics(); 
 
-  
 
+
+    _initData(); 
+
+  }
+
+
+
+
+
+  Future<void> _initData() async{
+
+    await _loadUserData(); 
+    if(_isAdmin){
+        await _loadMetrics(); 
+    }
+    
   }
 
 
@@ -183,10 +198,11 @@ class _HomeScreenState extends State<HomeScreen> {
   
   Future<void> _loadMetrics() async{
 
-     final location = await AuthService.getCurrentUserLocation(); 
+    final location = await AuthService.getCurrentUserLocation(); 
 
 
-    final result = await ReportsService.getReport(period: 'day', mode: 'period', locationId: location );
+
+    final result = await ReportsService.getReport(period: 'day', mode: 'period', locationId: location, );
 
 
     if(result['success']){
@@ -194,6 +210,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final data = result['data'];
       final actualReport = data['actualReport'] ?? {};
       final growth = data['growth'] ?? {};
+
+      num clampGrowth(dynamic value) {
+        final num number =
+            value is num ? value : num.tryParse(value.toString()) ?? 0;
+
+        return number < 0 ? 0 : number;
+      }
 
       String formatCurrency(dynamic value) {
         if (value == null) return '\$0';
@@ -219,8 +242,8 @@ class _HomeScreenState extends State<HomeScreen> {
       Map<String, dynamic> mappedData = {
         'ventas': formatCurrency(actualReport['totalSales']),
         'productos': formatNumber(actualReport['productsSold']),
-        'ventas_change': formatChange(growth['salesGrowth']),
-        'products_change': formatChange(growth['productsGrowth'] ?? 0),
+        'ventas_change': formatChange(clampGrowth(growth['salesGrowth'])),
+        'products_change': formatChange(clampGrowth(growth['productsGrowth'] ?? 0)),
      
       };
 
@@ -990,6 +1013,13 @@ void _showSettingsModal() {
 
 
     Widget buildSidebar() {
+
+      final Map<String, String> roleLabels = {
+          'master': 'MASTER',
+          'admin': 'ADMINISTRADOR',
+          'seller': 'CAJERO',
+        };
+
       return Container(
         width: sidebarWidth,
         decoration: BoxDecoration(
@@ -1520,7 +1550,7 @@ void _showSettingsModal() {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                _isAdmin ? 'ADMINISTRADOR' : 'CAJERO',
+                                 roleLabels[_userRole] ?? _userRole,
                                 style: GoogleFonts.outfit(color: const Color(0xFF05e265), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
                               ),
                             ],

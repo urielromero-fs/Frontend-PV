@@ -10,10 +10,6 @@ class CashSessionService {
     ) async {
     try {
 
-      print({
-        'openingAmount': openingAmount,
-        'locationId': locationId
-      });
 
       final response = await ApiHelper.request(
         method: 'POST',
@@ -21,8 +17,6 @@ class CashSessionService {
         body: {'openingAmount': openingAmount},
       );  
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
@@ -81,13 +75,12 @@ class CashSessionService {
   static Future<Map<String, dynamic>> getOpenSession(String locationId) async {
     try {
 
-      print(locationId);
       final response = await ApiHelper.request(
         method: 'GET',
         path: '/cash-sessions/open/$locationId',
       );
 
-      print(response.body);
+   
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
