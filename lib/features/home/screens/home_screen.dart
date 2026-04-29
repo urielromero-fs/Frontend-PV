@@ -84,15 +84,15 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
 
-    //Carga inicial de productos
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<ProductProvider>(context, listen: false); 
+    // //Carga inicial de productos
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   final provider = Provider.of<ProductProvider>(context, listen: false); 
          
-      if (provider.allProducts.isEmpty) {
-          provider.fetchInitialProducts();    
-      }
+    //   if (provider.allProducts.isEmpty) {
+    //       provider.fetchInitialProducts();    
+    //   }
       
-    });
+    // });
 
 
 
@@ -307,7 +307,6 @@ void _showSettingsModal() {
       imageQuality: 100,
     );
 
-    print(pickedFile);
 
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
@@ -997,19 +996,19 @@ void _showSettingsModal() {
     final isMobile = _isMobile(context);
     final sidebarWidth = _isSidebarCollapsed ? 80.0 : 280.0;
 
-    final provider = Provider.of<ProductProvider>(context); // listen: true por defecto
-    final products = provider.allProducts; // List<dynamic> o List<Object>
+    //final provider = Provider.of<ProductProvider>(context); // listen: true por defecto
+    //final products = provider.allProducts; // List<dynamic> o List<Object>
 
 
     
 
-    final productsEnStock = products
-        .where((producto) => (producto as Map<String, dynamic>)['units'] > 5)
-        .toList();
+  //   final productsEnStock = products
+  //       .where((producto) => (producto as Map<String, dynamic>)['units'] > 5)
+  //       .toList();
 
-   final porcentageStock = products.isNotEmpty
-    ? ((productsEnStock.length * 100) / products.length).round()
-    : 0;
+  //  final porcentageStock = products.isNotEmpty
+  //   ? ((productsEnStock.length * 100) / products.length).round()
+  //   : 0;
 
 
     Widget buildSidebar() {
@@ -1806,10 +1805,12 @@ void _showSettingsModal() {
                                   ),
                                   _StatCard(
                                     title: 'Productos en Stock',
-                                    value: productsEnStock.length.toString(),
+                                    //value: productsEnStock.length.toString(),
+                                    value: '90',
                                     icon: Icons.inventory_2_rounded,
                                     color: const Color(0xFF2196F3),
-                                    change: '%' + porcentageStock.toString(),
+                                    //change: '%' + porcentageStock.toString(),
+                                    change: "90",
                                   ),
                                   _StatCard(
                                     title: 'Productos Vendidos',
