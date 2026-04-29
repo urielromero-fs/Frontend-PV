@@ -16,6 +16,7 @@ import '../../reports/services/reports_service.dart';
 import 'package:pv26/core/providers/theme_provider.dart';
 import 'package:pv26/features/users/services/users_service.dart'; 
 import 'package:pv26/features/home/screens/users_panel_screen.dart';
+import 'package:pv26/features/home/screens/companies_screen.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:ui' as ui;
@@ -36,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool get _isAdmin => _userRole.trim().toLowerCase() == 'admin' || _userRole.trim().toLowerCase() == 'administrador';
   bool get _isMaster => _userRole.trim().toLowerCase() == 'master';
+  bool get _isCreator => _userRole.trim().toLowerCase() == 'creator';
  
    Map<String, dynamic> metricData = {};
 
@@ -1093,7 +1095,16 @@ void _showSettingsModal() {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 children: [
-                  if (_isAdmin && !_isMaster)
+                  if (_isCreator) ...[
+                    _NavItem(
+                      icon: Icons.add_business_rounded,
+                      title: 'Creación',
+                      isActive: true,
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CompaniesScreen())),
+                      isCollapsed: _isSidebarCollapsed,
+                    ),
+                  ] else ...[
+                    if (_isAdmin && !_isMaster)
 
                   //Dashboard button 
                   Showcase(
@@ -1394,9 +1405,17 @@ void _showSettingsModal() {
 
                             ),
                          
+                                // Compañías / Creación
+                                _NavItem(
+                                  icon: Icons.add_business_rounded,
+                                  title: 'Creación',
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CompaniesScreen())),
+                                  isCollapsed: _isSidebarCollapsed,
+                                ),
                      
 
                     ],
+                  ],
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Divider(color: Colors.white10),
@@ -1520,7 +1539,7 @@ void _showSettingsModal() {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                _isAdmin ? 'ADMINISTRADOR' : 'CAJERO',
+                                _isAdmin ? 'ADMINISTRADOR' : (_isMaster ? 'MASTER' : (_isCreator ? 'CREADOR' : 'CAJERO')),
                                 style: GoogleFonts.outfit(color: const Color(0xFF05e265), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
                               ),
                             ],
@@ -1640,28 +1659,40 @@ void _showSettingsModal() {
                     child: ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       children: [
-                        _NavItem(
-                          icon: Icons.dashboard_rounded,
-                          title: 'Dashboard',
-                          isActive: true,
-                          onTap: () => Navigator.pop(context),
-                        ),
-                        _NavItem(
-                          icon: Icons.inventory_2_rounded,
-                          title: 'Inventario',
-                          onTap: () {
-                            Navigator.pop(context);
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen()));
-                          },
-                        ),
-                        _NavItem(
-                          icon: Icons.point_of_sale_rounded,
-                          title: 'Cobros',
-                          onTap: () {
-                            Navigator.pop(context);
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentsScreen()));
-                          },
-                        ),
+                        if (!_isCreator)
+                          _NavItem(
+                            icon: Icons.dashboard_rounded,
+                            title: 'Dashboard',
+                            isActive: true,
+                            onTap: () => Navigator.pop(context),
+                          ),
+                        if (_isCreator)
+                           _NavItem(
+                            icon: Icons.add_business_rounded,
+                            title: 'Creación',
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const CompaniesScreen()));
+                            },
+                          ),
+                        if (!_isCreator) ...[
+                          _NavItem(
+                            icon: Icons.inventory_2_rounded,
+                            title: 'Inventario',
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen()));
+                            },
+                          ),
+                          _NavItem(
+                            icon: Icons.point_of_sale_rounded,
+                            title: 'Cobros',
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentsScreen()));
+                            },
+                          ),
+                        ],
                         if (_isAdmin) ...[
                           _NavItem(
                             icon: Icons.people_alt_rounded,
@@ -1711,7 +1742,9 @@ void _showSettingsModal() {
           Expanded(
             child: Container(
               color: Theme.of(context).scaffoldBackgroundColor,
-              child: CustomScrollView(
+              child: _isCreator 
+                ? const CompaniesScreen(showAppBar: false)
+                : CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
                   SliverPadding(

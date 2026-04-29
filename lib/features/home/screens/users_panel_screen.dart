@@ -103,6 +103,8 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
         return 'Cajero';
       case 'master':
         return 'Master';
+      case 'creator':
+        return 'Creador';
       default:
         return role ?? 'Sin rol';
     }
@@ -116,6 +118,8 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
         return const Color(0xFF05e265);
       case 'master':
         return Colors.deepPurpleAccent;
+      case 'creator':
+        return Colors.orangeAccent;
       default:
         return Colors.grey;
     }
@@ -152,7 +156,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
         final result = await UsersService.createUser(
           name: nameController.text,
           email: emailController.text,
-          role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+          role: selectedRole == 'Administrador' ? 'admin' : (selectedRole == 'Creador' ? 'creator' : 'seller'),
           currentLocation: selectedBranchId ?? 'Principal',
         );
 
@@ -274,7 +278,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12)),
                           ),
-                          items: ['Administrador', 'Cajero']
+                          items: ['Administrador', 'Cajero', 'Creador']
                               .map((val) => DropdownMenuItem(
                                   value: val, child: Text(val)))
                               .toList(),
@@ -326,7 +330,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
     // Map API role to display role
     String currentRole = user['role'] ?? 'seller';
     String selectedRole =
-        currentRole == 'admin' ? 'Administrador' : 'Cajero';
+        currentRole == 'admin' ? 'Administrador' : (currentRole == 'creator' ? 'Creador' : 'Cajero');
 
     String? selectedBranch = user['currentLocation']['name']?.toString();
      String? selectedBranchId;
@@ -348,7 +352,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
         id: user['_id'] ?? user['id'],
         name: nameController.text,
         email: emailController.text,
-        role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+        role: selectedRole == 'Administrador' ? 'admin' : (selectedRole == 'Creador' ? 'creator' : 'seller'),
         currentLocation: selectedBranchId,
       );
 
@@ -457,7 +461,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
-                      items: ['Administrador', 'Cajero']
+                      items: ['Administrador', 'Cajero', 'Creador']
                           .map((val) =>
                               DropdownMenuItem(value: val, child: Text(val)))
                           .toList(),

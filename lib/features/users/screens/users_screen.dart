@@ -121,7 +121,7 @@ class _UsersScreenState extends State<UsersScreen> {
 
   
       setState(() {
-        users = data.map((user) => {
+        users = data.where((user) => user['role'] != 'creator').map((user) => {
           'id': user['id'],
           'name': user['name'],
           'email': user['email'],
@@ -199,7 +199,9 @@ class _UsersScreenState extends State<UsersScreen> {
     final sucursalController = TextEditingController(
       text: isEditing ? user['sucursal'] : '',
     );
-    String selectedRole = isEditing ? user['role'] : 'Cajero';
+    String selectedRole = isEditing 
+        ? (user['role'] == 'admin' ? 'Administrador' : (user['role'] == 'creator' ? 'Creador' : 'Cajero'))
+        : 'Cajero';
 
     bool isSubmitting = false;
 
@@ -214,14 +216,14 @@ class _UsersScreenState extends State<UsersScreen> {
             id: user['id'],
             name: nameController.text,
             email: emailController.text,
-            role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+            role: selectedRole == 'Administrador' ? 'admin' : (selectedRole == 'Creador' ? 'creator' : 'seller'),
             currentLocation: sucursalController.text,
           );
         } else {
           result = await UsersService.createUser(
             name: nameController.text,
             email: emailController.text,
-            role: selectedRole == 'Administrador' ? 'admin' : 'seller',
+            role: selectedRole == 'Administrador' ? 'admin' : (selectedRole == 'Creador' ? 'creator' : 'seller'),
             currentLocation: sucursalController.text,
           );
         }
