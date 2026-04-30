@@ -567,6 +567,7 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+     
       appBar: widget.showAppBar ? AppBar(
         title: Text(
           'Compañías',
@@ -593,18 +594,72 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
           ),
         ],
       ) : null,
+
+
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
+
+             Row(
+              children: [
+                Text(
+                  'Compañías',
+                  style: GoogleFonts.outfit(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+
+            // Row(
+            //   children: [
+            //     Text(
+            //       'Compañías registradas',
+            //       style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+            //     ),
+            //     const SizedBox(width: 12),
+
+                
+                
+            //     Container(
+            //       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            //       decoration: BoxDecoration(
+            //         color: const Color(0xFF05e265).withOpacity(0.12),
+            //         borderRadius: BorderRadius.circular(20),
+            //       ),
+            //       child: Text(
+            //         '${filteredCompanies.length} Total',
+            //         style: GoogleFonts.outfit(
+            //           fontSize: 12,
+            //           fontWeight: FontWeight.bold,
+            //           color: const Color(0xFF05e265),
+            //         ),
+            //       ),
+            //     ),
+            //   ],
+            // ),
+  
+
+              
             Row(
               children: [
                 Text(
                   'Compañías registradas',
-                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+
                 const SizedBox(width: 12),
+
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                   decoration: BoxDecoration(
@@ -620,8 +675,36 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                     ),
                   ),
                 ),
+
+                const Spacer(),
+
+                ElevatedButton.icon(
+                  onPressed: _showCompanyForm,
+                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  label: Text(
+                    'Crear Compañía',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF05e265),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
               ],
             ),
+
+            const SizedBox(height: 16),
+
+
             const SizedBox(height: 16),
             TextField(
               controller: _searchController,

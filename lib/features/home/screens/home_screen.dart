@@ -1142,7 +1142,8 @@ void _showSettingsModal() {
                       isCollapsed: _isSidebarCollapsed,
                     ),
                   ] else ...[
-                    if (_isAdmin && !_isMaster)
+                  
+                  if (_isAdmin && !_isMaster)
 
                   //Dashboard button 
                   Showcase(
@@ -1444,12 +1445,12 @@ void _showSettingsModal() {
                             ),
                          
                                 // Compañías / Creación
-                                _NavItem(
-                                  icon: Icons.add_business_rounded,
-                                  title: 'Creación',
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CompaniesScreen())),
-                                  isCollapsed: _isSidebarCollapsed,
-                                ),
+                                // _NavItem(
+                                //   icon: Icons.add_business_rounded,
+                                //   title: 'Creación',
+                                //   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CompaniesScreen())),
+                                //   isCollapsed: _isSidebarCollapsed,
+                                // ),
                      
 
                     ],
@@ -1704,6 +1705,30 @@ void _showSettingsModal() {
                             isActive: true,
                             onTap: () => Navigator.pop(context),
                           ),
+
+                        if(_isMaster)...[
+                          _NavItem(
+                                  icon: Icons.admin_panel_settings_rounded,
+                                  title: 'Usuarios',
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersPanelScreen())),
+                                  isCollapsed: _isSidebarCollapsed,
+                          ),
+                           _NavItem(
+                                    icon: Icons.assessment_rounded,
+                                    title: 'Reportes ',
+                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen(showBranchFilter: true))),
+                                    isCollapsed: _isSidebarCollapsed,
+                          ),
+                           _NavItem(
+                                  icon: Icons.store_rounded,
+                                  title: 'Sucursales',
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchesScreen())),
+                                  isCollapsed: _isSidebarCollapsed,
+                                ),
+
+
+                        ],
+
                         if (_isCreator)
                            _NavItem(
                             icon: Icons.add_business_rounded,
@@ -1713,7 +1738,10 @@ void _showSettingsModal() {
                               Navigator.push(context, MaterialPageRoute(builder: (context) => const CompaniesScreen()));
                             },
                           ),
-                        if (!_isCreator) ...[
+
+
+
+                        if (!_isCreator && !_isMaster) ...[
                           _NavItem(
                             icon: Icons.inventory_2_rounded,
                             title: 'Inventario',

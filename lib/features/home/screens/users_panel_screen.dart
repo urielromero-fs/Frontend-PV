@@ -670,30 +670,60 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
 
 
 
-            Row(
-              children: [
-                SizedBox(
-                  width: 320,
-                  child: _PanelCard(
-                    title: 'Crear Usuario',
-                    icon: Icons.person_add_rounded,
-                    color: const Color(0xFF05e265),
-                    onTap: _showUserForm,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                SizedBox(
-                  width: 320,
-                  child: _PanelCard(
-                    title: 'Crear Sucursal',
-                    icon: Icons.store_rounded,
-                    color: Colors.blueAccent,
-                    onTap: _showBranchForm,
-                  ),
-                ),
-              ],
-            ),
+            // Row(
+            //   children: [
+            //     SizedBox(
+            //       width: 320,
+            //       child: _PanelCard(
+            //         title: 'Crear Usuario',
+            //         icon: Icons.person_add_rounded,
+            //         color: const Color(0xFF05e265),
+            //         onTap: _showUserForm,
+            //       ),
+            //     ),
+            //     const SizedBox(width: 20),
+            //     SizedBox(
+            //       width: 320,
+            //       child: _PanelCard(
+            //         title: 'Crear Sucursal',
+            //         icon: Icons.store_rounded,
+            //         color: Colors.blueAccent,
+            //         onTap: _showBranchForm,
+            //       ),
+            //     ),
+            //   ],
+            // ),
 
+         
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final double cardWidth = (constraints.maxWidth - 20) / 2;
+
+                return Row(
+                  children: [
+                    SizedBox(
+                      width: cardWidth,
+                      child: _PanelCard(
+                        title: 'Crear Usuario',
+                        icon: Icons.person_add_rounded,
+                        color: const Color(0xFF05e265),
+                        onTap: _showUserForm,
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _PanelCard(
+                        title: 'Crear Sucursal',
+                        icon: Icons.store_rounded,
+                        color: Colors.blueAccent,
+                        onTap: _showBranchForm,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
             const SizedBox(height: 28),
 
 
