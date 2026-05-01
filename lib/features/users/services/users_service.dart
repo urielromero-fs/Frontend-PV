@@ -333,7 +333,8 @@ class UsersService {
     required dynamic logo, // File o XFile
   }) async {
     try {
-      http.StreamedResponse response;
+      //http.StreamedResponse response;
+       http.Response response;
 
       if (kIsWeb) {
         //WEB
@@ -355,8 +356,10 @@ class UsersService {
         );
       }
 
-      final respStr = await response.stream.bytesToString();
-      final data = jsonDecode(respStr);
+      //final respStr = await response.stream.bytesToString();
+      //final data = jsonDecode(respStr);
+           final respStr = response.body;
+        final data = jsonDecode(respStr);
 
 
       if (response.statusCode == 200) {

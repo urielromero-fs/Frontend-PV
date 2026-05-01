@@ -73,36 +73,52 @@
   
 
    //mobile
-  static Future<http.StreamedResponse> requestMultipart({
+  static Future<http.Response> requestMultipart({
     required String path,
     required File file,
     String fileField = 'logo',
+     Map<String, String>? fields,
   }) async {
     final url = Uri.parse('$_baseUrl$path');
     final headers = await _getHeaders(isMultipart: true);
 
+
     final request = http.MultipartRequest('POST', url);
     request.headers.addAll(headers);
+
+      // 👇 CAMPOS
+  if (fields != null) {
+    request.fields.addAll(fields);
+  }
+
 
     request.files.add(
       await http.MultipartFile.fromPath(fileField, file.path),
     );
 
-    return await request.send();
+    final streamed = await request.send();
+
+    return await http.Response.fromStream(streamed);
   }
 
    //web
-  static Future<http.StreamedResponse> requestMultipartWeb({
+  static Future<http.Response> requestMultipartWeb({
     required String path,
     required Uint8List bytes,
     required String filename,
     String fileField = 'logo',
+    Map<String, String>? fields,
   }) async {
     final url = Uri.parse('$_baseUrl$path');
     final headers = await _getHeaders(isMultipart: true);
 
     final request = http.MultipartRequest('POST', url);
     request.headers.addAll(headers);
+
+     // 👇 CAMPOS
+  if (fields != null) {
+    request.fields.addAll(fields);
+  }
 
     request.files.add(
       http.MultipartFile.fromBytes(
@@ -113,7 +129,9 @@
       ),
     );
 
-    return await request.send();
+      final streamed = await request.send();
+
+   return await http.Response.fromStream(streamed);
   }
 
   

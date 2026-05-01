@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pv26/features/auth/services/auth_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/services.dart';
+
 
 class CompaniesScreen extends StatefulWidget {
   final bool showAppBar;
@@ -12,7 +17,11 @@ class CompaniesScreen extends StatefulWidget {
 class _CompaniesScreenState extends State<CompaniesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  XFile? selectedLogo;
+  Uint8List? logoBytes;
 
+  final picker = ImagePicker();
+  bool _globalLoading = false;
   // Dummy data for companies and branches
   final List<Map<String, dynamic>> _companies = [
     {
@@ -49,21 +58,138 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
       'branches': [],
     },
   ];
-
+  
+  bool isSubmitting = false;
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
+
+  void _setLoading(bool value) {
+    if (!mounted) return;
+    setState(() {
+      _globalLoading = value;
+    });
+  }
+
+  Future<void> _createCompany({
+    required GlobalKey<FormState> formKey,
+    required TextEditingController nombreController,
+    required TextEditingController celularController,
+    required TextEditingController correoController,
+    //required Function(void Function()) setModalState,
+    XFile? selectedLogo,
+  }) async {
+    if (!formKey.currentState!.validate()) return;
+
+    _setLoading(true);
+    final response = await AuthService.registerCompany(
+      name: nombreController.text.trim(),
+      email: correoController.text.trim(),
+      phone: celularController.text.trim(),
+      logo: selectedLogo,
+    );
+
+    _setLoading(false);
+
+    if (!mounted) return;
+
+    if (response['success'] == true) {
+      final data = response['data'];
+
+      setState(() {
+        _companies.add({
+          'id': data['user']?['_id']?.toString() ??
+              DateTime.now().millisecondsSinceEpoch.toString(),
+          'name': data['user']?['name'] ?? nombreController.text,
+          'celular': data['user']?['phone'] ?? celularController.text,
+          'correo': data['user']?['email'] ?? correoController.text,
+          'logoUrl': data['logoUrl'], // 👈 IMPORTANTE
+          'isExpanded': false,
+          'branches': [],
+        });
+      });
+
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
+          backgroundColor: const Color(0xFF05e265),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+
+  Future<void> _pickLogo(
+      StateSetter setModalState,
+    ) async {
+
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
+      );
+
+      if (pickedFile != null) {
+
+        final bytes = await pickedFile.readAsBytes();
+
+        // Validar PNG
+        if (!pickedFile.name.toLowerCase().endsWith('.png')) {
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Solo se permiten imágenes PNG'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+
+          return;
+        }
+
+        // Validar dimensiones
+        final codec = await ui.instantiateImageCodec(bytes);
+        final frame = await codec.getNextFrame();
+        final image = frame.image;
+
+        if (image.width > 500 || image.height > 500) {
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('La imagen debe ser máximo 500x500 px'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+
+          return;
+        }
+
+
+         
+
+        setModalState(() {
+          selectedLogo = pickedFile;
+          logoBytes = bytes;
+        });
+      }
+    }
+
   void _showCompanyForm() {
     final formKey = GlobalKey<FormState>();
     final nombreController = TextEditingController();
     final celularController = TextEditingController();
-    final numeroController = TextEditingController();
     final correoController = TextEditingController();
-    String? selectedLogoPath;
-    bool isSubmitting = false;
+   
 
     showDialog(
       context: context,
@@ -71,34 +197,6 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            void submitForm() {
-              if (formKey.currentState!.validate()) {
-                setModalState(() => isSubmitting = true);
-                
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  if (mounted) {
-                    setState(() {
-                      _companies.add({
-                        'id': DateTime.now().millisecondsSinceEpoch.toString(),
-                        'name': nombreController.text,
-                        'celular': celularController.text,
-                        'numero': numeroController.text,
-                        'correo': correoController.text,
-                        'isExpanded': false,
-                        'branches': [],
-                      });
-                    });
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Compañía creada con éxito'),
-                        backgroundColor: Color(0xFF05e265),
-                      ),
-                    );
-                  }
-                });
-              }
-            }
 
             return AlertDialog(
               backgroundColor: Theme.of(context).cardColor,
@@ -140,18 +238,7 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                           validator: (value) => value!.isEmpty ? 'Campo requerido' : null,
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
-                          controller: numeroController,
-                          keyboardType: TextInputType.number,
-                          style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface),
-                          decoration: InputDecoration(
-                            labelText: 'Número',
-                            prefixIcon: const Icon(Icons.numbers),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          validator: (value) => value!.isEmpty ? 'Campo requerido' : null,
-                        ),
-                        const SizedBox(height: 16),
+
                         TextFormField(
                           controller: correoController,
                           keyboardType: TextInputType.emailAddress,
@@ -168,30 +255,101 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
+
+
+
+                      // Row(
+                      //   children: [
+                      //     AnimatedSwitcher(
+                      //       duration: const Duration(milliseconds: 200),
+                      //       child: logoBytes != null
+                      //           ? ClipRRect(
+                      //               borderRadius: BorderRadius.circular(8),
+                      //               child: Image.memory(
+                      //                 logoBytes!,
+                      //                 key: ValueKey(logoBytes), // importante para animación correcta
+                      //                 width: 50,
+                      //                 height: 50,
+                      //                 fit: BoxFit.cover,
+                      //               ),
+                      //             )
+                      //           : const Icon(
+                      //               Icons.image,
+                      //               key: ValueKey('placeholder'),
+                      //               size: 50,
+                      //               color: Colors.grey,
+                      //             ),
+                      //     ),
+
+                      //     const SizedBox(width: 16),
+
+                      //     Expanded(
+                      //       child: ElevatedButton.icon(
+                      //         onPressed: () => _pickLogo(setModalState),
+                      //         icon: const Icon(Icons.upload_file),
+                      //         label: const Text('Seleccionar Logotipo'),
+                      //       ),
+                      //     ),
+
+                      //     const SizedBox(width: 8),
+
+                      //     if (logoBytes != null)
+                      //       const Icon(Icons.check_circle, color: Color(0xFF05e265)),
+                      //   ],
+                      // )
+                      
+
                         Row(
                           children: [
-                            const Icon(Icons.image, size: 40, color: Colors.grey),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              child: logoBytes != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.memory(
+                                        logoBytes!,
+                                        key: ValueKey(logoBytes),
+                                        width: 50,
+                                        height: 50,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.image,
+                                      key: ValueKey('placeholder'),
+                                      size: 50,
+                                      color: Colors.grey,
+                                    ),
+                            ),
+
                             const SizedBox(width: 16),
+
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: () {
-                                  setModalState(() {
-                                    selectedLogoPath = 'logo_simulado.png';
-                                  });
-                                },
+                                onPressed: () => _pickLogo(setModalState),
                                 icon: const Icon(Icons.upload_file),
                                 label: const Text('Seleccionar Logotipo'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                                  foregroundColor: Theme.of(context).colorScheme.onSurface,
-                                ),
                               ),
                             ),
+
                             const SizedBox(width: 8),
-                            if (selectedLogoPath != null)
+
+                            if (logoBytes != null) ...[
+                              IconButton(
+                                tooltip: 'Eliminar logo',
+                                onPressed: () {
+                                  setModalState(() {
+                                    logoBytes = null;
+                                    selectedLogo = null;
+                                  });
+                                },
+                                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              ),
+
                               const Icon(Icons.check_circle, color: Color(0xFF05e265)),
+                            ],
                           ],
-                        ),
+)
                       ],
                     ),
                   ),
@@ -203,7 +361,14 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
-                  onPressed: isSubmitting ? null : submitForm,
+                  onPressed: isSubmitting ? null : () => _createCompany(
+                        formKey: formKey,
+                        nombreController: nombreController,
+                        celularController: celularController,
+                        selectedLogo: selectedLogo,
+                        correoController: correoController,
+                        //setModalState: setModalState,
+                      ),
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265)),
                   child: isSubmitting
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
@@ -217,11 +382,14 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
     );
   }
 
+
+
+
   void _showBranchForm(Map<String, dynamic> company) {
     final formKey = GlobalKey<FormState>();
     final nombreController = TextEditingController();
     final correoController = TextEditingController();
-    final numeroController = TextEditingController();
+    final celularController = TextEditingController();
     bool isSubmitting = false;
 
     showDialog(
@@ -242,7 +410,6 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                         'id': DateTime.now().millisecondsSinceEpoch.toString(),
                         'name': nombreController.text,
                         'correo': correoController.text,
-                        'numero': numeroController.text,
                         'cashiers': [],
                       });
                       company['isExpanded'] = true; // Expand to show the new branch
@@ -296,11 +463,11 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
-                        controller: numeroController,
+                        controller: celularController,
                         keyboardType: TextInputType.number,
                         style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface),
                         decoration: InputDecoration(
-                          labelText: 'Número / Teléfono',
+                          labelText: 'Teléfono',
                           prefixIcon: const Icon(Icons.numbers),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -596,7 +763,9 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
       ) : null,
 
 
-      body: Padding(
+      body: 
+      
+      Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -618,33 +787,6 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
             const SizedBox(height: 16),
 
 
-            // Row(
-            //   children: [
-            //     Text(
-            //       'Compañías registradas',
-            //       style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
-            //     ),
-            //     const SizedBox(width: 12),
-
-                
-                
-            //     Container(
-            //       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            //       decoration: BoxDecoration(
-            //         color: const Color(0xFF05e265).withOpacity(0.12),
-            //         borderRadius: BorderRadius.circular(20),
-            //       ),
-            //       child: Text(
-            //         '${filteredCompanies.length} Total',
-            //         style: GoogleFonts.outfit(
-            //           fontSize: 12,
-            //           fontWeight: FontWeight.bold,
-            //           color: const Color(0xFF05e265),
-            //         ),
-            //       ),
-            //     ),
-            //   ],
-            // ),
   
 
               
@@ -934,4 +1076,8 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
       ),
     );
   }
+
+
+
+
 }

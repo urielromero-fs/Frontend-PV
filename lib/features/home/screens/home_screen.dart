@@ -79,26 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
 
 
-
-    //_loadUserData();
-
     _loadOnboarding().then((_) {
       _initOnboarding(); 
     });
-
-
-    // //Carga inicial de productos
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   final provider = Provider.of<ProductProvider>(context, listen: false); 
-         
-    //   if (provider.allProducts.isEmpty) {
-    //       provider.fetchInitialProducts();    
-    //   }
-      
-    // });
-
-
-
 
     _initData(); 
 

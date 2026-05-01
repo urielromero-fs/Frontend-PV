@@ -1,7 +1,9 @@
   import 'dart:convert';
   import 'package:shared_preferences/shared_preferences.dart';
   import 'package:http/http.dart' as http;
-
+  import 'package:flutter/foundation.dart' show kIsWeb;
+  import 'package:pv26/core/network/api_helper.dart';
+  import 'package:flutter/services.dart';
 
   class AuthService {
     static const String _accessTokenKey = 'access_token';
@@ -20,7 +22,8 @@
     static Future<Map<String, dynamic>> register(
       String name,
       String email,
-      String password,
+      String phone,
+
     ) async {
       try {
         final response = await http.post(
@@ -29,7 +32,12 @@
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: jsonEncode({'name': name, 'email': email, 'password': password}),
+          body: jsonEncode({
+            'name': name, 
+            'email': email, 
+            'phone': phone, 
+          
+          }),
         );
 
         if (response.statusCode == 200 || response.statusCode == 201) {
@@ -395,6 +403,107 @@
       return false;
     }
   }
+
+
+
+
+    
+    static Future<Map<String, dynamic>> registerCompany({
+      required String name,
+      required String email,
+      required String phone,
+      dynamic logo, // File o XFile
+    }) async {
+      try {
+        final path = '/auth/registerCompany';
+
+        final fields = {
+          'name': name,
+          'email': email,
+          'phone': phone,
+        };
+
+        http.Response response;
+
+          // if (kIsWeb) {
+          //   if (logo != null) {
+          //     final bytes = await logo.readAsBytes();
+          //     final filename = logo.name;
+
+          //     response = await ApiHelper.requestMultipartWeb(
+          //       path: path,
+          //       bytes: bytes,
+          //       filename: filename,
+          //       fileField: 'logo',
+          //       fields: fields,
+          //     );
+          //   } else {
+          //     response = await ApiHelper.requestMultipartWeb(
+          //       path: path,
+          //       bytes: Uint8List(0), // no se manda archivo
+          //       filename: '',
+          //       fileField: '',
+          //       fields: fields,
+          //     );
+          //   }
+          // } else {
+          //   response = await ApiHelper.requestMultipart(
+          //     path: path,
+          //     file: logo, // puede ser null si tu helper lo soporta
+          //     fileField: 'logo',
+          //     fields: fields,
+          //   );
+          // }
+
+
+        if (kIsWeb && logo != null) {
+          final bytes = await logo.readAsBytes();
+
+          response = await ApiHelper.requestMultipartWeb(
+            path: path,
+            bytes: bytes,
+            filename: logo.name,
+            fileField: 'logo',
+            fields: fields,
+          );
+        } else if (!kIsWeb && logo != null) {
+          response = await ApiHelper.requestMultipart(
+            path: path,
+            file: logo,
+            fileField: 'logo',
+            fields: fields,
+          );
+        } else {
+          // ❌ NO mandar multipart si no hay archivo
+          response = await ApiHelper.request(
+           method: 'POST',
+            path: path,
+            body: fields,
+          );
+        }
+
+            final respStr = response.body;
+        final data = jsonDecode(respStr);
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return {
+            'success': true,
+            'message': data['message'] ?? 'Empresa creada correctamente',
+            'data': data,
+          };
+        }
+
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Error (${response.statusCode})',
+        };
+      } catch (e) {
+        return {
+          'success': false,
+          'message': 'Error: $e',
+        };
+      }
+    }
 
 
 
