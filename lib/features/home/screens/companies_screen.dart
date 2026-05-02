@@ -4,6 +4,7 @@ import 'package:pv26/features/auth/services/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
+import 'package:pv26/features/users/services/users_service.dart';
 
 
 class CompaniesScreen extends StatefulWidget {
@@ -22,44 +23,56 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
 
   final picker = ImagePicker();
   bool _globalLoading = false;
-  // Dummy data for companies and branches
-  final List<Map<String, dynamic>> _companies = [
-    {
-      'id': '1',
-      'name': 'Empresa A',
-      'celular': '5512345678',
-      'numero': '101',
-      'correo': 'contacto@empresaa.com',
-      'isExpanded': false,
-      'branches': [
-        {
-          'id': 'b1',
-          'name': 'Sucursal Centro',
-          'correo': 'centro@empresaa.com',
-          'numero': '001',
-          'cashiers': [
-            {
-              'id': 'c1',
-              'name': 'Juan Pérez',
-              'correo': 'juan@empresaa.com',
-              'numero': '5551112233',
-            }
-          ],
-        },
-      ]
-    },
-    {
-      'id': '2',
-      'name': 'Empresa B',
-      'celular': '5598765432',
-      'numero': '102',
-      'correo': 'info@empresab.com',
-      'isExpanded': false,
-      'branches': [],
-    },
-  ];
+  // // Dummy data for companies and branches
+  // final List<Map<String, dynamic>> _companies = [
+  //   {
+  //     'id': '1',
+  //     'name': 'Empresa A',
+  //     'celular': '5512345678',
+  //     'numero': '101',
+  //     'correo': 'contacto@empresaa.com',
+  //     'isExpanded': false,
+  //     'branches': [
+  //       {
+  //         'id': 'b1',
+  //         'name': 'Sucursal Centro',
+  //         'correo': 'centro@empresaa.com',
+  //         'numero': '001',
+  //         'cashiers': [
+  //           {
+  //             'id': 'c1',
+  //             'name': 'Juan Pérez',
+  //             'correo': 'juan@empresaa.com',
+  //             'numero': '5551112233',
+  //           }
+  //         ],
+  //       },
+  //     ]
+  //   },
+  //   {
+  //     'id': '2',
+  //     'name': 'Empresa B',
+  //     'celular': '5598765432',
+  //     'numero': '102',
+  //     'correo': 'info@empresab.com',
+  //     'isExpanded': false,
+  //     'branches': [],
+  //   },
+  // ];
   
+
+
+  List<Map<String, dynamic>> _companies = [];
+  bool _isLoadingCompanies = false;
   bool isSubmitting = false;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompanies();
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -73,6 +86,86 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
       _globalLoading = value;
     });
   }
+
+  Future<void> _loadCompanies() async {
+      setState(() {
+        _isLoadingCompanies = true;
+      });
+
+      final response = await UsersService.getMasters();
+
+      if (!mounted) return;
+
+      if (response['success'] == true) {
+        final data = response['data'];
+
+        final List masters = data['masters'] ?? [];
+
+        // final List companies = data is List
+        //     ? data
+        //     : data['users'] ?? data['data'] ?? [];
+
+        // setState(() {
+        //   _companies = companies.map<Map<String, dynamic>>((company) {
+        //     return {
+        //       'id': company['_id']?.toString() ?? '',
+        //       'name': company['name'] ?? '',
+        //       'celular': company['phone'] ?? '',
+        //       'numero': company['number'] ?? '',
+        //       'correo': company['email'] ?? '',
+        //       'logoUrl': company['logoUrl'],
+        //       'isExpanded': false,
+
+        //       // por mientras vacío hasta que conectes sucursales
+        //       'branches': company['locations'] ?? [],
+        //     };
+        //   }).toList();
+
+        //   _isLoadingCompanies = false;
+        // });
+      
+        setState(() {
+          _companies = masters.map<Map<String, dynamic>>((master) {
+            final locations = master['locations'] as List? ?? [];
+
+            return {
+              'id': master['_id'],
+              'name': master['name'] ?? '',
+              'correo': master['email'] ?? '',
+              'celular': master['phone'] ?? '',
+              'numero': master['phone'] ?? '',
+              'logoUrl': master['logoUrl'],
+              'isExpanded': false,
+
+              'branches': locations.map((loc) {
+                return {
+                  'id': loc['_id'],
+                  'name': loc['name'],
+                  'numero': '',
+                  'address': loc['address'],
+                  'cashiers': [], // aún no  en backend
+                };
+              }).toList(),
+            };
+          }).toList();
+
+          _isLoadingCompanies = false;
+        });
+          
+      
+      } else {
+        setState(() {
+          _isLoadingCompanies = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message']),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
 
   Future<void> _createCompany({
     required GlobalKey<FormState> formKey,
@@ -99,18 +192,7 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
     if (response['success'] == true) {
       final data = response['data'];
 
-      setState(() {
-        _companies.add({
-          'id': data['user']?['_id']?.toString() ??
-              DateTime.now().millisecondsSinceEpoch.toString(),
-          'name': data['user']?['name'] ?? nombreController.text,
-          'celular': data['user']?['phone'] ?? celularController.text,
-          'correo': data['user']?['email'] ?? correoController.text,
-          'logoUrl': data['logoUrl'], // 👈 IMPORTANTE
-          'isExpanded': false,
-          'branches': [],
-        });
-      });
+      await _loadCompanies();
 
       Navigator.pop(context);
 
@@ -869,14 +951,22 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: filteredCompanies.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No se encontraron compañías',
-                        style: GoogleFonts.outfit(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+           Expanded(
+              child: _isLoadingCompanies
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF05e265),
                       ),
                     )
+                  : filteredCompanies.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No se encontraron compañías',
+                            style: GoogleFonts.outfit(
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        )
                   : ListView.builder(
                       itemCount: filteredCompanies.length,
                       itemBuilder: (context, index) {

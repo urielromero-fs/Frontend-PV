@@ -328,7 +328,7 @@ class UsersService {
   }
       
 
-
+  //Logo
   static Future<Map<String, dynamic>> uploadLogo({
     required dynamic logo, // File o XFile
   }) async {
@@ -380,6 +380,42 @@ class UsersService {
         'message': 'Error: $e',
       };
     }
+  }
+
+
+
+    //Get companies
+  static Future<Map<String, dynamic>> getMasters() async {
+    try {
+      final response = await ApiHelper.request(
+        method: 'GET',
+        path: '/users/masters',
+      );
+
+      
+    
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor (${response.statusCode})',
+        };
+      }
+
+    } catch (e) { 
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+
   }
 
 
