@@ -1650,31 +1650,45 @@ void _showSettingsModal() {
           : null,
       drawer: isMobile
           ? Drawer(
-              backgroundColor: const Color(0xFF0a0a0a),
+              backgroundColor: Theme.of(context).cardColor,
               child: Column(
                 children: [
                   DrawerHeader(
+                    margin: EdgeInsets.zero,
+                    padding: EdgeInsets.zero,
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         colors: [Color(0xFF05e265), Color(0xFF04c457)],
                       ),
                     ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.eco, color: Colors.white, size: 48),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Centli ',
-                            style: GoogleFonts.outfit(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.eco, color: Colors.white, size: 48),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Centli ',
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white70),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(
@@ -1760,7 +1774,7 @@ void _showSettingsModal() {
                             },
                           ),
                         ],
-                        const Divider(color: Colors.white10),
+                        Divider(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                         if (_isAdmin)
                           _NavItem(
                             icon: Icons.settings_rounded,
@@ -1778,6 +1792,16 @@ void _showSettingsModal() {
                             _showSupportModal();
                           },
                         ),
+                        const SizedBox(height: 20),
+                        _NavItem(
+                          icon: Icons.logout_rounded,
+                          title: 'Cerrar Sesión',
+                          onTap: () {
+                            Navigator.pop(context);
+                            _handleLogout(context);
+                          },
+                        ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),

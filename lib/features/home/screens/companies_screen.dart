@@ -758,9 +758,21 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(content: Text('Cajero eliminado'), backgroundColor: Colors.red),
                                       );
+                                    } else if (value == 'send_password') {
+                                      _sendUserPassword(cashier['correo']);
                                     }
                                   },
                                   itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'send_password',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.password_rounded, size: 20, color: Colors.orangeAccent),
+                                          SizedBox(width: 8),
+                                          Text('Enviar contraseña'),
+                                        ],
+                                      ),
+                                    ),
                                     const PopupMenuItem(
                                       value: 'edit',
                                       child: Row(
@@ -1034,11 +1046,23 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                                       onSelected: (value) {
                                         if (value == 'create_branch') {
                                           _showBranchForm(company);
+                                        } else if (value == 'send_password') {
+                                          _sendUserPassword(company['correo']);
                                         }
                                       },
                                       itemBuilder: (context) => [
-                                        const PopupMenuItem(
-                                          value: 'create_branch',
+                                          const PopupMenuItem(
+                                            value: 'send_password',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.password_rounded, size: 20, color: Colors.orangeAccent),
+                                                SizedBox(width: 8),
+                                                Text('Enviar contraseña'),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'create_branch',
                                           child: Row(
                                             children: [
                                               Icon(Icons.store_rounded, size: 20, color: Colors.blueAccent),
@@ -1104,9 +1128,21 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                                                         _showCashierForm(company, branch);
                                                       } else if (value == 'view_cashiers') {
                                                         _showCashiersList(company, branch);
+                                                      } else if (value == 'send_password') {
+                                                        _sendUserPassword(branch['correo']);
                                                       }
                                                     },
                                                     itemBuilder: (context) => [
+                                                      const PopupMenuItem(
+                                                        value: 'send_password',
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(Icons.password_rounded, size: 20, color: Colors.orangeAccent),
+                                                            SizedBox(width: 8),
+                                                            Text('Enviar contraseña'),
+                                                          ],
+                                                        ),
+                                                      ),
                                                       const PopupMenuItem(
                                                         value: 'create_cashier',
                                                         child: Row(
@@ -1167,7 +1203,34 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
     );
   }
 
+  Future<void> _sendUserPassword(String? email) async {
+    if (email == null || email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay un correo válido registrado'), backgroundColor: Colors.red),
+      );
+      return;
+    }
 
+    _setLoading(true);
+    final response = await AuthService.forgotPassword(email);
+    _setLoading(false);
 
+    if (!mounted) return;
 
+    if (response['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message'] ?? 'Instrucciones enviadas'),
+          backgroundColor: const Color(0xFF05e265),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message'] ?? 'Error al enviar instrucciones'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 }
