@@ -98,7 +98,7 @@ class UsersService {
         final responseData = jsonDecode(response.body);
         return {
           'success': true,
-          'message': 'Correo de recuperación enviado exitosamente',
+          'message': 'Contraseña de recuperación enviado exitosamente al correo del usuario',
           'data': responseData,
         };
       } else {
@@ -419,6 +419,78 @@ class UsersService {
   }
 
 
+  //Update company
+  static Future<Map<String, dynamic>> updateCompany({
+      required String id,
+      required String name,
+      required String email,
+      required String phone,
+      dynamic logo, // File o XFile
+    }) async {
+      try {
+
+        final path = '/users/masters/$id';
+
+        final fields = {
+          'name': name,
+          'email': email,
+          'phone': phone,
+        };
+
+        http.Response response;
+
+        if (kIsWeb && logo != null) {
+          final bytes = await logo.readAsBytes();
+
+          response = await ApiHelper.requestMultipartWeb(
+            path: path,
+            bytes: bytes,
+            filename: logo.name,
+            fileField: 'logo',
+            fields: fields,
+            method: 'PUT',
+          );
+        } 
+        else if (!kIsWeb && logo != null) {
+          response = await ApiHelper.requestMultipart(
+            path: path,
+            file: logo,
+            fileField: 'logo',
+            fields: fields,
+            method: 'PUT',
+          );
+        } 
+        else {
+          
+          response = await ApiHelper.request(
+            method: 'PUT',
+            path: path,
+            body: fields,
+          );
+        }
+
+        final respStr = response.body;
+        final data = jsonDecode(respStr);
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return {
+            'success': true,
+            'message': data['message'] ?? 'Empresa actualizada correctamente',
+            'data': data,
+          };
+        }
+
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Error (${response.statusCode})',
+        };
+      } catch (e) {
+        return {
+          'success': false,
+          'message': 'Error: $e',
+        };
+      }
+  }
 
 
 }

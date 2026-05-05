@@ -77,19 +77,19 @@
     required String path,
     required File file,
     String fileField = 'logo',
-     Map<String, String>? fields,
+    Map<String, String>? fields,
+    String method = 'POST',
   }) async {
     final url = Uri.parse('$_baseUrl$path');
     final headers = await _getHeaders(isMultipart: true);
 
 
-    final request = http.MultipartRequest('POST', url);
+    final request = http.MultipartRequest(method, url);
     request.headers.addAll(headers);
 
-      // 👇 CAMPOS
-  if (fields != null) {
-    request.fields.addAll(fields);
-  }
+    if (fields != null) {
+      request.fields.addAll(fields);
+    }
 
 
     request.files.add(
@@ -108,17 +108,18 @@
     required String filename,
     String fileField = 'logo',
     Map<String, String>? fields,
+    String method = 'POST',
   }) async {
     final url = Uri.parse('$_baseUrl$path');
     final headers = await _getHeaders(isMultipart: true);
 
-    final request = http.MultipartRequest('POST', url);
+    final request = http.MultipartRequest(method, url);
     request.headers.addAll(headers);
 
-     // 👇 CAMPOS
-  if (fields != null) {
-    request.fields.addAll(fields);
-  }
+     
+    if (fields != null) {
+      request.fields.addAll(fields);
+    }
 
     request.files.add(
       http.MultipartFile.fromBytes(

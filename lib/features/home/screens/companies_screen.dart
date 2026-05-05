@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:pv26/features/users/services/users_service.dart';
-
+import 'package:pv26/features/reports/services/branches_service.dart';
 
 class CompaniesScreen extends StatefulWidget {
   final bool showAppBar;
@@ -101,28 +101,9 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
 
         final List masters = data['masters'] ?? [];
 
-        // final List companies = data is List
-        //     ? data
-        //     : data['users'] ?? data['data'] ?? [];
 
-        // setState(() {
-        //   _companies = companies.map<Map<String, dynamic>>((company) {
-        //     return {
-        //       'id': company['_id']?.toString() ?? '',
-        //       'name': company['name'] ?? '',
-        //       'celular': company['phone'] ?? '',
-        //       'numero': company['number'] ?? '',
-        //       'correo': company['email'] ?? '',
-        //       'logoUrl': company['logoUrl'],
-        //       'isExpanded': false,
 
-        //       // por mientras vacío hasta que conectes sucursales
-        //       'branches': company['locations'] ?? [],
-        //     };
-        //   }).toList();
 
-        //   _isLoadingCompanies = false;
-        // });
       
         setState(() {
           _companies = masters.map<Map<String, dynamic>>((master) {
@@ -143,7 +124,9 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                   'name': loc['name'],
                   'numero': '',
                   'address': loc['address'],
-                  'cashiers': [], // aún no  en backend
+                  'adminsNumber': loc['adminsNumber'] ?? 0,
+                  'sellersNumber': loc['sellersNumber'] ?? 0,
+                  'cashiers': [], 
                 };
               }).toList(),
             };
@@ -466,56 +449,80 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
 
 
 
+Future<void> _updateCompany({
+  required GlobalKey<FormState> formKey,
+  required TextEditingController nombreController,
+  required TextEditingController celularController,
+  required TextEditingController correoController,
+  required String id,
+  XFile? selectedLogo,
+}) async {
+  if (!formKey.currentState!.validate()) return;
 
-  void _showBranchForm(Map<String, dynamic> company) {
-    final formKey = GlobalKey<FormState>();
-    final nombreController = TextEditingController();
-    final correoController = TextEditingController();
-    final celularController = TextEditingController();
-    bool isSubmitting = false;
+  _setLoading(true);
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            void submitForm() {
-              if (formKey.currentState!.validate()) {
-                setModalState(() => isSubmitting = true);
-                
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  if (mounted) {
-                    setState(() {
-                      final branches = company['branches'] as List<dynamic>;
-                      branches.add({
-                        'id': DateTime.now().millisecondsSinceEpoch.toString(),
-                        'name': nombreController.text,
-                        'correo': correoController.text,
-                        'cashiers': [],
-                      });
-                      company['isExpanded'] = true; // Expand to show the new branch
-                    });
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Sucursal creada en ${company['name']}'),
-                        backgroundColor: Colors.blueAccent,
-                      ),
-                    );
-                  }
-                });
-              }
-            }
+  final response = await UsersService.updateCompany(
+    id: id,
+    name: nombreController.text.trim(),
+    email: correoController.text.trim(),
+    phone: celularController.text.trim(),
+    logo: selectedLogo,
+  );
 
-            return AlertDialog(
-              backgroundColor: Theme.of(context).cardColor,
-              title: Text(
-                'Nueva Sucursal - ${company['name']}',
-                style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
+  _setLoading(false);
+
+  if (!mounted) return;
+
+  if (response['success'] == true) {
+    await _loadCompanies();
+
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(response['message']),
+        backgroundColor: const Color(0xFF05e265),
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(response['message']),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+
+void _showEditCompanyForm(Map company) {
+  final formKey = GlobalKey<FormState>();
+
+  final nombreController =
+      TextEditingController(text: company['name']);
+  final celularController =
+      TextEditingController(text: company['celular']);
+  final correoController =
+      TextEditingController(text: company['correo']);
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return AlertDialog(
+            backgroundColor: Theme.of(context).cardColor,
+            title: Text(
+              'Editar Compañía',
+              style: GoogleFonts.outfit(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
               ),
-              content: SizedBox(
-                width: 400,
+            ),
+            content: SizedBox(
+              width: 450,
+              child: SingleChildScrollView(
                 child: Form(
                   key: formKey,
                   child: Column(
@@ -523,53 +530,293 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                     children: [
                       TextFormField(
                         controller: nombreController,
-                        style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface),
+                        style: GoogleFonts.outfit(
+                            color: Theme.of(context).colorScheme.onSurface),
                         decoration: InputDecoration(
-                          labelText: 'Nombre de la Sucursal',
-                          prefixIcon: const Icon(Icons.store),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          labelText: 'Nombre de la Compañía',
+                          prefixIcon: const Icon(Icons.business),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                        validator: (value) => value!.isEmpty ? 'Campo requerido' : null,
+                        validator: (value) =>
+                            value!.isEmpty ? 'Campo requerido' : null,
                       ),
+
                       const SizedBox(height: 16),
+
+                      TextFormField(
+                        controller: celularController,
+                        keyboardType: TextInputType.phone,
+                        style: GoogleFonts.outfit(
+                            color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Celular',
+                          prefixIcon: const Icon(Icons.phone),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        validator: (value) =>
+                            value!.isEmpty ? 'Campo requerido' : null,
+                      ),
+
+                      const SizedBox(height: 16),
+
                       TextFormField(
                         controller: correoController,
                         keyboardType: TextInputType.emailAddress,
-                        style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface),
+                        style: GoogleFonts.outfit(
+                            color: Theme.of(context).colorScheme.onSurface),
                         decoration: InputDecoration(
                           labelText: 'Correo Electrónico',
                           prefixIcon: const Icon(Icons.email),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                        validator: (value) => value!.isEmpty ? 'Campo requerido' : null,
+                        validator: (value) {
+                          if (value!.isEmpty) return 'Campo requerido';
+                          if (!value.contains('@')) return 'Correo inválido';
+                          return null;
+                        },
                       ),
+
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: celularController,
-                        keyboardType: TextInputType.number,
-                        style: GoogleFonts.outfit(color: Theme.of(context).colorScheme.onSurface),
-                        decoration: InputDecoration(
-                          labelText: 'Teléfono',
-                          prefixIcon: const Icon(Icons.numbers),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        validator: (value) => value!.isEmpty ? 'Campo requerido' : null,
+
+                      // 👇 MISMO BLOQUE DE LOGO QUE CREATE
+                      Row(
+                        children: [
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            child: logoBytes != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.memory(
+                                      logoBytes!,
+                                      key: ValueKey(logoBytes),
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.image,
+                                    key: ValueKey('placeholder'),
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _pickLogo(setModalState),
+                              icon: const Icon(Icons.upload_file),
+                              label: const Text('Seleccionar Logotipo'),
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          if (logoBytes != null) ...[
+                            IconButton(
+                              tooltip: 'Eliminar logo',
+                              onPressed: () {
+                                setModalState(() {
+                                  logoBytes = null;
+                                  selectedLogo = null;
+                                });
+                              },
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.red),
+                            ),
+                            const Icon(Icons.check_circle,
+                                color: Color(0xFF05e265)),
+                          ],
+                        ],
                       ),
                     ],
                   ),
                 ),
               ),
+            ),
+
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+
+              ElevatedButton(
+                onPressed: () => _updateCompany(
+                  formKey: formKey,
+                  nombreController: nombreController,
+                  celularController: celularController,
+                  correoController: correoController,
+                  id: company['id'],
+                  selectedLogo: selectedLogo,
+                ),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF05e265)),
+                child: const Text(
+                  'Actualizar',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+
+
+Future<void> _deleteCompany(String id) async {
+  if (id.isEmpty) return;
+
+  setState(() {
+    _isLoadingCompanies = true;
+  });
+
+  final response = await UsersService.inactivateUser(
+    id: id,
+  );
+
+  if (!mounted) return;
+
+  setState(() {
+    _isLoadingCompanies = false;
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(response['message']),
+      backgroundColor: response['success'] == true
+          ? const Color(0xFF05e265)
+          : Colors.red,
+    ),
+  );
+
+  if (response['success'] == true) {
+    await _loadCompanies();
+  }
+}
+  
+
+
+  void _showBranchForm(String companyId) {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController addressController = TextEditingController();
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Theme.of(context).cardColor,
+              title: Text(
+                'Nueva Sucursal',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nombre de la Sucursal',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: addressController,
+                    decoration: InputDecoration(
+                      labelText: 'Ubicación / Dirección',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               actions: [
                 TextButton(
-                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                  onPressed: isLoading
+                      ? null
+                      : () => Navigator.pop(context),
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
-                  onPressed: isSubmitting ? null : submitForm,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-                  child: isSubmitting
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Crear Sucursal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          final name = nameController.text.trim();
+                          final address = addressController.text.trim();
+
+                          // Validación
+                          if (name.isEmpty || address.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Completa todos los campos'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          
+                          setState(() => isLoading = true);
+
+                          final result =
+                              await BranchesService.createLocationFromCreator(
+                            name: name,
+                            address: address,
+                            companyId: companyId, 
+                          );
+
+                          
+                          setState(() => isLoading = false);
+
+                          Navigator.pop(context);
+
+                         
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result['message']),
+                              backgroundColor: result['success']
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          );
+
+                          
+                          if (result['success']) {
+                             await _loadCompanies();
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Crear',
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
               ],
             );
@@ -578,6 +825,8 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
       },
     );
   }
+  
+
 
   void _showCashierForm(Map<String, dynamic> company, Map<String, dynamic> branch) {
     final formKey = GlobalKey<FormState>();
@@ -759,7 +1008,7 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                                         const SnackBar(content: Text('Cajero eliminado'), backgroundColor: Colors.red),
                                       );
                                     } else if (value == 'send_password') {
-                                      _sendUserPassword(cashier['correo']);
+                                      //_sendUserPassword(cashier['correo']);
                                     }
                                   },
                                   itemBuilder: (context) => [
@@ -814,6 +1063,12 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
     );
   }
 
+
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -825,6 +1080,43 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
       final query = _searchQuery.toLowerCase();
       return name.contains(query) || correo.contains(query) || celular.contains(query);
     }).toList();
+
+
+
+    Future<void> _sendUserPassword(String email) async {
+        if (email.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Email no válido'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        setState(() {
+          _isLoadingCompanies = true; 
+        });
+
+        final response = await UsersService.sendNewPassword(
+          email: email,
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          _isLoadingCompanies = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message']),
+            backgroundColor: response['success'] == true
+                ? const Color(0xFF05e265)
+                : Colors.red,
+          ),
+        );
+      }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -1011,17 +1303,17 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.phone, size: 14, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Text('${company['celular']}'),
-                                        const SizedBox(width: 12),
-                                        const Icon(Icons.numbers, size: 14, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Text('${company['numero']}'),
-                                      ],
-                                    ),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.phone, size: 14, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        (company['celular'] != null && company['celular'].toString().isNotEmpty)
+                                            ? company['celular'].toString()
+                                            : 'Número no registrado',
+                                      ),
+                                    ],
+                                  ),
                                     const SizedBox(height: 2),
                                     Row(
                                       children: [
@@ -1045,10 +1337,15 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                                       icon: const Icon(Icons.more_vert),
                                       onSelected: (value) {
                                         if (value == 'create_branch') {
-                                          _showBranchForm(company);
+                                          _showBranchForm(company['id']);
+                                         
                                         } else if (value == 'send_password') {
                                           _sendUserPassword(company['correo']);
-                                        }
+                                        } else if (value == 'delete') {
+                                          _deleteCompany(company['id']); 
+                                        }else if (value == 'edit') {
+                                         _showEditCompanyForm(company);
+                                      }
                                       },
                                       itemBuilder: (context) => [
                                           const PopupMenuItem(
@@ -1117,10 +1414,15 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                                                   contentPadding: const EdgeInsets.only(left: 40, right: 16),
                                                   leading: const Icon(Icons.store, color: Colors.blueAccent),
                                                   title: Text(branch['name'], style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
-                                                  subtitle: Text(
-                                                    '${branch['correo']} | No: ${branch['numero']}\n${cashiers.length} Cajeros',
-                                                    style: GoogleFonts.outfit(fontSize: 12),
-                                                  ),
+                                                 subtitle: Text(
+                                                      '${branch['address'] ?? 'Sin dirección'}\n'
+                                                      'Admins: ${branch['adminsNumber'] ?? 0} | '
+                                                      'Cajeros: ${branch['sellersNumber'] ?? 0}',
+                                                      style: GoogleFonts.outfit(
+                                                        fontSize: 12,
+                                                        height: 1.4,
+                                                      ),
+                                                    ),
                                                   trailing: PopupMenuButton<String>(
                                                     icon: const Icon(Icons.more_horiz),
                                                     onSelected: (value) {
@@ -1203,34 +1505,39 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
     );
   }
 
-  Future<void> _sendUserPassword(String? email) async {
-    if (email == null || email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay un correo válido registrado'), backgroundColor: Colors.red),
-      );
-      return;
-    }
+  // Future<void> _sendUserPassword(String? email) async {
+  //   if (email == null || email.isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('No hay un correo válido registrado'), backgroundColor: Colors.red),
+  //     );
+  //     return;
+  //   }
 
-    _setLoading(true);
-    final response = await AuthService.forgotPassword(email);
-    _setLoading(false);
+  //   _setLoading(true);
+  //   final response = await AuthService.forgotPassword(email);
+  //   _setLoading(false);
 
-    if (!mounted) return;
+  //   if (!mounted) return;
 
-    if (response['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response['message'] ?? 'Instrucciones enviadas'),
-          backgroundColor: const Color(0xFF05e265),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response['message'] ?? 'Error al enviar instrucciones'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
+  //   if (response['success'] == true) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text(response['message'] ?? 'Instrucciones enviadas'),
+  //         backgroundColor: const Color(0xFF05e265),
+  //       ),
+  //     );
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text(response['message'] ?? 'Error al enviar instrucciones'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //   }
+  // }
+
+
+
 }
+
+

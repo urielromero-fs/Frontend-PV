@@ -474,54 +474,6 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
     );
   }
 
-  // void _showBranchForm() {
-
-  //   final TextEditingController nameController = TextEditingController();
-  //   final TextEditingController addressController = TextEditingController();
-  //   bool isLoading = false;
-
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       backgroundColor: Theme.of(context).cardColor,
-  //       title: Text('Nueva Sucursal',
-  //           style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-  //       content: Column(
-  //         mainAxisSize: MainAxisSize.min,
-  //         children: [
-  //           TextField(
-  //             decoration: InputDecoration(
-  //               labelText: 'Nombre de la Sucursal',
-  //               border: OutlineInputBorder(
-  //                   borderRadius: BorderRadius.circular(12)),
-  //             ),
-  //           ),
-  //           const SizedBox(height: 16),
-  //           TextField(
-  //             decoration: InputDecoration(
-  //               labelText: 'Ubicación / Dirección',
-  //               border: OutlineInputBorder(
-  //                   borderRadius: BorderRadius.circular(12)),
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //       actions: [
-  //         TextButton(
-  //             onPressed: () => Navigator.pop(context),
-  //             child: const Text('Cancelar')),
-  //         ElevatedButton(
-  //           onPressed: () => Navigator.pop(context),
-  //           style: ElevatedButton.styleFrom(
-  //               backgroundColor: Colors.blueAccent),
-  //           child:
-  //               const Text('Crear', style: TextStyle(color: Colors.white)),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
 
   void _showBranchForm() {
     final TextEditingController nameController = TextEditingController();

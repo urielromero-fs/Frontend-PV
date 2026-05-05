@@ -80,4 +80,45 @@ class BranchesService {
 
   }
 
+
+  //Create location
+  static Future<Map<String, dynamic>> createLocationFromCreator({
+    required String name,
+    required String address,
+    required String companyId,
+  }) async {
+    try {
+      final response = await ApiHelper.request(
+        method: 'POST',
+        path: '/locations/from-creator',
+        body: {
+          'name': name,
+          'address': address,
+          'masterId': companyId,
+        }
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Ubicación creada exitosamente',
+          'data': responseData,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor (${response.statusCode})',
+        };
+      }
+    } catch (e) { 
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+
+  }
+
 }
