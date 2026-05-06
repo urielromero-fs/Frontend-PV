@@ -121,4 +121,82 @@ class BranchesService {
 
   }
 
+  //Update location
+  static Future<Map<String, dynamic>> updateLocation({
+    required String companyId,
+    required String name,
+    required String address,
+  }) async {
+    try {
+      final response = await ApiHelper.request(
+        method: 'PUT',
+        path: '/locations/$companyId',
+        body: {
+          'name': name,
+          'address': address,
+        }
+
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Sucursal actualizada exitosamente',
+          'data': responseData,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor (${response.statusCode})',
+        };
+      }
+
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+  }
+
+
+
+  //Delete location
+  static Future<Map<String, dynamic>> deleteLocation({
+    required String companyId,
+  }) async
+  {
+    try {
+
+      final response = await ApiHelper.request(
+        method: 'DELETE',
+        path: '/locations/$companyId',
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+            return {
+              'success': true,
+              'message': data['message'] ?? 'Sucursal eliminada correctamente',
+              'data': data,
+            };
+          } else {
+            return {
+              'success': false,
+              'message': data['message'] ?? 'Error al eliminar la sucursal',
+            };
+          }
+
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+  }
+        
+
 }

@@ -25,6 +25,9 @@ class UsersService {
         }
       );
 
+
+
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         return {
@@ -491,6 +494,57 @@ class UsersService {
         };
       }
   }
+
+
+  //Create user from creator
+  static Future<Map<String, dynamic>> createUserFromCreator({
+    required String name,
+    required String email, 
+    required String role,
+    required String currentLocation,
+    required String companyId,
+  }) async {
+    try {
+
+      
+      final response = await ApiHelper.request(
+        method: 'POST',
+        path: '/users/from-creator',
+        body: {
+          'name': name,
+          'email': email,
+          'role': role,
+          'currentLocation': currentLocation,
+          'masterId': companyId,
+        }
+      );
+
+      
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        return {
+          'success': true,
+          'message': 'Usuario creado exitosamente',
+          'data': responseData,
+        };
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Error en el servidor (${response.statusCode})',
+        };
+      }
+    } catch (e) { 
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+
+  }
+
+
 
 
 }

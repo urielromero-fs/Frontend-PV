@@ -144,7 +144,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                 backgroundColor: Color(0xFF05e265),
               ),
             );
-            // Dar un pequeno respiro al backend antes de recargar
+           
             Future.delayed(const Duration(milliseconds: 500), () => _loadUsers());
           } else {
             setModalState(() => isSubmitting = false);
@@ -540,7 +540,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                             return;
                           }
 
-                          //  Loading ON
+                    
                           setState(() => isLoading = true);
 
                           final result =
@@ -549,7 +549,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                             address: address,
                           );
 
-                          // Loading OFF
+                        
                           setState(() => isLoading = false);
 
                           Navigator.pop(context);
@@ -622,29 +622,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
 
 
 
-            // Row(
-            //   children: [
-            //     SizedBox(
-            //       width: 320,
-            //       child: _PanelCard(
-            //         title: 'Crear Usuario',
-            //         icon: Icons.person_add_rounded,
-            //         color: const Color(0xFF05e265),
-            //         onTap: _showUserForm,
-            //       ),
-            //     ),
-            //     const SizedBox(width: 20),
-            //     SizedBox(
-            //       width: 320,
-            //       child: _PanelCard(
-            //         title: 'Crear Sucursal',
-            //         icon: Icons.store_rounded,
-            //         color: Colors.blueAccent,
-            //         onTap: _showBranchForm,
-            //       ),
-            //     ),
-            //   ],
-            // ),
+   
 
          
             LayoutBuilder(

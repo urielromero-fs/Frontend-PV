@@ -23,42 +23,7 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
 
   final picker = ImagePicker();
   bool _globalLoading = false;
-  // // Dummy data for companies and branches
-  // final List<Map<String, dynamic>> _companies = [
-  //   {
-  //     'id': '1',
-  //     'name': 'Empresa A',
-  //     'celular': '5512345678',
-  //     'numero': '101',
-  //     'correo': 'contacto@empresaa.com',
-  //     'isExpanded': false,
-  //     'branches': [
-  //       {
-  //         'id': 'b1',
-  //         'name': 'Sucursal Centro',
-  //         'correo': 'centro@empresaa.com',
-  //         'numero': '001',
-  //         'cashiers': [
-  //           {
-  //             'id': 'c1',
-  //             'name': 'Juan Pérez',
-  //             'correo': 'juan@empresaa.com',
-  //             'numero': '5551112233',
-  //           }
-  //         ],
-  //       },
-  //     ]
-  //   },
-  //   {
-  //     'id': '2',
-  //     'name': 'Empresa B',
-  //     'celular': '5598765432',
-  //     'numero': '102',
-  //     'correo': 'info@empresab.com',
-  //     'isExpanded': false,
-  //     'branches': [],
-  //   },
-  // ];
+
   
 
 
@@ -102,9 +67,6 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
         final List masters = data['masters'] ?? [];
 
 
-
-
-      
         setState(() {
           _companies = masters.map<Map<String, dynamic>>((master) {
             final locations = master['locations'] as List? ?? [];
@@ -119,6 +81,10 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
               'isExpanded': false,
 
               'branches': locations.map((loc) {
+
+                 final admins = loc['admins'] as List? ?? [];
+                 final sellers = loc['sellers'] as List? ?? [];
+
                 return {
                   'id': loc['_id'],
                   'name': loc['name'],
@@ -127,6 +93,21 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
                   'adminsNumber': loc['adminsNumber'] ?? 0,
                   'sellersNumber': loc['sellersNumber'] ?? 0,
                   'cashiers': [], 
+
+                   'admins': admins.map((a) => {
+                      'id': a['_id'],
+                      'name': a['name'] ?? '',
+                      'email': a['email'] ?? '',
+                      'role': a['role'],
+                    }).toList(),
+
+
+                'sellers': sellers.map((s) => {
+                  'id': s['_id'],
+                  'name': s['name'] ?? '',
+                  'email': s['email'] ?? '',
+                  'role': s['role'],
+                }).toList(),
                 };
               }).toList(),
             };
@@ -323,46 +304,7 @@ class _CompaniesScreenState extends State<CompaniesScreen> {
 
 
 
-                      // Row(
-                      //   children: [
-                      //     AnimatedSwitcher(
-                      //       duration: const Duration(milliseconds: 200),
-                      //       child: logoBytes != null
-                      //           ? ClipRRect(
-                      //               borderRadius: BorderRadius.circular(8),
-                      //               child: Image.memory(
-                      //                 logoBytes!,
-                      //                 key: ValueKey(logoBytes), // importante para animación correcta
-                      //                 width: 50,
-                      //                 height: 50,
-                      //                 fit: BoxFit.cover,
-                      //               ),
-                      //             )
-                      //           : const Icon(
-                      //               Icons.image,
-                      //               key: ValueKey('placeholder'),
-                      //               size: 50,
-                      //               color: Colors.grey,
-                      //             ),
-                      //     ),
 
-                      //     const SizedBox(width: 16),
-
-                      //     Expanded(
-                      //       child: ElevatedButton.icon(
-                      //         onPressed: () => _pickLogo(setModalState),
-                      //         icon: const Icon(Icons.upload_file),
-                      //         label: const Text('Seleccionar Logotipo'),
-                      //       ),
-                      //     ),
-
-                      //     const SizedBox(width: 8),
-
-                      //     if (logoBytes != null)
-                      //       const Icon(Icons.check_circle, color: Color(0xFF05e265)),
-                      //   ],
-                      // )
-                      
 
                         Row(
                           children: [
@@ -581,7 +523,6 @@ void _showEditCompanyForm(Map company) {
 
                       const SizedBox(height: 16),
 
-                      // 👇 MISMO BLOQUE DE LOGO QUE CREATE
                       Row(
                         children: [
                           AnimatedSwitcher(
@@ -997,7 +938,7 @@ Future<void> _deleteCompany(String id) async {
                                   icon: const Icon(Icons.more_vert),
                                   onSelected: (value) {
                                     if (value == 'edit') {
-                                      // TODO: Implement edit
+                                      
                                     } else if (value == 'delete') {
                                       setModalState(() {
                                         setState(() {
@@ -1065,476 +1006,898 @@ Future<void> _deleteCompany(String id) async {
 
 
 
+  Future<void> _deleteBranch({
+      required Map<String, dynamic> branch,
+      required List<dynamic> branches,
+    }) async {
 
-
-
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    final filteredCompanies = _companies.where((company) {
-      final name = (company['name'] ?? '').toString().toLowerCase();
-      final correo = (company['correo'] ?? '').toString().toLowerCase();
-      final celular = (company['celular'] ?? '').toString().toLowerCase();
-      final query = _searchQuery.toLowerCase();
-      return name.contains(query) || correo.contains(query) || celular.contains(query);
-    }).toList();
-
-
-
-    Future<void> _sendUserPassword(String email) async {
-        if (email.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Email no válido'),
-              backgroundColor: Colors.red,
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Eliminar sucursal'),
+            content: Text(
+              '¿Deseas eliminar la sucursal "${branch['name']}"?',
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Eliminar',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
           );
-          return;
-        }
+        },
+      );
 
-        setState(() {
-          _isLoadingCompanies = true; 
-        });
+      if (confirm != true) return;
 
-        final response = await UsersService.sendNewPassword(
-          email: email,
-        );
+      setState(() {
+        _isLoadingCompanies = true;
+      });
 
-        if (!mounted) return;
+      final response = await BranchesService.deleteLocation(
+        companyId: branch['id'],
+      );
 
-        setState(() {
-          _isLoadingCompanies = false;
-        });
+      if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message']),
-            backgroundColor: response['success'] == true
-                ? const Color(0xFF05e265)
-                : Colors.red,
-          ),
-        );
-      }
+      setState(() {
+        _isLoadingCompanies = false;
+      });
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-     
-      appBar: widget.showAppBar ? AppBar(
-        title: Text(
-          'Compañías',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
+          backgroundColor: response['success'] == true
+              ? const Color(0xFF05e265)
+              : Colors.red,
         ),
-        backgroundColor: theme.cardColor,
-        elevation: 0,
-        iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
+      );
+
+      if (response['success'] == true) {
+        setState(() {
+          branches.removeWhere(
+            (b) => b['id'] == branch['id'],
+          );
+        });
+      }
+}
+
+
+  Future<void> _editBranch(Map<String, dynamic> branch) async {
+  final TextEditingController nameController =
+      TextEditingController(text: branch['name']);
+  final TextEditingController addressController =
+      TextEditingController(text: branch['address']);
+
+
+  print(branch);
+
+  final formKey = GlobalKey<FormState>();
+
+  final result = await showDialog<Map<String, String>>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Editar sucursal'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Nombre'),
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Requerido' : null,
+              ),
+              TextFormField(
+                controller: addressController,
+                decoration: const InputDecoration(labelText: 'Dirección'),
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Requerido' : null,
+              ),
+            ],
+          ),
+        ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: ElevatedButton.icon(
-              onPressed: _showCompanyForm,
-              icon: const Icon(Icons.add, color: Colors.white, size: 20),
-              label: Text(
-                'Crear Compañía',
-                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF05e265),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(context, {
+                  'name': nameController.text,
+                  'address': addressController.text,
+                });
+              }
+            },
+            child: const Text('Guardar'),
           ),
         ],
-      ) : null,
+      );
+    },
+  );
+
+  if (result == null) return;
+
+  setState(() => _isLoadingCompanies = true);
+
+  final response = await BranchesService.updateLocation(
+    companyId: branch['id'],
+    name: result['name']!,
+    address: result['address']!,
+  );
+
+  if (!mounted) return;
+
+  setState(() => _isLoadingCompanies = false);
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(response['message']),
+      backgroundColor:
+          response['success'] == true ? const Color(0xFF05e265) : Colors.red,
+    ),
+  );
+
+  if (response['success'] == true) {
+       await _loadCompanies();        
+  }
+}
 
 
-      body: 
-      
-      Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-
-             Row(
-              children: [
-                Text(
-                  'Compañías',
-                  style: GoogleFonts.outfit(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+  void _showUsersByBranch(
+    Map<String, dynamic> company,
+    Map<String, dynamic> branch,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).cardColor,
+          title: Row(
+            children: [
+              const Icon(Icons.people_alt, color: Color(0xFF05e265)),
+              const SizedBox(width: 8),
+              Text(
+                'Usuarios - ${branch['name']}',
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-
-  
-
-              
-            Row(
-              children: [
-                Text(
-                  'Compañías registradas',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF05e265).withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${filteredCompanies.length} Total',
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF05e265),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 500,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 500),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    
+                    _buildUsersSectionReadOnly(
+                      title: 'Admins',
+                      icon: Icons.admin_panel_settings,
+                      users: branch['admins'] ?? [],
                     ),
-                  ),
-                ),
 
-                const Spacer(),
+                    const SizedBox(height: 20),
 
-                ElevatedButton.icon(
-                  onPressed: _showCompanyForm,
-                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
-                  label: Text(
-                    'Crear Compañía',
-                    style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                    _buildUsersSectionReadOnly(
+                      title: 'Sellers',
+                      icon: Icons.store,
+                      users: branch['sellers'] ?? [],
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF05e265),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-
-            const SizedBox(height: 16),
-            TextField(
-              controller: _searchController,
-              onChanged: (val) => setState(() => _searchQuery = val),
-              style: GoogleFonts.outfit(color: theme.colorScheme.onSurface),
-              decoration: InputDecoration(
-                hintText: 'Buscar por nombre, correo o celular...',
-                hintStyle: GoogleFonts.outfit(color: theme.colorScheme.onSurface.withOpacity(0.4)),
-                prefixIcon: Icon(Icons.search_rounded, color: theme.colorScheme.onSurface.withOpacity(0.4)),
-                filled: true,
-                fillColor: theme.cardColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-           Expanded(
-              child: _isLoadingCompanies
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF05e265),
+          ),
+        );
+      },
+    );
+  }
+
+
+  Widget _buildUsersSectionReadOnly({
+      required String title,
+      required IconData icon,
+      required List users,
+    }) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          
+          // Header 
+          Row(
+            children: [
+              Icon(icon, color: const Color(0xFF05e265), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+         
+          if (users.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No hay $title registrados',
+                style: GoogleFonts.outfit(color: Colors.grey),
+              ),
+            )
+          else
+            // Lista
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: users.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final user = users[index];
+
+                return Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      
+                      CircleAvatar(
+                        backgroundColor: const Color(0xFF05e265),
+                        child: Icon(
+                          icon,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
-                    )
-                  : filteredCompanies.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No se encontraron compañías',
-                            style: GoogleFonts.outfit(
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user['name'] ?? '',
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              user['email'] ?? '',
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
+      );
+    }
+
+
+ void _showUserForm(Map<String, dynamic> company, Map<String, dynamic> branch) {
+      final formKey = GlobalKey<FormState>();
+      final nombreController = TextEditingController();
+      final correoController = TextEditingController();
+
+      String selectedRole = 'seller'; 
+      bool isSubmitting = false;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+
+              Future<void> submitForm() async {
+                if (!formKey.currentState!.validate()) return;
+
+                setModalState(() => isSubmitting = true);
+
+                final response = await UsersService.createUserFromCreator(
+                  name: nombreController.text.trim(),
+                  email: correoController.text.trim(),
+                  role: selectedRole,
+                  currentLocation: branch['id'].toString(),
+                  companyId: company['id'].toString(),
+                );
+
+                if (!mounted) return;
+
+                setModalState(() => isSubmitting = false);
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(response['message']),
+                    backgroundColor: response['success'] == true
+                        ? const Color(0xFF05e265)
+                        : Colors.red,
+                  ),
+                );
+
+                if (response['success'] == true) {
+                  _loadCompanies(); 
+                }
+              }
+
+              return AlertDialog(
+                backgroundColor: Theme.of(context).cardColor,
+                title: Text(
+                  'Crear Usuario - ${branch['name']}',
+                  style: GoogleFonts.outfit(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                content: SizedBox(
+                  width: 420,
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+
+                        // Nombre
+                        TextFormField(
+                          controller: nombreController,
+                          style: GoogleFonts.outfit(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Nombre',
+                            prefixIcon: Icon(Icons.person),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'Campo requerido' : null,
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // Email
+                        TextFormField(
+                          controller: correoController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            labelText: 'Correo',
+                            prefixIcon: Icon(Icons.email),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'Campo requerido' : null,
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // ROLE 
+                        DropdownButtonFormField<String>(
+                          value: selectedRole,
+                          decoration: const InputDecoration(
+                            labelText: 'Rol',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.badge),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'admin',
+                              child: Text('Admin'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'seller',
+                              child: Text('Cajero'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setModalState(() {
+                              selectedRole = value!;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                    child: const Text('Cancelar'),
+                  ),
+                  ElevatedButton(
+                    onPressed: isSubmitting ? null : submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF05e265),
+                    ),
+                    child: isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Crear Usuario',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        )
-                  : ListView.builder(
-                      itemCount: filteredCompanies.length,
-                      itemBuilder: (context, index) {
-                        final company = filteredCompanies[index];
-                        final branches = company['branches'] as List<dynamic>? ?? [];
-                        final isExpanded = company['isExpanded'] == true;
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+}
+    @override
+    Widget build(BuildContext context) {
+      final theme = Theme.of(context);
+      
+      final filteredCompanies = _companies.where((company) {
+        final name = (company['name'] ?? '').toString().toLowerCase();
+        final correo = (company['correo'] ?? '').toString().toLowerCase();
+        final celular = (company['celular'] ?? '').toString().toLowerCase();
+        final query = _searchQuery.toLowerCase();
+        return name.contains(query) || correo.contains(query) || celular.contains(query);
+      }).toList();
 
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          color: theme.cardColor,
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
-                            children: [
-                              ListTile(
-                                onTap: () {
-                                  setState(() {
-                                    company['isExpanded'] = !isExpanded;
-                                  });
-                                },
-                                leading: const CircleAvatar(
-                                  backgroundColor: Color(0xFF05e265),
-                                  child: Icon(Icons.business, color: Colors.white),
-                                ),
-                                title: Text(
-                                  company['name'] ?? '',
-                                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.phone, size: 14, color: Colors.grey),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        (company['celular'] != null && company['celular'].toString().isNotEmpty)
-                                            ? company['celular'].toString()
-                                            : 'Número no registrado',
-                                      ),
-                                    ],
+
+
+      Future<void> _sendUserPassword(String email) async {
+          if (email.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Email no válido'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+
+          setState(() {
+            _isLoadingCompanies = true; 
+          });
+
+          final response = await UsersService.sendNewPassword(
+            email: email,
+          );
+
+          if (!mounted) return;
+
+          setState(() {
+            _isLoadingCompanies = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message']),
+              backgroundColor: response['success'] == true
+                  ? const Color(0xFF05e265)
+                  : Colors.red,
+            ),
+          );
+        }
+
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+      
+        appBar: widget.showAppBar ? AppBar(
+          title: Text(
+            'Compañías',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: theme.cardColor,
+          elevation: 0,
+          iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: ElevatedButton.icon(
+                onPressed: _showCompanyForm,
+                icon: const Icon(Icons.add, color: Colors.white, size: 20),
+                label: Text(
+                  'Crear Compañía',
+                  style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF05e265),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ) : null,
+
+
+        body: 
+        
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+
+              Row(
+                children: [
+                  Text(
+                    'Compañías',
+                    style: GoogleFonts.outfit(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+
+    
+
+                
+              Row(
+                children: [
+                  Text(
+                    'Compañías registradas',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF05e265).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${filteredCompanies.length} Total',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF05e265),
+                      ),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  ElevatedButton.icon(
+                    onPressed: _showCompanyForm,
+                    icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                    label: Text(
+                      'Crear Compañía',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF05e265),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+
+              const SizedBox(height: 16),
+              TextField(
+                controller: _searchController,
+                onChanged: (val) => setState(() => _searchQuery = val),
+                style: GoogleFonts.outfit(color: theme.colorScheme.onSurface),
+                decoration: InputDecoration(
+                  hintText: 'Buscar por nombre, correo o celular...',
+                  hintStyle: GoogleFonts.outfit(color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                  prefixIcon: Icon(Icons.search_rounded, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            Expanded(
+                child: _isLoadingCompanies
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF05e265),
+                        ),
+                      )
+                    : filteredCompanies.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No se encontraron compañías',
+                              style: GoogleFonts.outfit(
+                                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            ),
+                          )
+                    : ListView.builder(
+                        itemCount: filteredCompanies.length,
+                        itemBuilder: (context, index) {
+                          final company = filteredCompanies[index];
+                          final branches = company['branches'] as List<dynamic>? ?? [];
+                          final isExpanded = company['isExpanded'] == true;
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            color: theme.cardColor,
+                            clipBehavior: Clip.antiAlias,
+                            child: Column(
+                              children: [
+                                ListTile(
+                                  onTap: () {
+                                    setState(() {
+                                      company['isExpanded'] = !isExpanded;
+                                    });
+                                  },
+                                  leading: const CircleAvatar(
+                                    backgroundColor: Color(0xFF05e265),
+                                    child: Icon(Icons.business, color: Colors.white),
                                   ),
-                                    const SizedBox(height: 2),
+                                  title: Text(
+                                    company['name'] ?? '',
+                                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 4),
                                     Row(
                                       children: [
-                                        const Icon(Icons.email, size: 14, color: Colors.grey),
+                                        const Icon(Icons.phone, size: 14, color: Colors.grey),
                                         const SizedBox(width: 4),
-                                        Text('${company['correo']}'),
+                                        Text(
+                                          (company['celular'] != null && company['celular'].toString().isNotEmpty)
+                                              ? company['celular'].toString()
+                                              : 'Número no registrado',
+                                        ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${branches.length} Sucursales',
-                                      style: GoogleFonts.outfit(fontSize: 12, color: Colors.blueAccent),
-                                    )
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey),
-                                    PopupMenuButton<String>(
-                                      icon: const Icon(Icons.more_vert),
-                                      onSelected: (value) {
-                                        if (value == 'create_branch') {
-                                          _showBranchForm(company['id']);
-                                         
-                                        } else if (value == 'send_password') {
-                                          _sendUserPassword(company['correo']);
-                                        } else if (value == 'delete') {
-                                          _deleteCompany(company['id']); 
-                                        }else if (value == 'edit') {
-                                         _showEditCompanyForm(company);
-                                      }
-                                      },
-                                      itemBuilder: (context) => [
-                                          const PopupMenuItem(
-                                            value: 'send_password',
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.email, size: 14, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Text('${company['correo']}'),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${branches.length} Sucursales',
+                                        style: GoogleFonts.outfit(fontSize: 12, color: Colors.blueAccent),
+                                      )
+                                    ],
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(isExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.grey),
+                                      PopupMenuButton<String>(
+                                        icon: const Icon(Icons.more_vert),
+                                        onSelected: (value) {
+                                          if (value == 'create_branch') {
+                                            _showBranchForm(company['id']);
+                                          
+                                          } else if (value == 'send_password') {
+                                            _sendUserPassword(company['correo']);
+                                          } else if (value == 'delete') {
+                                            _deleteCompany(company['id']); 
+                                          }else if (value == 'edit') {
+                                          _showEditCompanyForm(company);
+                                        }
+                                        },
+                                        itemBuilder: (context) => [
+                                            const PopupMenuItem(
+                                              value: 'send_password',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.password_rounded, size: 20, color: Colors.orangeAccent),
+                                                  SizedBox(width: 8),
+                                                  Text('Enviar contraseña'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'create_branch',
                                             child: Row(
                                               children: [
-                                                Icon(Icons.password_rounded, size: 20, color: Colors.orangeAccent),
+                                                Icon(Icons.store_rounded, size: 20, color: Colors.blueAccent),
                                                 SizedBox(width: 8),
-                                                Text('Enviar contraseña'),
+                                                Text('Crear Sucursal'),
                                               ],
                                             ),
                                           ),
                                           const PopupMenuItem(
-                                            value: 'create_branch',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.store_rounded, size: 20, color: Colors.blueAccent),
-                                              SizedBox(width: 8),
-                                              Text('Crear Sucursal'),
-                                            ],
-                                          ),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'edit',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.edit_outlined, size: 20),
-                                              SizedBox(width: 8),
-                                              Text('Editar'),
-                                            ],
-                                          ),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'delete',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                                              SizedBox(width: 8),
-                                              Text('Eliminar', style: TextStyle(color: Colors.red)),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isExpanded)
-                                Container(
-                                  color: theme.scaffoldBackgroundColor.withOpacity(0.5),
-                                  child: Column(
-                                    children: branches.isEmpty
-                                        ? [
-                                            Padding(
-                                              padding: const EdgeInsets.all(16.0),
-                                              child: Text('No hay sucursales registradas.',
-                                                  style: GoogleFonts.outfit(color: Colors.grey)),
-                                            )
-                                          ]
-                                        : branches.map<Widget>((branch) {
-                                            final cashiers = branch['cashiers'] as List<dynamic>? ?? [];
-                                            return Column(
+                                            value: 'edit',
+                                            child: Row(
                                               children: [
-                                                const Divider(height: 1),
-                                                ListTile(
-                                                  contentPadding: const EdgeInsets.only(left: 40, right: 16),
-                                                  leading: const Icon(Icons.store, color: Colors.blueAccent),
-                                                  title: Text(branch['name'], style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
-                                                 subtitle: Text(
-                                                      '${branch['address'] ?? 'Sin dirección'}\n'
-                                                      'Admins: ${branch['adminsNumber'] ?? 0} | '
-                                                      'Cajeros: ${branch['sellersNumber'] ?? 0}',
-                                                      style: GoogleFonts.outfit(
-                                                        fontSize: 12,
-                                                        height: 1.4,
-                                                      ),
-                                                    ),
-                                                  trailing: PopupMenuButton<String>(
-                                                    icon: const Icon(Icons.more_horiz),
-                                                    onSelected: (value) {
-                                                      if (value == 'create_cashier') {
-                                                        _showCashierForm(company, branch);
-                                                      } else if (value == 'view_cashiers') {
-                                                        _showCashiersList(company, branch);
-                                                      } else if (value == 'send_password') {
-                                                        _sendUserPassword(branch['correo']);
-                                                      }
-                                                    },
-                                                    itemBuilder: (context) => [
-                                                      const PopupMenuItem(
-                                                        value: 'send_password',
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons.password_rounded, size: 20, color: Colors.orangeAccent),
-                                                            SizedBox(width: 8),
-                                                            Text('Enviar contraseña'),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      const PopupMenuItem(
-                                                        value: 'create_cashier',
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons.person_add, size: 20, color: Color(0xFF05e265)),
-                                                            SizedBox(width: 8),
-                                                            Text('Crear Cajero'),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      const PopupMenuItem(
-                                                        value: 'view_cashiers',
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons.people_outline, size: 20, color: Colors.blueAccent),
-                                                            SizedBox(width: 8),
-                                                            Text('Ver Cajeros'),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      const PopupMenuItem(
-                                                        value: 'edit',
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons.edit_outlined, size: 20),
-                                                            SizedBox(width: 8),
-                                                            Text('Editar'),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      const PopupMenuItem(
-                                                        value: 'delete',
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                                                            SizedBox(width: 8),
-                                                            Text('Eliminar', style: TextStyle(color: Colors.red)),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
+                                                Icon(Icons.edit_outlined, size: 20),
+                                                SizedBox(width: 8),
+                                                Text('Editar'),
                                               ],
-                                            );
-                                          }).toList(),
+                                            ),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                                SizedBox(width: 8),
+                                                Text('Eliminar', style: TextStyle(color: Colors.red)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
+                                if (isExpanded)
+                                  Container(
+                                    color: theme.scaffoldBackgroundColor.withOpacity(0.5),
+                                    child: Column(
+                                      children: branches.isEmpty
+                                          ? [
+                                              Padding(
+                                                padding: const EdgeInsets.all(16.0),
+                                                child: Text('No hay sucursales registradas.',
+                                                    style: GoogleFonts.outfit(color: Colors.grey)),
+                                              )
+                                            ]
+                                          : branches.map<Widget>((branch) {
+                                              final cashiers = branch['cashiers'] as List<dynamic>? ?? [];
+                                              return Column(
+                                                children: [
+                                                  const Divider(height: 1),
+                                                  ListTile(
+                                                    contentPadding: const EdgeInsets.only(left: 40, right: 16),
+                                                    leading: const Icon(Icons.store, color: Colors.blueAccent),
+                                                    title: Text(branch['name'], style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                                                  subtitle: Text(
+                                                        '${branch['address'] ?? 'Sin dirección'}\n'
+                                                        'Admins: ${branch['adminsNumber'] ?? 0} | '
+                                                        'Cajeros: ${branch['sellersNumber'] ?? 0}',
+                                                        style: GoogleFonts.outfit(
+                                                          fontSize: 12,
+                                                          height: 1.4,
+                                                        ),
+                                                      ),
+                                                    trailing: PopupMenuButton<String>(
+                                                      icon: const Icon(Icons.more_horiz),
+                                                      onSelected: (value) {
+                                                        if (value == 'create_user') {
+                                                          _showUserForm(company, branch);
+                                                        } else if (value == 'view_users') {
+                                                          _showUsersByBranch(company, branch);
+                                                        } else if (value == 'delete') {
+                                                          _deleteBranch(branch: branch,branches: branches,);
+                                                        }else if (value == 'edit') {
+                                                          _editBranch(branch);
+                                                        }
+
+
+                                                      },
+                                                      itemBuilder: (context) => [
+                                                        const PopupMenuItem(
+                                                          value: 'create_user',
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(Icons.person_add, size: 20, color: Color(0xFF05e265)),
+                                                              SizedBox(width: 8),
+                                                              Text('Crear Usuario'),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        const PopupMenuItem(
+                                                          value: 'view_users',
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(Icons.people_outline, size: 20, color: Colors.blueAccent),
+                                                              SizedBox(width: 8),
+                                                              Text('Ver Usuarios'),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        const PopupMenuItem(
+                                                          value: 'edit',
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(Icons.edit_outlined, size: 20),
+                                                              SizedBox(width: 8),
+                                                              Text('Editar'),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        const PopupMenuItem(
+                                                          value: 'delete',
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                                              SizedBox(width: 8),
+                                                              Text('Eliminar', style: TextStyle(color: Colors.red)),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            }).toList(),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  // Future<void> _sendUserPassword(String? email) async {
-  //   if (email == null || email.isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('No hay un correo válido registrado'), backgroundColor: Colors.red),
-  //     );
-  //     return;
-  //   }
-
-  //   _setLoading(true);
-  //   final response = await AuthService.forgotPassword(email);
-  //   _setLoading(false);
-
-  //   if (!mounted) return;
-
-  //   if (response['success'] == true) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(response['message'] ?? 'Instrucciones enviadas'),
-  //         backgroundColor: const Color(0xFF05e265),
-  //       ),
-  //     );
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(response['message'] ?? 'Error al enviar instrucciones'),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   }
-  // }
+      );
+    }
 
 
 
