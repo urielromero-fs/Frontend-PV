@@ -253,7 +253,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12)),
                           ),
-                          items: ['Administrador', 'Cajero', 'Creador']
+                          items: ['Administrador', 'Cajero']
                               .map((val) => DropdownMenuItem(
                                   value: val, child: Text(val)))
                               .toList(),
@@ -434,7 +434,7 @@ class _UsersPanelScreenState extends State<UsersPanelScreen> {
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
-                      items: ['Administrador', 'Cajero', 'Creador']
+                      items: ['Administrador', 'Cajero']
                           .map((val) =>
                               DropdownMenuItem(value: val, child: Text(val)))
                           .toList(),
