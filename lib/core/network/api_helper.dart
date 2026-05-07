@@ -135,5 +135,71 @@
    return await http.Response.fromStream(streamed);
   }
 
-  
+
+
+  static Future<http.Response> requestMultipartFileSafe({
+  required String path,
+  required File file,
+  required String fileField,
+  Map<String, String>? fields,
+  String method = 'POST',
+}) async {
+
+  final url = Uri.parse('$_baseUrl$path');
+  final headers = await _getHeaders(isMultipart: true);
+
+  final request = http.MultipartRequest(method, url);
+  request.headers.addAll(headers);
+
+  if (fields != null) {
+    request.fields.addAll(fields);
+  }
+
+  request.files.add(
+    await http.MultipartFile.fromPath(
+      fileField,
+      file.path,
+    
+     
+    ),
+  );
+
+  final streamed = await request.send();
+  return await http.Response.fromStream(streamed);
+} 
+
+
+static Future<http.Response> requestMultipartWebFileSafe({
+  required String path,
+  required Uint8List bytes,
+  required String filename,
+  required String fileField,
+  Map<String, String>? fields,
+  String method = 'POST',
+}) async {
+
+  final url = Uri.parse('$_baseUrl$path');
+  final headers = await _getHeaders(isMultipart: true);
+
+  final request = http.MultipartRequest(method, url);
+  request.headers.addAll(headers);
+
+  if (fields != null) {
+    request.fields.addAll(fields);
+  }
+
+  request.files.add(
+    http.MultipartFile.fromBytes(
+      fileField,
+      bytes,
+      filename: filename,
+     
+      
+    ),
+  );
+
+  final streamed = await request.send();
+  return await http.Response.fromStream(streamed);
+}
+
   }

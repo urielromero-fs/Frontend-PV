@@ -6,6 +6,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:pv26/features/users/services/users_service.dart';
 import 'package:pv26/features/reports/services/branches_service.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:pv26/features/inventory/services/inventory_service.dart';
+
+import 'package:flutter/foundation.dart';
 
 class CompaniesScreen extends StatefulWidget {
   final bool showAppBar;
@@ -1469,6 +1474,67 @@ Future<void> _deleteCompany(String id) async {
         },
       );
 }
+
+Future<void> _showUploadProductsDialog(Map<String, dynamic> company, Map<String, dynamic> branch) async {
+  try {
+
+    // Abrir selector de archivo
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv', 'xlsx', 'xls'],
+      withData: true,
+    );
+
+    if (result == null) return;
+
+    setState(() {
+      _isLoadingCompanies = true;
+    });
+
+    final file = result.files.first;
+
+    final response = await InventoryService.importProductsFromFile(
+      
+      file: kIsWeb ? null : File(file.path!),
+      bytes: file.bytes,
+      filename: file.name,
+      locationId: branch['id'], 
+      masterId: company['id'] ,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingCompanies = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(response['message']),
+        backgroundColor: response['success'] == true
+            ? const Color(0xFF05e265)
+            : Colors.red,
+      ),
+    );
+
+  } catch (e) {
+
+    setState(() {
+      _isLoadingCompanies = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: ${e.toString()}'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+
+
+
     @override
     Widget build(BuildContext context) {
       final theme = Theme.of(context);
@@ -1834,6 +1900,8 @@ Future<void> _deleteCompany(String id) async {
                                                           _deleteBranch(branch: branch,branches: branches,);
                                                         }else if (value == 'edit') {
                                                           _editBranch(branch);
+                                                        }else if (value == 'upload_products') {
+                                                          _showUploadProductsDialog(company, branch);
                                                         }
 
 
@@ -1866,6 +1934,16 @@ Future<void> _deleteCompany(String id) async {
                                                               Icon(Icons.edit_outlined, size: 20),
                                                               SizedBox(width: 8),
                                                               Text('Editar'),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        const PopupMenuItem(
+                                                          value: 'upload_products',
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(Icons.upload_file, size: 20, color: Colors.blueAccent),
+                                                              SizedBox(width: 8),
+                                                              Text('Subir Productos'),
                                                             ],
                                                           ),
                                                         ),

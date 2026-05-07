@@ -1,5 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:pv26/core/network/api_helper.dart';
+import 'package:http/http.dart' as http;
+
 
 class InventoryService {
   // Create product using ApiHelper (handles refresh)
@@ -222,4 +227,99 @@ class InventoryService {
       };
     }
   }
+
+
+
+
+  static Future<Map<String, dynamic>> importProductsFromFile({
+  File? file,
+  Uint8List? bytes,
+  String? filename,
+  required String locationId,
+  required String masterId,
+}) async {
+  try {
+
+    http.Response response;
+
+
+
+  
+    if (kIsWeb) {
+
+      if (bytes == null || filename == null) {
+        return {
+          'success': false,
+          'message': 'Archivo inválido en web',
+        };
+      }
+
+      response = await ApiHelper.requestMultipartWebFileSafe(
+        path: '/products/import-from-creator/$locationId',
+        bytes: bytes,
+        filename: filename,
+        fileField: 'file',
+        fields: {
+          'masterId': masterId,
+        },
+      );
+    }
+
+    //MOBILE
+    else {
+
+      if (file == null) {
+        return {
+          'success': false,
+          'message': 'Archivo inválido en mobile',
+        };
+      }
+
+      response = await ApiHelper.requestMultipartFileSafe(
+        path: '/products/import-from-creator/$locationId',
+        file: file,
+        fileField: 'file',
+        fields: {
+          'masterId': masterId,
+        },
+      );
+    }
+
+    
+    dynamic data;
+
+    try {
+      data = jsonDecode(response.body);
+    } catch (_) {
+      return {
+        'success': false,
+        'message': 'Respuesta inválida del servidor',
+        'raw': response.body,
+      };
+    }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Importación exitosa',
+        'data': data,
+      };
+    }
+
+    return {
+      'success': false,
+      'message': data['message'] ?? 'Error al importar productos',
+    };
+
+  } catch (e) {
+    return {
+      'success': false,
+      'message': e.toString(),
+    };
+  }
 }
+
+}
+
+
+
