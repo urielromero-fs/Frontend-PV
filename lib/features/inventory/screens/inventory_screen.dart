@@ -14,6 +14,7 @@ import '../widgets/product_list_item.dart';
 import '../widgets/add_product_dialog.dart';
 import '../widgets/edit_product_dialog.dart';
 import '../widgets/add_stock_dialog.dart';
+import '../widgets/fast_add_inventory_dialog.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -317,6 +318,31 @@ void _handleKeyEvent(KeyEvent event) {
                                   ),
                                 ),
 
+                  ),
+                  const SizedBox(width: 8),
+                  
+                  //Add inventory button
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => FastAddInventoryDialog(branchId: branchId),
+                      );
+                    },
+                    icon: const Icon(Icons.inventory_2_outlined, size: 18, color: Colors.white),
+                    label: Text(
+                      'Agregar inventario',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
                   ),
                   
                   //Refresh list button 
