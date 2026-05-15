@@ -9,7 +9,8 @@ import 'package:pv26/core/utils/currency_formatter.dart';
 import '../services/branches_service.dart';
 
 class BranchesScreen extends StatefulWidget {
-  const BranchesScreen({super.key});
+  final bool showAppBar;
+  const BranchesScreen({super.key, this.showAppBar = true});
 
   @override
   State<BranchesScreen> createState() => _BranchesScreenState();
@@ -62,14 +63,19 @@ class _BranchesScreenState extends State<BranchesScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
+      appBar: widget.showAppBar ? AppBar(
         title: Text('Sucursales y Cobros', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
-      ),
+        leading: isMobile ? IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ) : null,
+      ) : null,
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(

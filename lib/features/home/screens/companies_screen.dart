@@ -1538,6 +1538,7 @@ Future<void> _showUploadProductsDialog(Map<String, dynamic> company, Map<String,
     @override
     Widget build(BuildContext context) {
       final theme = Theme.of(context);
+      final bool isMobile = MediaQuery.of(context).size.width < 768;
       
       final filteredCompanies = _companies.where((company) {
         final name = (company['name'] ?? '').toString().toLowerCase();
@@ -1612,6 +1613,10 @@ Future<void> _showUploadProductsDialog(Map<String, dynamic> company, Map<String,
               ),
             ),
           ],
+          leading: isMobile ? IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ) : null,
         ) : null,
 
 

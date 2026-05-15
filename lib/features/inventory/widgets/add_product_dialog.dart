@@ -5,6 +5,7 @@ import '../services/inventory_service.dart';
 import '../screens/barcode_scanner.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
+import '../providers/category_provider.dart';
 import '../../../core/utils/currency_formatter.dart';
 
 class AddProductDialog extends StatefulWidget {
@@ -48,24 +49,7 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
   bool isBulk = false;
   bool hasMayoreo = false;
   bool isLoading = false;
-  String selectedCategory = 'Sin categoría';
-  final List<String> categories = [
-    "Sin categoría",
-    "Abarrotes",
-    "Básicos",
-    "Botanas",
-    "Enlatados",
-    "Lácteos",
-    "Bebidas",
-    "Carnes",
-    "Panadería",
-    "Frutas y Verduras",
-    "Limpieza",
-    "Higiene Personal",
-    "Artículos para Bebé",
-    "Mascotas",
-    "Otros",
-  ];
+  String selectedCategory = 'General';
 
   Future<void> saveProduct() async {
     if (isLoading) return;
@@ -334,7 +318,6 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
                           setState(() {
                             isBulk = value;
                             if (isBulk) {
-                              selectedCategory = 'Abarrotes';
                               weightController.text = '1';
                             } else {
                               weightController.clear();
@@ -355,28 +338,60 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: selectedCategory,
-                    items: categories.map((category) {
-                      return DropdownMenuItem<String>(
-                        value: category,
-                        child: Text(
-                          category,
-                          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Consumer<CategoryProvider>(
+                          builder: (context, catProvider, _) {
+                            final categories = catProvider.categories;
+                            // Ensure selectedCategory exists in the list
+                            if (!categories.contains(selectedCategory) && categories.isNotEmpty) {
+                              selectedCategory = categories.first;
+                            }
+                            return DropdownButtonFormField<String>(
+                              value: selectedCategory,
+                              items: categories.map((category) {
+                                return DropdownMenuItem<String>(
+                                  value: category,
+                                  child: Text(
+                                    category,
+                                    style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    selectedCategory = value;
+                                  });
+                                }
+                              },
+                              dropdownColor: Theme.of(context).cardColor,
+                              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
+                              decoration: _inputDecoration(context, labelText: 'Departamento'),
+                            );
+                          },
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          selectedCategory = value;
-                        });
-                      }
-                    },
-                    dropdownColor: Theme.of(context).cardColor,
-                    style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface),
-                    decoration: _inputDecoration(context, labelText: 'Categoría'),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        height: 54, // Match input height
+                        width: 54,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF05e265).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFF05e265).withOpacity(0.5),
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.add, color: Color(0xFF05e265)),
+                          onPressed: () => _showAddDepartmentDialog(context),
+                          tooltip: 'Nuevo Departamento',
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   TextField(
@@ -717,5 +732,48 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
         controller.text = result;
       });
     }
+  }
+
+  Future<void> _showAddDepartmentDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text(
+          'Nuevo Departamento',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: _inputDecoration(context, labelText: 'Nombre del Departamento'),
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                context.read<CategoryProvider>().addCategory(name);
+                setState(() {
+                  selectedCategory = name;
+                });
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF05e265),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text('Agregar', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 }

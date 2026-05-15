@@ -544,7 +544,63 @@ class UsersService {
 
   }
 
+  static Future<Map<String, dynamic>> registerCheckIn({
+    required String userId,
+  }) async {
+    try {
+      final response = await ApiHelper.request(
+        method: 'POST',
+        path: '/users/attendance/check-in',
+        body: {'userId': userId},
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, 'message': 'Entrada registrada correctamente'};
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {'success': false, 'message': errorData['message'] ?? 'Error al registrar entrada'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
 
+  static Future<Map<String, dynamic>> registerCheckOut({
+    required String userId,
+  }) async {
+    try {
+      final response = await ApiHelper.request(
+        method: 'POST',
+        path: '/users/attendance/check-out',
+        body: {'userId': userId},
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, 'message': 'Salida registrada correctamente'};
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {'success': false, 'message': errorData['message'] ?? 'Error al registrar salida'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
 
-
+  static Future<Map<String, dynamic>> getAttendanceHistory({
+    required String userId,
+  }) async {
+    try {
+      final response = await ApiHelper.request(
+        method: 'GET',
+        path: '/users/attendance/history/$userId',
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'data': data};
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {'success': false, 'message': errorData['message'] ?? 'Error al obtener historial'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
 }

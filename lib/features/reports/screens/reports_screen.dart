@@ -14,10 +14,11 @@ class ReportsScreen extends StatefulWidget {
   final String? branchId; 
   final String? branchName; 
   const ReportsScreen({
-    super.key, 
     this.showBranchFilter = false, 
     this.branchId, 
-    this.branchName});
+    this.branchName,
+    this.showAppBar = true});
+  final bool showAppBar;
   
 
   @override
@@ -491,10 +492,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
 Widget build(BuildContext context) {
+  final bool isMobile = MediaQuery.of(context).size.width < 768;
   final currentData = metricData[_selectedPeriod] ?? {};
 
   return Scaffold(
-    appBar: AppBar(
+    appBar: widget.showAppBar ? AppBar(
       title: Text(
         'Reportes',
         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -502,12 +504,10 @@ Widget build(BuildContext context) {
       backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () {
-          Navigator.pop(context);
-        },
-      ),
+      leading: isMobile ? IconButton(
+        icon: const Icon(Icons.menu),
+        onPressed: () => Scaffold.of(context).openDrawer(),
+      ) : null,
       actions: [
         Showcase(
           key: _downloadReportKey,
@@ -530,7 +530,7 @@ Widget build(BuildContext context) {
           ),
         )
       ],
-    ),
+    ) : null,
 
    
     body: SingleChildScrollView(

@@ -31,7 +31,8 @@ import 'package:flutter_beep/flutter_beep.dart';
 
 String _f(double value) => CurrencyFormatter.format(value);
 class PaymentsScreen extends StatefulWidget {
-  const PaymentsScreen({super.key});
+  final bool showAppBar;
+  const PaymentsScreen({super.key, this.showAppBar = true});
   @override
   State<PaymentsScreen> createState() => _PaymentsScreenState();
 }
@@ -44,6 +45,7 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   String _barcodeBuffer = '';
   DateTime? _lastKeyPress;
   String _locationId = ''; 
+  final ValueNotifier<String> _searchQueryNotifier = ValueNotifier<String>('');
 
 
   //Filtro
@@ -754,20 +756,20 @@ Future<void> loadTickets() async {
         title: Text(
           'Cerrar Operación',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
           '¿Estás seguro de que deseas cerrar la caja?',
-          style: GoogleFonts.poppins(color: Colors.white70),
+          style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancelar',
-              style: GoogleFonts.poppins(color: Colors.white54),
+              style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
             ),
           ),
           ElevatedButton(
@@ -786,9 +788,9 @@ Future<void> loadTickets() async {
                     Navigator.pop(context);
                     await _showDailyReportDialog();
                     //Redirigir al dashboard
-                    Navigator.pushAndRemoveUntil(
+                    Navigator.pushNamedAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      '/home',
                       (route) => false, // elimina todas las rutas anteriores
                     );
                   } else {
@@ -821,7 +823,7 @@ Future<void> loadTickets() async {
         title: Text(
           'Reporte del Día',
           style: GoogleFonts.poppins(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -886,23 +888,24 @@ Future<void> loadTickets() async {
   Widget _buildReportRow(
     String label,
     String value, {
-    Color color = Colors.white,
+    Color? color,
     bool isBold = false,
   }) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: GoogleFonts.poppins(
-            color: Colors.white70,
+            color: textColor.withOpacity(0.7),
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         Text(
           value,
           style: GoogleFonts.poppins(
-            color: color,
+            color: color ?? textColor,
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             fontSize: isBold ? 16 : 14,
           ),
@@ -940,6 +943,7 @@ Future<void> loadTickets() async {
     _tabController.dispose();
     _searchFocusNode.dispose();
     _audioPlayer.dispose();
+    _searchQueryNotifier.dispose();
     super.dispose();
   }
 
@@ -947,16 +951,6 @@ Future<void> loadTickets() async {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<ProductProvider>(context);
-    final allProducts = provider.allProducts;
-    final filteredProducts = filterProducts(
-      products: provider.allProducts,
-      searchQuery: searchQuery,
-      category: selectedCategoryFilter,
-      onlyBulk: filterBulkOnly,
-      sortOption: selectedSortOption,
-    );
-    
     final bool isMobile = MediaQuery.of(context).size.width < 600;
     return 
     
@@ -974,6 +968,24 @@ Future<void> loadTickets() async {
           _barcodeBuffer = '';
         }
         _lastKeyPress = now;
+
+          if (event.logicalKey == LogicalKeyboardKey.f12) {
+             if (currentTicket.items.isNotEmpty && currentTicket.amountTendered == null) {
+               _showPaymentDialog().then((success) {
+                 if (success == true) {
+                   _processSale();
+                 }
+               });
+             }
+             return;
+          }
+
+          if (event.logicalKey == LogicalKeyboardKey.f2) {
+             if (currentTicket.items.isNotEmpty && currentTicket.amountTendered != null) {
+                _processSale();
+             }
+             return;
+          }
 
             // Enter del scanner
           if (event.logicalKey == LogicalKeyboardKey.enter) {
@@ -1000,7 +1012,7 @@ Future<void> loadTickets() async {
           }
       },
       child: Scaffold(
-        appBar: AppBar(
+        appBar: widget.showAppBar ? AppBar(
         title: Row(
           children: [
             Text(
@@ -1041,12 +1053,10 @@ Future<void> loadTickets() async {
         backgroundColor: Theme.of(context).cardColor,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        leading: isMobile ? IconButton(
+          icon: Icon(Icons.menu, color: Theme.of(context).colorScheme.onSurface),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ) : null,
         actions: [
           if (_isRegisterOpen)
             Padding(
@@ -1313,11 +1323,11 @@ Future<void> loadTickets() async {
 
           ),
         ],
-      ),
+      ) : null,
       body: 
       isMobile
-          ? _buildMobileLayout(filteredProducts)
-          : Row(children: _buildDesktopLayout(filteredProducts)),
+          ? _buildMobileLayout()
+          : Row(children: _buildDesktopLayout()),
       floatingActionButton: isMobile ? _buildMobileCartBottomBar() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
  
@@ -1327,7 +1337,7 @@ Future<void> loadTickets() async {
   );
 }
   
-  Widget _buildMobileLayout(List<dynamic> filteredProducts) {
+  Widget _buildMobileLayout() {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -1352,9 +1362,11 @@ Future<void> loadTickets() async {
                       focusNode: _searchFocusNode,
                       controller: searchController,
                       onChanged: (value) {
-                        setState(() {
-                          searchQuery = value;
-                        });
+                        _searchQueryNotifier.value = value;
+                        // Si se borra todo, aseguramos que el foco permanezca si el usuario está ahí
+                        if (value.isEmpty) {
+                           _searchFocusNode.requestFocus();
+                        }
                       },
                       onSubmitted: (value) => _onSearchSubmitted(value),
                       decoration: InputDecoration(
@@ -1379,21 +1391,33 @@ Future<void> loadTickets() async {
             const SizedBox(height: 16),
             // Products Grid
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.only(bottom: 120),
-                itemCount: filteredProducts.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 8),
-                itemBuilder: (context, index) {
-                  final product = filteredProducts[index];
-                  return ProductListTile(
-                    name: product['name'],
-                    price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
-                    isBulk: product['isBulk'] ?? false,
-                    units: (product['units'] as num?)?.toDouble() ?? 0.0,
-                    remainingUnits: ((product['units'] as num?)?.toDouble() ?? 0.0) - 
-                        (currentTicket.items.where((it) => it.name == product['name']).fold(0.0, (sum, it) => sum + it.quantity)),
-                    onTap: () => _addToCart(product),
-                    onAddStock: () => _showAddStockModal(product),
+              child: ValueListenableBuilder<String>(
+                valueListenable: _searchQueryNotifier,
+                builder: (context, query, _) {
+                  final filteredProducts = filterProducts(
+                    products: Provider.of<ProductProvider>(context).allProducts,
+                    searchQuery: query,
+                    category: selectedCategoryFilter,
+                    onlyBulk: filterBulkOnly,
+                    sortOption: selectedSortOption,
+                  );
+                  return ListView.separated(
+                    padding: const EdgeInsets.only(bottom: 120),
+                    itemCount: filteredProducts.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final product = filteredProducts[index];
+                      return ProductListTile(
+                        name: product['name'],
+                        price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
+                        isBulk: product['isBulk'] ?? false,
+                        units: (product['units'] as num?)?.toDouble() ?? 0.0,
+                        remainingUnits: ((product['units'] as num?)?.toDouble() ?? 0.0) - 
+                            (currentTicket.items.where((it) => it.name == product['name']).fold(0.0, (sum, it) => sum + it.quantity)),
+                        onTap: () => _addToCart(product),
+                        onAddStock: () => _showAddStockModal(product),
+                      );
+                    },
                   );
                 },
               ),
@@ -1406,7 +1430,7 @@ Future<void> loadTickets() async {
   
 
   
-  List<Widget> _buildDesktopLayout(List<dynamic> filteredProducts) {
+  List<Widget> _buildDesktopLayout() {
     return [
       // Left Panel - Product Search/Add
       Expanded(
@@ -1435,14 +1459,18 @@ Future<void> loadTickets() async {
                           focusNode: _searchFocusNode,
                           controller: searchController,
                           onChanged: (value) {
-                            setState(() {
-                              searchQuery = value;
-                            });
+                            _searchQueryNotifier.value = value;
 
-                            Future.delayed(Duration(milliseconds: 2500), () {
-                                        FocusScope.of(context).requestFocus(_scannerFocusNode);
-                            });
-
+                            // Solo devolver el foco al scanner si el campo está vacío y el usuario no está escribiendo activamente
+                            if (value.isEmpty) {
+                              Future.delayed(const Duration(seconds: 5), () {
+                                if (_searchFocusNode.hasFocus && searchController.text.isEmpty) {
+                                  // Seguimos permitiendo el foco en búsqueda si está vacío por un tiempo largo
+                                } else if (!_searchFocusNode.hasFocus) {
+                                  FocusScope.of(context).requestFocus(_scannerFocusNode);
+                                }
+                              });
+                            }
                           },
                           // onChanged: (value) {
                           //       searchQueryNotifier.value = value;
@@ -1494,25 +1522,35 @@ Future<void> loadTickets() async {
                 const SizedBox(height: 16),
                 // Products Grid
                 Expanded(
-                child: ListView.separated(
-                  itemCount: filteredProducts.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final product = filteredProducts[index];
-                    return ProductListTile(
-                      name: product['name'],
-                      price:
-                          (product['sellingPrice'] as num?)?.toDouble() ??
-                          0.0,
-                      isBulk: product['isBulk'] ?? false,
-                      units: (product['units'] as num?)?.toDouble() ?? 0.0,
-                      remainingUnits: ((product['units'] as num?)?.toDouble() ?? 0.0) - 
-                          (currentTicket.items.where((it) => it.name == product['name']).fold(0.0, (sum, it) => sum + it.quantity)),
-                      onTap: () => _addToCart(product),
-                      onAddStock: () => _showAddStockModal(product),
-                    );
-                  },
-                ),
+                  child: ValueListenableBuilder<String>(
+                    valueListenable: _searchQueryNotifier,
+                    builder: (context, query, _) {
+                      final filteredProducts = filterProducts(
+                        products: Provider.of<ProductProvider>(context).allProducts,
+                        searchQuery: query,
+                        category: selectedCategoryFilter,
+                        onlyBulk: filterBulkOnly,
+                        sortOption: selectedSortOption,
+                      );
+                      return ListView.separated(
+                        itemCount: filteredProducts.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final product = filteredProducts[index];
+                          return ProductListTile(
+                            name: product['name'],
+                            price: (product['sellingPrice'] as num?)?.toDouble() ?? 0.0,
+                            isBulk: product['isBulk'] ?? false,
+                            units: (product['units'] as num?)?.toDouble() ?? 0.0,
+                            remainingUnits: ((product['units'] as num?)?.toDouble() ?? 0.0) - 
+                                (currentTicket.items.where((it) => it.name == product['name']).fold(0.0, (sum, it) => sum + it.quantity)),
+                            onTap: () => _addToCart(product),
+                            onAddStock: () => _showAddStockModal(product),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -2808,7 +2846,7 @@ Future<void> loadTickets() async {
           return Focus(
             autofocus: true,
             onKeyEvent: (node, event) {
-              if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.f12) {
+              if (event is KeyDownEvent && (event.logicalKey == LogicalKeyboardKey.f12 || event.logicalKey == LogicalKeyboardKey.enter)) {
                 final parsedAmount = double.tryParse(amountController.text.replaceAll(",", ""));
                 final double amount = parsedAmount ?? currentTicket.total;
                 
@@ -3073,14 +3111,14 @@ Future<void> loadTickets() async {
             Text(
               'Historial de Ventas',
               style: GoogleFonts.poppins(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const Spacer(),
             IconButton(
               onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.close, color: Colors.white54),
+              icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.54)),
             ),
           ],
         ),
@@ -3100,12 +3138,9 @@ Future<void> loadTickets() async {
                 sales = snapshot.data!['data'] ?? [];
               }
               
-              
-
-
               return ListView.separated(
                 itemCount: sales.length,
-                separatorBuilder: (context, index) => Divider(color: Colors.white.withOpacity(0.05)),
+                separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                 itemBuilder: (context, index) {
                   final sale = sales[index] ?? {};
                   final DateTime date = sale['date'] != null
@@ -3128,26 +3163,26 @@ Future<void> loadTickets() async {
                         }).join(', ') + (items.length > 2 ? '...' : '')
                       : 'Sin detalles';
 
-
-
                 final Color primaryColor = sale['isActive'] == true
                     ? const Color(0xFF05e265)
                     : Colors.grey;
 
                 final Color textColor =
-                    sale['isActive'] == true ? Colors.white : Colors.white38;
+                    sale['isActive'] == true 
+                      ? Theme.of(context).colorScheme.onSurface 
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.38);
 
                 final Color secondaryTextColor = sale['isActive'] == true
-                    ? Colors.white70
-                    : Colors.white38;
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.7)
+                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.38);
 
                 final Color containerColor = sale['isActive'] == true
-                    ? Colors.white.withOpacity(0.03)
-                    : Colors.grey.withOpacity(0.08);
+                    ? Theme.of(context).dividerColor.withOpacity(0.03)
+                    : Theme.of(context).dividerColor.withOpacity(0.08);
 
                 final Color deleteColor = sale['isActive'] == true
                     ? Colors.red.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.08);;
+                    : Colors.grey.withOpacity(0.08);
                
                   return Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
@@ -3155,7 +3190,7 @@ Future<void> loadTickets() async {
                     decoration: BoxDecoration(
                       color: containerColor,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                      border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                     ),
                     child: Row(
                       children: [
@@ -3196,7 +3231,7 @@ Future<void> loadTickets() async {
                               const SizedBox(height: 4),
                               Text(
                                 itemsSummary,
-                                style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+                                style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 13),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -3541,7 +3576,7 @@ Future<void> loadTickets() async {
           title: Text(
             'Filtros',
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
           ),

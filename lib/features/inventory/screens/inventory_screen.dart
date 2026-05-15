@@ -15,6 +15,7 @@ import '../widgets/add_product_dialog.dart';
 import '../widgets/edit_product_dialog.dart';
 import '../widgets/add_stock_dialog.dart';
 import '../widgets/fast_add_inventory_dialog.dart';
+import '../providers/category_provider.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -23,7 +24,8 @@ import 'dart:async';
 
 class InventoryScreen extends StatefulWidget {
   final String? branchId; 
-  const InventoryScreen({super.key,this.branchId});
+  final bool showAppBar;
+  const InventoryScreen({super.key, this.branchId, this.showAppBar = true});
   @override
   State<InventoryScreen> createState() => _InventoryScreenState();
 }
@@ -44,6 +46,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   final FocusNode _keyboardFocusNode = FocusNode();
   String _barcodeBuffer = '';
   DateTime _lastKeyEventTime = DateTime.now();
+  final ValueNotifier<String> _searchQueryNotifier = ValueNotifier<String>('');
 
   final List<String> stockFilters = [
     'Todos',
@@ -53,26 +56,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
 
 
-  final List<String> categoryFilters = [
-    'Todas',
-    "Sin categoría",
-    "Abarrotes",
-    "Básicos",
-    "Botanas",
-    "Enlatados",
-    "Lácteos",
-    "Bebidas",
-    "Carnes",
-    "Panadería",
-    "Frutas y Verduras",
-    "Limpieza",
-    "Higiene Personal",
-    "Artículos para Bebé",
-    "Mascotas",
-    "General",
-    "Paquetes",
-    "Otros",
-  ];
 
   final List<String> sortOptions = [
     'Ninguno',
@@ -247,21 +230,11 @@ void _handleKeyEvent(KeyEvent event) {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductProvider>(context);
-    final allProducts = provider.allProducts;
     final bool isMobile = MediaQuery.of(context).size.width < 600;
-    // Aplicar filtros
-    final filteredProducts = filterProducts(
-      products: allProducts,
-      searchQuery: searchQuery,
-      category: selectedCategoryFilter,
-      onlyBulk: filterBulkOnly,
-      sortOption: selectedSortOption,
-      stockStatus: selectedStockFilter,
-    );
 
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: widget.showAppBar ? AppBar(
         title: Text(
           'Inventario',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -269,10 +242,10 @@ void _handleKeyEvent(KeyEvent event) {
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: isMobile ? IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ) : null,
         actions: [
 
                   //Add product button 
@@ -381,7 +354,7 @@ void _handleKeyEvent(KeyEvent event) {
 
          
         ],
-      ),
+      ) : null,
       /* Removed FloatingActionButton as requested and moved it to the top */
       body: 
       KeyboardListener(
@@ -416,9 +389,7 @@ void _handleKeyEvent(KeyEvent event) {
                           focusNode: _searchFocusNode,
                           controller: searchController,
                           onChanged: (value) {
-                            setState(() {
-                              searchQuery = value;
-                            });
+                            _searchQueryNotifier.value = value;
                           },
                           decoration: InputDecoration(
                             hintText: 'Buscar producto...',
@@ -517,7 +488,7 @@ void _handleKeyEvent(KeyEvent event) {
                               ),
                               Expanded(
                                 child: Text(
-                                  'Categoría',
+                                  'Departamento',
                                   style: GoogleFonts.poppins(
                                     color: Theme.of(context).colorScheme.onSurface,
                                     fontWeight: FontWeight.w600,
@@ -634,77 +605,74 @@ void _handleKeyEvent(KeyEvent event) {
                       ],
                       // Lista de productos
                       Expanded(
-                        child: isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : errorMessage.isNotEmpty
-                            ? Center(
-                                child: Text(
-                                  errorMessage,
-                                  style: GoogleFonts.poppins(color: Colors.red),
+                        child: ValueListenableBuilder<String>(
+                          valueListenable: _searchQueryNotifier,
+                          builder: (context, query, _) {
+                            final filteredProducts = filterProducts(
+                              products: provider.allProducts,
+                              searchQuery: query,
+                              category: selectedCategoryFilter,
+                              onlyBulk: filterBulkOnly,
+                              sortOption: selectedSortOption,
+                              stockStatus: selectedStockFilter,
+                            );
+
+                            if (isLoading) {
+                              return const Center(child: CircularProgressIndicator(color: Color(0xFF05e265)));
+                            }
+
+                            if (errorMessage.isNotEmpty) {
+                              return Center(child: Text(errorMessage, style: GoogleFonts.poppins(color: Colors.redAccent)));
+                            }
+
+                            if (filteredProducts.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.inventory_2_outlined, size: 64, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+                                    const SizedBox(height: 16),
+                                    Text('No se encontraron productos',
+                                        style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                                  ],
                                 ),
-                              )
-                            : filteredProducts.isEmpty
-                            ? Center(
-                                child: Text(
-                                  'No hay productos',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: filteredProducts.length,
-                                itemBuilder: (context, index) {
-                                  final product = filteredProducts[index];
-                                  
-                                  // // Solo el primer producto tendrá showcase (por ejemplo)
-                                  // final GlobalKey? addStockKey = index == 0 ? _addStockKey : null;
-                                  // final GlobalKey? actionMenuKey = index == 0 ? _productOptionsKey : null;
+                              );
+                            }
 
-
-
-                                  return ProductListItem(
-                                    id: (product['_id'] ?? '').toString(),
-                                    name: product['name'] ?? 'Sin nombre',
-                                    category:
-                                        product['category'] ?? 'Sin categoría',
-                                    stock: (product['units'] ?? 0).toString(),
-                                    isBulk: product['isBulk'] ?? false,
-                                    price: '\$${product['sellingPrice'] ?? 0}',
-                                    status: (product['units'] ?? 0) == 0
-                                        ? 'Sin Stock'
-                                        : (product['units'] ?? 0) < 5
-                                        ? 'Bajo Stock'
-                                        : 'En Stock',
-                                    statusColor: (product['units'] ?? 0) == 0
-                                        ? const Color(0xFFE91E63)
-                                        : (product['units'] ?? 0) < 5
-                                        ? const Color(0xFFFF9800)
-                                        : const Color(0xFF05e265),
-                                    userRole: _userRole,
-
-
-                                    // // SHOWCASE solo para este producto
-                                    // addStockKey: addStockKey,
-                                    // actionMenuKey: actionMenuKey,
-
-                                    onDelete: () =>
-                                        _deleteProduct(product['_id']),
-                                    onEdit: () =>
-                                        _showEditProductModal(product),
-
-                                    
-                                    onAddStock: () =>
-                                        _showAddStockModal(product),
-                                    hasWholesalePrice:
-                                        product['hasWholesalePrice'] ?? false,
-                                    wholesalePrice:
-                                        '\$${product['wholesalePrice'] ?? 0}',
-                                    wholesaleMinUnits:
-                                        product['wholesaleMinUnits'] ?? 0,
-                                  );
-                                },
-                              ),
+                            return ListView.builder(
+                              padding: const EdgeInsets.only(bottom: 20),
+                              itemCount: filteredProducts.length,
+                              itemBuilder: (context, index) {
+                                final product = filteredProducts[index];
+                                return ProductListItem(
+                                  id: (product['_id'] ?? '').toString(),
+                                  name: product['name'] ?? 'Sin nombre',
+                                  category: product['category'] ?? 'Sin categoría',
+                                  stock: (product['units'] ?? 0).toString(),
+                                  isBulk: product['isBulk'] ?? false,
+                                  price: '\$ ${product['sellingPrice'] ?? 0}',
+                                  status: (product['units'] ?? 0) == 0
+                                      ? 'Sin Stock'
+                                      : (product['units'] ?? 0) < 5
+                                      ? 'Bajo Stock'
+                                      : 'En Stock',
+                                  statusColor: (product['units'] ?? 0) == 0
+                                      ? const Color(0xFFE91E63)
+                                      : (product['units'] ?? 0) < 5
+                                      ? const Color(0xFFFF9800)
+                                      : const Color(0xFF05e265),
+                                  userRole: _userRole,
+                                  onDelete: () => _deleteProduct(product['_id']),
+                                  onEdit: () => _showEditProductModal(product),
+                                  onAddStock: () => _showAddStockModal(product),
+                                  hasWholesalePrice: product['hasWholesalePrice'] ?? false,
+                                  wholesalePrice: '\$ ${product['wholesalePrice'] ?? 0}',
+                                  wholesaleMinUnits: product['wholesaleMinUnits'] ?? 0,
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -800,25 +768,33 @@ void _handleKeyEvent(KeyEvent event) {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Categoría
-                  DropdownButtonFormField<String>(
-                    value: selectedCategoryFilter,
-                    dropdownColor: const Color(0xFF1a1a1a),
-                    items: categoryFilters.map((cat) {
-                      return DropdownMenuItem(
-                        value: cat,
-                        child: Text(
-                          cat,
-                          style: GoogleFonts.poppins(color: Colors.white),
-                        ),
+                  // Categoría (Departamento)
+                  Consumer<CategoryProvider>(
+                    builder: (context, catProvider, _) {
+                      final categories = ['Todas', ...catProvider.categories];
+                      if (!categories.contains(selectedCategoryFilter)) {
+                        selectedCategoryFilter = 'Todas';
+                      }
+                      return DropdownButtonFormField<String>(
+                        value: selectedCategoryFilter,
+                        dropdownColor: const Color(0xFF1a1a1a),
+                        items: categories.map((cat) {
+                          return DropdownMenuItem(
+                            value: cat,
+                            child: Text(
+                              cat,
+                              style: GoogleFonts.poppins(color: Colors.white),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setModalState(() {
+                            selectedCategoryFilter = value!;
+                          });
+                        },
+                        decoration: const InputDecoration(labelText: 'Departamento'),
                       );
-                    }).toList(),
-                    onChanged: (value) {
-                      setModalState(() {
-                        selectedCategoryFilter = value!;
-                      });
                     },
-                    decoration: const InputDecoration(labelText: 'Categoría'),
                   ),
                   const SizedBox(height: 16),
                   // Ordenamiento

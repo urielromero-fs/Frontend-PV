@@ -21,6 +21,9 @@ import 'package:showcaseview/showcaseview.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:ui' as ui;
 import 'package:pv26/core/utils/role_utils.dart';
+import 'package:pv26/features/sales/screens/payments_screen.dart';
+
+enum AppView { dashboard, inventory, payments, users, reports, usersPanel, branches, companies }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSidebarCollapsed = false;
   String _userLogoUrl = '';
   String? _branchId = ''; 
+  AppView _activeView = AppView.dashboard;
 
   bool get _isAdmin => _userRole.trim().toLowerCase() == 'admin' || _userRole.trim().toLowerCase() == 'administrador';
   bool get _isMaster => _userRole.trim().toLowerCase() == 'master';
@@ -96,7 +100,13 @@ class _HomeScreenState extends State<HomeScreen> {
     await _loadUserData(); 
     if(_isAdmin){
       await _loadMetrics(); 
-         
+    }
+    // Asegurar que los productos se carguen si la lista está vacía
+    if (mounted) {
+      final productProvider = context.read<ProductProvider>();
+      if (productProvider.allProducts.isEmpty) {
+        await productProvider.fetchInitialProducts(branchId: _branchId);
+      }
     }
     
   }
@@ -1120,8 +1130,8 @@ void _showSettingsModal() {
                     _NavItem(
                       icon: Icons.add_business_rounded,
                       title: 'Creación',
-                      isActive: true,
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CompaniesScreen())),
+                      isActive: _activeView == AppView.companies,
+                      onTap: () => setState(() => _activeView = AppView.companies),
                       isCollapsed: _isSidebarCollapsed,
                     ),
                   ] else ...[
@@ -1157,9 +1167,9 @@ void _showSettingsModal() {
                           child: _NavItem(
                                     icon: Icons.dashboard_rounded,
                                     title: 'Dashboard',
-                                    isActive: true,
+                                    isActive: _activeView == AppView.dashboard,
                                     isCollapsed: _isSidebarCollapsed,
-                                    onTap: () {},
+                                    onTap: () => setState(() => _activeView = AppView.dashboard),
                                   ),
                     ),
 
@@ -1193,7 +1203,8 @@ void _showSettingsModal() {
                               child:  _NavItem(
                                     icon: Icons.inventory_2_rounded,
                                     title: 'Inventario',
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen())),
+                                    isActive: _activeView == AppView.inventory,
+                                    onTap: () => setState(() => _activeView = AppView.inventory),
                                     isCollapsed: _isSidebarCollapsed,
                                   ),
                       ),
@@ -1226,7 +1237,8 @@ void _showSettingsModal() {
                               child:  _NavItem(
                                     icon: Icons.point_of_sale_rounded,
                                     title: 'Cobros',
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentsScreen())),
+                                    isActive: _activeView == AppView.payments,
+                                    onTap: () => setState(() => _activeView = AppView.payments),
                                     isCollapsed: _isSidebarCollapsed,
                                   ),
                     ),
@@ -1265,7 +1277,8 @@ void _showSettingsModal() {
                               child: _NavItem(
                                         icon: Icons.people_alt_rounded,
                                         title: 'Usuarios',
-                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersScreen())),
+                                        isActive: _activeView == AppView.users,
+                                        onTap: () => setState(() => _activeView = AppView.users),
                                         isCollapsed: _isSidebarCollapsed,
                                       ),
                     ),
@@ -1299,7 +1312,8 @@ void _showSettingsModal() {
                               child: _NavItem(
                                         icon: Icons.analytics_rounded,
                                         title: 'Reportes',
-                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen())),
+                                        isActive: _activeView == AppView.reports,
+                                        onTap: () => setState(() => _activeView = AppView.reports),
                                         isCollapsed: _isSidebarCollapsed,
                                       ),
                     ),
@@ -1489,21 +1503,38 @@ void _showSettingsModal() {
                     child: Divider(color: Colors.white10),
                   ),
                   // Botón de cambio de tema
-                  ListTile(
-                    onTap: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
-                    leading: Icon(
-                      Provider.of<ThemeProvider>(context).isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                      color: Provider.of<ThemeProvider>(context).isDarkMode ? Colors.orange : Colors.indigoAccent,
-                    ),
-                    title: _isSidebarCollapsed 
-                      ? null 
-                      : Text(
-                          Provider.of<ThemeProvider>(context).isDarkMode ? 'Modo Claro' : 'Modo Oscuro',
-                          style: GoogleFonts.poppins(
-                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.black87,
-                            fontSize: 14,
-                          ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: _isSidebarCollapsed ? 8 : 16,
+                          vertical: 12,
                         ),
+                        child: Row(
+                          mainAxisAlignment: _isSidebarCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Provider.of<ThemeProvider>(context).isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                              color: Provider.of<ThemeProvider>(context).isDarkMode ? Colors.orange : Colors.indigoAccent,
+                              size: 24,
+                            ),
+                            if (!_isSidebarCollapsed) ...[
+                              const SizedBox(width: 16),
+                              Text(
+                                Provider.of<ThemeProvider>(context).isDarkMode ? 'Modo Claro' : 'Modo Oscuro',
+                                style: GoogleFonts.outfit(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1613,7 +1644,7 @@ void _showSettingsModal() {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: isMobile
+      appBar: isMobile && _activeView == AppView.dashboard
           ? AppBar(
               backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
               iconTheme: IconThemeData(
@@ -1699,28 +1730,40 @@ void _showSettingsModal() {
                           _NavItem(
                             icon: Icons.dashboard_rounded,
                             title: 'Dashboard',
-                            isActive: true,
-                            onTap: () => Navigator.pop(context),
+                            isActive: _activeView == AppView.dashboard,
+                            onTap: () {
+                              setState(() => _activeView = AppView.dashboard);
+                              Navigator.pop(context);
+                            },
                           ),
 
                         if(_isMaster)...[
                           _NavItem(
                                   icon: Icons.admin_panel_settings_rounded,
                                   title: 'Usuarios',
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersPanelScreen())),
-                                  isCollapsed: _isSidebarCollapsed,
+                                  isActive: _activeView == AppView.usersPanel,
+                                  onTap: () {
+                                    setState(() => _activeView = AppView.usersPanel);
+                                    Navigator.pop(context);
+                                  },
                           ),
                            _NavItem(
                                     icon: Icons.assessment_rounded,
                                     title: 'Reportes ',
-                                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen(showBranchFilter: true))),
-                                    isCollapsed: _isSidebarCollapsed,
+                                    isActive: _activeView == AppView.reports,
+                                    onTap: () {
+                                      setState(() => _activeView = AppView.reports);
+                                      Navigator.pop(context);
+                                    },
                           ),
                            _NavItem(
                                   icon: Icons.store_rounded,
                                   title: 'Sucursales',
-                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BranchesScreen())),
-                                  isCollapsed: _isSidebarCollapsed,
+                                  isActive: _activeView == AppView.branches,
+                                  onTap: () {
+                                    setState(() => _activeView = AppView.branches);
+                                    Navigator.pop(context);
+                                  },
                                 ),
 
 
@@ -1730,9 +1773,10 @@ void _showSettingsModal() {
                            _NavItem(
                             icon: Icons.add_business_rounded,
                             title: 'Creación',
+                            isActive: _activeView == AppView.companies,
                             onTap: () {
+                              setState(() => _activeView = AppView.companies);
                               Navigator.pop(context);
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => const CompaniesScreen()));
                             },
                           ),
 
@@ -1742,17 +1786,19 @@ void _showSettingsModal() {
                           _NavItem(
                             icon: Icons.inventory_2_rounded,
                             title: 'Inventario',
+                            isActive: _activeView == AppView.inventory,
                             onTap: () {
+                              setState(() => _activeView = AppView.inventory);
                               Navigator.pop(context);
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryScreen()));
                             },
                           ),
                           _NavItem(
                             icon: Icons.point_of_sale_rounded,
                             title: 'Cobros',
+                            isActive: _activeView == AppView.payments,
                             onTap: () {
+                              setState(() => _activeView = AppView.payments);
                               Navigator.pop(context);
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentsScreen()));
                             },
                           ),
                         ],
@@ -1760,17 +1806,19 @@ void _showSettingsModal() {
                           _NavItem(
                             icon: Icons.people_alt_rounded,
                             title: 'Usuarios',
+                            isActive: _activeView == AppView.users,
                             onTap: () {
+                              setState(() => _activeView = AppView.users);
                               Navigator.pop(context);
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => const UsersScreen()));
                             },
                           ),
                           _NavItem(
                             icon: Icons.analytics_rounded,
                             title: 'Reportes',
+                            isActive: _activeView == AppView.reports,
                             onTap: () {
+                              setState(() => _activeView = AppView.reports);
                               Navigator.pop(context);
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsScreen()));
                             },
                           ),
                         ],
@@ -1811,109 +1859,143 @@ void _showSettingsModal() {
           : null,
       body: Row(
         children: [
-          if (!isMobile) buildSidebar(),
+          if (!isMobile) RepaintBoundary(child: buildSidebar()),
           Expanded(
             child: Container(
               color: Theme.of(context).scaffoldBackgroundColor,
-              child: _isCreator 
-                ? const CompaniesScreen(showAppBar: false)
-                : CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: EdgeInsets.all(isMobile ? 20 : 40),
-                    sliver: SliverList(
-                     delegate: SliverChildListDelegate([
-                        // Logo 
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                             Center(
-                                child: Container(
-                                  width: isMobile ? 260 : 580,
-                                  height: isMobile ? 60 : 80,
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  child: Image.asset(
-                                    'assets/images/logo.png', 
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-
-                            // Saludo
-                            Text(
-                              '¡Hola, $_userName!',
-                              style: GoogleFonts.outfit(
-                                fontSize: isMobile ? 28 : 40,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Bienvenido de nuevo a Centli',
-                              style: GoogleFonts.outfit(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                fontSize: isMobile ? 14 : 18,
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ],
-                        ),
-                        if (_isAdmin) ...[
-                          // Quick Stats Grid
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              final crossAxisCount = constraints.maxWidth < 600 ? 1 : (constraints.maxWidth < 1000 ? 2 : 3);
-                              return GridView.count(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                crossAxisCount: crossAxisCount,
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 16,
-                                childAspectRatio: isMobile ? 2.5 : 1.8,
-                                children: [
-                                  _StatCard(
-                                    title: 'Ventas del Día',
-                                    value: (metricData['ventas'] ?? 0).toString(),
-                                    icon: Icons.trending_up_rounded,
-                                    color: const Color(0xFF05e265),
-                                    change: (metricData['ventas_change'] ?? 0).toString(),
-                                  ),
-                                  _StatCard(
-                                    title: 'Productos en Stock',
-                                    value: productsEnStock.length.toString(),
-                                   
-                                    icon: Icons.inventory_2_rounded,
-                                    color: const Color(0xFF2196F3),
-                                    change: '${porcentageStock.toString()}%',
-                                    
-                                  ),
-                                  _StatCard(
-                                    title: 'Productos Vendidos',
-                                    value:  (metricData['productos'] ?? 0).toString(),
-                                    icon: Icons.people_alt_rounded,
-                                    color: const Color(0xFFFF9800),
-                                    change: (metricData['products_change'] ?? 0).toString(),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 32),
-                        ],
-
-
-                        const SizedBox(height: 100), // Bottom padding for scroll
-                      ]),
-                    ),
-                  ),
-                ],
-              ),
+              child: _buildMainContent(),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMainContent() {
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
+
+    if (_isCreator || _activeView == AppView.companies) {
+      return const CompaniesScreen(showAppBar: true);
+    }
+
+    switch (_activeView) {
+      case AppView.dashboard:
+        return _buildDashboard(isMobile);
+      case AppView.inventory:
+        return InventoryScreen(branchId: _branchId, showAppBar: true);
+      case AppView.payments:
+        return const PaymentsScreen(showAppBar: true);
+      case AppView.users:
+        return const UsersScreen(showAppBar: true);
+      case AppView.reports:
+        return ReportsScreen(showBranchFilter: _isMaster, showAppBar: true);
+      case AppView.usersPanel:
+        return const UsersPanelScreen(showAppBar: true);
+      case AppView.branches:
+        return const BranchesScreen(showAppBar: true);
+      default:
+        return _buildDashboard(isMobile);
+    }
+  }
+
+  Widget _buildDashboard(bool isMobile) {
+    // Calculamos el stock de nuevo por si acaso los datos cambiaron
+    final products = Provider.of<ProductProvider>(context).allProducts;
+    final productsEnStock = products
+        .where((producto) => (producto as Map<String, dynamic>)['units'] > 5)
+        .toList();
+    final porcentageStock = products.isNotEmpty
+        ? ((productsEnStock.length * 100) / products.length).round()
+        : 0;
+
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.all(isMobile ? 20 : 40),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              // Logo
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: isMobile ? 260 : 580,
+                      height: isMobile ? 60 : 80,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+
+                  // Saludo
+                  Text(
+                    '¡Hola, $_userName!',
+                    style: GoogleFonts.outfit(
+                      fontSize: isMobile ? 28 : 40,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Bienvenido de nuevo a Centli',
+                    style: GoogleFonts.outfit(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: isMobile ? 14 : 18,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ),
+              if (_isAdmin) ...[
+                // Quick Stats Grid
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final crossAxisCount = constraints.maxWidth < 600 ? 1 : (constraints.maxWidth < 1000 ? 2 : 3);
+                    return GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: crossAxisCount,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: isMobile ? 2.5 : 1.8,
+                      children: [
+                        _StatCard(
+                          title: 'Ventas del Día',
+                          value: (metricData['ventas'] ?? 0).toString(),
+                          icon: Icons.trending_up_rounded,
+                          color: const Color(0xFF05e265),
+                          change: (metricData['ventas_change'] ?? 0).toString(),
+                        ),
+                        _StatCard(
+                          title: 'Productos en Stock',
+                          value: productsEnStock.length.toString(),
+                          icon: Icons.inventory_2_rounded,
+                          color: const Color(0xFF2196F3),
+                          change: '${porcentageStock.toString()}%',
+                        ),
+                        _StatCard(
+                          title: 'Productos Vendidos',
+                          value: (metricData['productos'] ?? 0).toString(),
+                          icon: Icons.people_alt_rounded,
+                          color: const Color(0xFFFF9800),
+                          change: (metricData['products_change'] ?? 0).toString(),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 32),
+              ],
+              const SizedBox(height: 100), // Bottom padding for scroll
+            ]),
+          ),
+        ),
+      ],
     );
   }
 
