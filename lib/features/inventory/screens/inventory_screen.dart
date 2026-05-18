@@ -21,6 +21,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../users/services/users_service.dart'; 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:pv26/core/network/api_helper.dart';
+import 'package:http/http.dart' as http;
+import 'package:web/web.dart' as web;
+import 'dart:js_interop';
 
 class InventoryScreen extends StatefulWidget {
   final String? branchId; 
@@ -80,7 +85,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   final FocusNode _searchFocusNode = FocusNode();
   
   String? branchId; 
-
+  bool _isDownloading = false;
 
 
   @override
@@ -96,20 +101,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     _loadUserRole();
 
-     _initBranch();
+    //_initBranch();
 
-
-
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initBranch();
+    });
 
   }
 
   Future<void> _initBranch() async {
-      if (widget.branchId != null) {
-        branchId = widget.branchId;
-      } else {
-        branchId = await AuthService.getCurrentUserLocation();
-      }
-
+    
+      branchId = await AuthService.getCurrentUserLocation();
 
       Provider.of<ProductProvider>(context, listen: false)
           .fetchProducts(branchId: branchId);
@@ -180,6 +182,81 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
 
 
+
+  Future<void> _downloadInventory() async {
+  if (_isDownloading) return;
+
+  setState(() {
+    _isDownloading = true;
+  });
+
+  try {
+    final result = await InventoryService.downloadProductsExcel(
+      locationId: branchId!,
+    );
+
+     if (!result['success']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'])),
+      );
+      return;
+    }
+
+    final bytes = result['bytes'] as Uint8List;
+    final filename = result['filename'] ?? 'products.xlsx';
+
+    if (result['success']) {
+      final bytes = result['bytes'];
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Descarga iniciada...')),
+      );
+
+     
+      if (kIsWeb) {
+        _downloadFileWeb(bytes, filename);
+      } else {
+       
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Archivo listo en memoria')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'])),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
+  }
+
+  
+
+  setState(() {
+    _isDownloading = false;
+  });
+}
+
+
+void _downloadFileWeb(Uint8List bytes, String filename) {
+  final blob = web.Blob([bytes.toJS].toJS);
+  final url = web.URL.createObjectURL(blob);
+
+  final anchor = web.HTMLAnchorElement()
+    ..href = url
+    ..download = filename
+    ..style.display = 'none';
+
+  web.document.body!.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+
+  web.URL.revokeObjectURL(url);
+}
+
+
   @override
   void dispose() {
     _keyboardFocusNode.dispose();
@@ -247,6 +324,9 @@ void _handleKeyEvent(KeyEvent event) {
           onPressed: () => Scaffold.of(context).openDrawer(),
         ) : null,
         actions: [
+
+
+
 
                   //Add product button 
                   Showcase(
@@ -318,6 +398,42 @@ void _handleKeyEvent(KeyEvent event) {
                     ),
                   ),
                   
+
+
+
+                  const SizedBox(width: 8),
+
+                  //Download button
+                  ElevatedButton.icon(
+                    onPressed: _isDownloading ? null : _downloadInventory,
+                    icon: _isDownloading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.download, size: 18, color: Colors.white),
+                    label: Text(
+                      _isDownloading ? 'Descargando...' : 'Exportar',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                 
+                 
                   //Refresh list button 
                   Showcase(
                           key: _refreshListKey,
@@ -697,18 +813,25 @@ void _handleKeyEvent(KeyEvent event) {
       ),
     );
   }
-  void _showAddProductModal() {
-    showDialog(
-      context: context,
-      builder: (_) => AddProductDialog(
-        onProductAdded: () {
-          final provider = Provider.of<ProductProvider>(context, listen: false);
-          provider.fetchProducts(branchId: branchId);
-        },
-        branchId: branchId,
-      ),
-    );
-  }
+  
+  
+ 
+
+      void _showAddProductModal() {
+      final provider = Provider.of<ProductProvider>(context, listen: false);
+
+      showDialog(
+        context: context,
+        builder: (_) => AddProductDialog(
+          onProductAdded: () {
+            provider.fetchProducts(branchId: branchId);
+          },
+          branchId: branchId,
+        ),
+      );
+    }
+
+
   void _showEditProductModal(Map product) {
     showDialog(
       context: context,

@@ -82,7 +82,12 @@ class ProductProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
+    //notifyListeners();
+ 
+  WidgetsBinding.instance.addPostFrameCallback((_) {
     notifyListeners();
+  });
+  
   }
 
   void clearProducts() {

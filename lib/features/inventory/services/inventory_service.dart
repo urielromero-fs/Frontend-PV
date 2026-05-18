@@ -26,6 +26,8 @@ class InventoryService {
     String? locationId,
   }) async {
     try {
+
+ 
       final response = await ApiHelper.request(
         method: 'POST',
         path: '/products',
@@ -318,6 +320,55 @@ class InventoryService {
     };
   }
 }
+
+
+  static Future<Map<String, dynamic>> downloadProductsExcel({
+    required String locationId,
+  }) async {
+    try {
+
+     
+
+      final response = await ApiHelper.request(
+        method: 'GET',
+        path: '/products/export/$locationId',
+      );
+
+      
+      if (response.statusCode == 200) {
+        final Uint8List bytes = response.bodyBytes;
+
+        return {
+          'success': true,
+          'message': 'Archivo descargado exitosamente',
+          'bytes': bytes,
+          'filename': 'products.xlsx',
+        };
+      } else {
+        String message = 'Error al descargar archivo';
+
+        try {
+          final error = response.body.isNotEmpty
+              ? response.body
+              : null;
+          if (error != null) {
+            message = error;
+          }
+        } catch (_) {}
+
+        return {
+          'success': false,
+          'message': message,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: ${e.toString()}',
+      };
+    }
+  }
+
 
 }
 

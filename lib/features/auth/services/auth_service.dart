@@ -16,7 +16,7 @@
     static const String _userLogoKey = 'user_logo';
     static const String _userLocations = 'user_locations';
     static const String _userCurrentLocation = 'user_current_location';
-
+  
 
     // Register with real API call
     static Future<Map<String, dynamic>> register(
@@ -105,6 +105,8 @@
 
           // Extract user data from response body
           final userData = responseData['user'] ?? {};
+
+        
 
           final userName = userData['userName'] ?? '';
           final userEmail = userData['email'] ?? email;

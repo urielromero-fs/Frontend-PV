@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../providers/category_provider.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../auth/services/auth_service.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddProductDialog extends StatefulWidget {
   final VoidCallback onProductAdded;
@@ -19,14 +21,8 @@ class AddProductDialog extends StatefulWidget {
 class _AddProductDialogState extends State<AddProductDialog> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      setState(() {});
-    });
-  }
+
+ 
 
   final nameController = TextEditingController();
   final purchasePriceController = TextEditingController();
@@ -50,6 +46,38 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
   bool hasMayoreo = false;
   bool isLoading = false;
   String selectedCategory = 'General';
+
+  String? branchId; 
+
+    
+
+
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
+
+     _initBranch();
+
+ 
+  }
+
+
+  Future<void> _initBranch() async {
+ 
+      final prefs = await SharedPreferences.getInstance();
+    
+      branchId = prefs.getString('user_current_location');;
+        
+      Future.microtask(() {
+        context.read<CategoryProvider>().loadCategories(branchId!);
+      });
+  }
+
 
   Future<void> saveProduct() async {
     if (isLoading) return;
@@ -77,7 +105,7 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
       wholesalePrice: double.tryParse(mayoreoController.text.replaceAll(",", "")) ?? 0.0,
       wholesaleMinUnits: int.tryParse(mayoreoUnitsController.text) ?? 0,
       isPackage: false,
-      locationId: widget.branchId,
+      locationId: branchId,
     );
     setState(() {
       isLoading = false;
@@ -97,8 +125,11 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
       ),
     );
     if (result['success'] == true) {
-      widget.onProductAdded();
       Navigator.pop(context);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<ProductProvider>().fetchProducts(branchId: branchId);
+      });
     }
   }
 
@@ -139,7 +170,7 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
       wholesaleMinUnits: 0,
       isPackage: true,
       packageContents: selectedPackageProducts,
-      locationId: widget.branchId,
+      locationId: branchId,
     );
 
     setState(() {
@@ -154,8 +185,11 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
     );
 
     if (result['success'] == true) {
-      widget.onProductAdded();
       Navigator.pop(context);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<ProductProvider>().fetchProducts(branchId: branchId);
+      });
     }
   }
 
@@ -734,46 +768,88 @@ class _AddProductDialogState extends State<AddProductDialog> with SingleTickerPr
     }
   }
 
+
+
+
+  
   Future<void> _showAddDepartmentDialog(BuildContext context) async {
-    final controller = TextEditingController();
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardColor,
-        title: Text(
-          'Nuevo Departamento',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: _inputDecoration(context, labelText: 'Nombre del Departamento'),
-          style: GoogleFonts.poppins(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final name = controller.text.trim();
-              if (name.isNotEmpty) {
-                context.read<CategoryProvider>().addCategory(name);
-                setState(() {
-                  selectedCategory = name;
-                });
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF05e265),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text('Agregar', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
+  final controller = TextEditingController();
+
+  return showDialog(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: Theme.of(context).cardColor,
+      title: Text(
+        'Nuevo Departamento',
+        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
       ),
-    );
-  }
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        decoration: _inputDecoration(
+          context,
+          labelText: 'Nombre del Departamento',
+        ),
+        style: GoogleFonts.poppins(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(
+            'Cancelar',
+            style: GoogleFonts.poppins(color: Colors.grey),
+          ),
+        ),
+
+        ElevatedButton(
+          onPressed: () async {
+            final name = controller.text.trim();
+            if (name.isEmpty) return;
+
+            final provider = context.read<CategoryProvider>();
+
+            final success = await provider.addCategory(
+              locationId: branchId!, 
+              category: name,
+            );
+
+            if (!context.mounted) return;
+
+            if (success) {
+              setState(() {
+                selectedCategory = name;
+              });
+
+              Navigator.pop(dialogContext);
+            } else {
+              // Mantener dialog abierto y mostrar error
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    provider.error ?? 'Error al agregar categoría',
+                  ),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF05e265),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text(
+            'Agregar',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 }
