@@ -1088,60 +1088,84 @@ class _UserRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color statusColor = status == 'Inactivo' ? const Color(0xFFFF5252) : const Color(0xFF05e265);
+    final bool isInactive = status == 'Inactivo';
+    final Color statusColor = isInactive ? const Color(0xFFFF5252) : const Color(0xFF05e265);
     
     final actionsMenu = PopupMenuButton<String>(
       color: Theme.of(context).cardColor,
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (value) {
-        if (value == 'edit') onEdit();
+        if (value == 'edit' || value == 'enable') onEdit();
         if (value == 'delete') onDelete();
         if (value == 'password') onSendPassword();
         if (value == 'history') onShowHistory();
       },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'edit',
-          child: Row(
-            children: [
-              const Icon(Icons.edit_rounded, color: Color(0xFF05e265), size: 18),
-              const SizedBox(width: 12),
-              Text('Editar', style: GoogleFonts.poppins(fontSize: 13)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'password',
-          child: Row(
-            children: [
-              const Icon(Icons.key_rounded, color: Colors.blueAccent, size: 18),
-              const SizedBox(width: 12),
-              Text('Enviar contraseña', style: GoogleFonts.poppins(fontSize: 13)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'history',
-          child: Row(
-            children: [
-              const Icon(Icons.history_rounded, color: Colors.orangeAccent, size: 18),
-              const SizedBox(width: 12),
-              Text('Historial de Asistencia', style: GoogleFonts.poppins(fontSize: 13)),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
-              const SizedBox(width: 12),
-              Text('Eliminar', style: GoogleFonts.poppins(fontSize: 13, color: Colors.redAccent)),
-            ],
-          ),
-        ),
-      ],
+      itemBuilder: (context) => isInactive
+        ? [
+            PopupMenuItem(
+              value: 'enable',
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF05e265), size: 18),
+                  const SizedBox(width: 12),
+                  Text('Habilitar', style: GoogleFonts.poppins(fontSize: 13)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+                  const SizedBox(width: 12),
+                  Text('Eliminar', style: GoogleFonts.poppins(fontSize: 13, color: Colors.redAccent)),
+                ],
+              ),
+            ),
+          ]
+        : [
+            PopupMenuItem(
+              value: 'edit',
+              child: Row(
+                children: [
+                  const Icon(Icons.edit_rounded, color: Color(0xFF05e265), size: 18),
+                  const SizedBox(width: 12),
+                  Text('Editar', style: GoogleFonts.poppins(fontSize: 13)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'password',
+              child: Row(
+                children: [
+                  const Icon(Icons.key_rounded, color: Colors.blueAccent, size: 18),
+                  const SizedBox(width: 12),
+                  Text('Enviar contraseña', style: GoogleFonts.poppins(fontSize: 13)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'history',
+              child: Row(
+                children: [
+                  const Icon(Icons.history_rounded, color: Colors.orangeAccent, size: 18),
+                  const SizedBox(width: 12),
+                  Text('Historial de Asistencia', style: GoogleFonts.poppins(fontSize: 13)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+                  const SizedBox(width: 12),
+                  Text('Eliminar', style: GoogleFonts.poppins(fontSize: 13, color: Colors.redAccent)),
+                ],
+              ),
+            ),
+          ],
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -1153,89 +1177,108 @@ class _UserRow extends StatelessWidget {
     );
 
     if (isMobile) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: const Color(0xFF05e265).withOpacity(0.1),
-                  child: Text(name.substring(0, 1).toUpperCase(), style: const TextStyle(color: Color(0xFF05e265))),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                      Text(email, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
-                    ],
+      return Opacity(
+        opacity: isInactive ? 0.6 : 1.0,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: const Color(0xFF05e265).withOpacity(0.1),
+                    child: Text(name.substring(0, 1).toUpperCase(), style: const TextStyle(color: Color(0xFF05e265))),
                   ),
-                ),
-                actionsMenu,
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildStatusBadge(status, statusColor),
-                if (isCheckedIn)
-                  ElevatedButton(
-                    onPressed: onCheckOut,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                    child: const Text('Salida', style: TextStyle(color: Colors.white)),
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: onCheckIn,
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265)),
-                    child: const Text('Entrada', style: TextStyle(color: Colors.black)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                        Text(email, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
                   ),
-              ],
-            ),
-          ],
+                  actionsMenu,
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildStatusBadge(status, statusColor),
+                  if (isInactive)
+                    ElevatedButton(
+                      onPressed: null,
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                      child: const Text('Inactivo', style: TextStyle(color: Colors.white)),
+                    )
+                  else if (isCheckedIn)
+                    ElevatedButton(
+                      onPressed: onCheckOut,
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                      child: const Text('Salida', style: TextStyle(color: Colors.white)),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: onCheckIn,
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265)),
+                      child: const Text('Entrada', style: TextStyle(color: Colors.black)),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.05))),
-      ),
-      child: Row(
-        children: [
-          Expanded(flex: 2, child: Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600))),
-          Expanded(child: Text(role, style: GoogleFonts.poppins())),
-          Expanded(child: Text(joinDate, style: GoogleFonts.poppins())),
-          Expanded(child: Center(child: _buildStatusBadge(status, statusColor))),
-          Expanded(
-            child: Center(
-              child: isCheckedIn
+    return Opacity(
+      opacity: isInactive ? 0.6 : 1.0,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.05))),
+        ),
+        child: Row(
+          children: [
+            Expanded(flex: 2, child: Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600))),
+            Expanded(child: Text(role, style: GoogleFonts.poppins())),
+            Expanded(child: Text(joinDate, style: GoogleFonts.poppins())),
+            Expanded(child: Center(child: _buildStatusBadge(status, statusColor))),
+            Expanded(
+              child: Center(
+                child: isInactive
                   ? ElevatedButton.icon(
-                      onPressed: onCheckOut,
-                      icon: const Icon(Icons.exit_to_app, size: 14),
-                      label: const Text('Salida', style: TextStyle(fontSize: 11)),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+                      onPressed: null,
+                      icon: const Icon(Icons.block, size: 14),
+                      label: const Text('Inactivo', style: TextStyle(fontSize: 11)),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey, foregroundColor: Colors.white),
                     )
-                  : ElevatedButton.icon(
-                      onPressed: onCheckIn,
-                      icon: const Icon(Icons.login, size: 14),
-                      label: const Text('Entrada', style: TextStyle(fontSize: 11)),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265), foregroundColor: Colors.black),
-                    ),
+                  : (isCheckedIn
+                      ? ElevatedButton.icon(
+                          onPressed: onCheckOut,
+                          icon: const Icon(Icons.exit_to_app, size: 14),
+                          label: const Text('Salida', style: TextStyle(fontSize: 11)),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+                        )
+                      : ElevatedButton.icon(
+                          onPressed: onCheckIn,
+                          icon: const Icon(Icons.login, size: 14),
+                          label: const Text('Entrada', style: TextStyle(fontSize: 11)),
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF05e265), foregroundColor: Colors.black),
+                        )),
+              ),
             ),
-          ),
-          Expanded(child: Center(child: actionsMenu)),
-        ],
+            Expanded(child: Center(child: actionsMenu)),
+          ],
+        ),
       ),
     );
   }

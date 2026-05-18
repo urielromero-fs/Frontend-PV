@@ -172,41 +172,32 @@ class _PaymentsScreenState extends State<PaymentsScreen>
   void _showStockAlert() {
     _playLimitSound();
     
-    ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
-    ScaffoldMessenger.of(context).showMaterialBanner(
-      MaterialBanner(
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28),
+            Icon(Icons.warning_amber_rounded, color: Theme.of(context).colorScheme.onError, size: 24),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 '¡STOCK AGOTADO! No hay suficientes unidades.',
                 style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onError,
                   fontSize: 14,
                 ),
               ),
             ),
           ],
         ),
-        backgroundColor: Colors.redAccent,
-        actions: [
-          TextButton(
-            onPressed: () => ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
-            child: const Text('CERRAR', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
+        margin: const EdgeInsets.all(16),
       ),
     );
-
-    // Auto-hide after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
-      }
-    });
   }
 
 
