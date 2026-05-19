@@ -84,6 +84,7 @@ flutter:
 
   assets:
     - assets/images/logo.png
+    - assets/images/logo_icon.png
     - assets/sounds/error.mp3
     - assets/sounds/denied.mp3
     - assets/sounds/notiError.mp3

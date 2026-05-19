@@ -91,6 +91,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage('assets/images/logo.png'), context);
+    precacheImage(const AssetImage('assets/images/logo_icon.png'), context);
+  }
+
 
 
 
@@ -1042,34 +1049,11 @@ void _showSettingsModal() {
                 ),
               ),
               child: _isSidebarCollapsed
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        IconButton(
-                          icon: const Icon(Icons.menu_open, color: Colors.white),
-                          onPressed: () => setState(() => _isSidebarCollapsed = false),
-                        ),
-                      ],
+                  ? Center(
+                      child: IconButton(
+                        icon: const Icon(Icons.menu_open, color: Colors.white),
+                        onPressed: () => setState(() => _isSidebarCollapsed = false),
+                      ),
                     )
                   : Row(
                       children: [

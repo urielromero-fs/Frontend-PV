@@ -3066,6 +3066,11 @@ Future<void> loadTickets() async {
     required bool isActive,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color activeBgColor = const Color(0xFF05e265).withOpacity(isDark ? 0.15 : 0.08);
+    final Color activeBorderColor = const Color(0xFF05e265).withOpacity(isDark ? 0.6 : 0.4);
+    final Color activeContentColor = isDark ? const Color(0xFF05e265) : const Color(0xFF04b04e);
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -3073,12 +3078,12 @@ Future<void> loadTickets() async {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           decoration: BoxDecoration(
             color: isActive
-                ? const Color(0xFF05e265)
+                ? activeBgColor
                 : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isActive
-                  ? const Color(0xFF05e265)
+                  ? activeBorderColor
                   : (Theme.of(context).brightness == Brightness.light
                       ? Theme.of(context).dividerColor
                       : Colors.white.withOpacity(0.15)),
@@ -3087,7 +3092,7 @@ Future<void> loadTickets() async {
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF05e265).withOpacity(0.3),
+                      color: const Color(0xFF05e265).withOpacity(isDark ? 0.15 : 0.06),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -3106,7 +3111,7 @@ Future<void> loadTickets() async {
               Icon(
                 icon,
                 color: isActive
-                    ? Colors.black
+                    ? activeContentColor
                     : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 size: 24,
               ),
@@ -3116,7 +3121,7 @@ Future<void> loadTickets() async {
                   label,
                   style: GoogleFonts.poppins(
                     color: isActive
-                        ? Colors.black
+                        ? activeContentColor
                         : Theme.of(context).colorScheme.onSurface,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                     fontSize: 12,
