@@ -232,7 +232,7 @@ class InventoryService {
 
 
 
-
+  //import products for creator
   static Future<Map<String, dynamic>> importProductsFromFile({
   File? file,
   Uint8List? bytes,
@@ -321,7 +321,8 @@ class InventoryService {
   }
 }
 
-
+  
+  //download products 
   static Future<Map<String, dynamic>> downloadProductsExcel({
     required String locationId,
   }) async {
@@ -368,6 +369,90 @@ class InventoryService {
       };
     }
   }
+
+
+
+  //import products for admin
+  static Future<Map<String, dynamic>> importProductsFromFileAdmin({
+  File? file,
+  Uint8List? bytes,
+  String? filename,
+  required String locationId,
+}) async {
+  try {
+
+    http.Response response;
+
+
+
+  
+    if (kIsWeb) {
+
+      if (bytes == null || filename == null) {
+        return {
+          'success': false,
+          'message': 'Archivo inválido en web',
+        };
+      }
+
+      response = await ApiHelper.requestMultipartWebFileSafe(
+        path: '/products/import/$locationId',
+        bytes: bytes,
+        filename: filename,
+        fileField: 'file',
+      );
+    }
+
+    //MOBILE
+    else {
+
+      if (file == null) {
+        return {
+          'success': false,
+          'message': 'Archivo inválido en mobile',
+        };
+      }
+
+      response = await ApiHelper.requestMultipartFileSafe(
+        path: '/products/import/$locationId',
+        file: file,
+        fileField: 'file',
+      );
+    }
+
+    
+    dynamic data;
+
+    try {
+      data = jsonDecode(response.body);
+    } catch (_) {
+      return {
+        'success': false,
+        'message': 'Respuesta inválida del servidor',
+        'raw': response.body,
+      };
+    }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Importación exitosa',
+        'data': data,
+      };
+    }
+
+    return {
+      'success': false,
+      'message': data['message'] ?? 'Error al importar productos',
+    };
+
+  } catch (e) {
+    return {
+      'success': false,
+      'message': e.toString(),
+    };
+  }
+}
 
 
 }

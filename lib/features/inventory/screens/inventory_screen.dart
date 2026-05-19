@@ -26,6 +26,9 @@ import 'package:pv26/core/network/api_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+
 
 class InventoryScreen extends StatefulWidget {
   final String? branchId; 
@@ -86,6 +89,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   
   String? branchId; 
   bool _isDownloading = false;
+  bool _isImporting = false;
 
 
   @override
@@ -257,6 +261,97 @@ void _downloadFileWeb(Uint8List bytes, String filename) {
 }
 
 
+
+  Future<void> _importInventory() async {
+      try {
+        setState(() {
+          _isImporting = true;
+        });
+
+        final result = await FilePicker.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['csv', 'xlsx', 'xls'],
+          withData: kIsWeb,
+        );
+
+        if (result == null || result.files.isEmpty) {
+          setState(() {
+            _isImporting = false;
+          });
+          return;
+        }
+
+        final pickedFile = result.files.first;
+
+        Map<String, dynamic> response;
+
+        //WEB
+        if (kIsWeb) {
+          response = await InventoryService.importProductsFromFileAdmin(
+            bytes: pickedFile.bytes,
+            filename: pickedFile.name,
+            locationId: branchId!,
+          );
+        }
+
+        //MOBILE
+        else {
+          response = await InventoryService.importProductsFromFileAdmin(
+            file: File(pickedFile.path!),
+            locationId: branchId!,
+          );
+        }
+
+        if (!mounted) return;
+
+        if (response['success'] == true) {
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                response['message'] ?? 'Productos importados',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          //Refresh products
+          await context.read<ProductProvider>().fetchProducts(
+            branchId: branchId,
+          );
+        } 
+        
+        else {
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                response['message'] ?? 'Error al importar',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+
+        if (mounted) {
+          setState(() {
+            _isImporting = false;
+          });
+        }
+      }
+    }
+
   @override
   void dispose() {
     _keyboardFocusNode.dispose();
@@ -309,6 +404,7 @@ void _handleKeyEvent(KeyEvent event) {
     final provider = Provider.of<ProductProvider>(context);
     final bool isMobile = MediaQuery.of(context).size.width < 600;
 
+    
 
     return Scaffold(
       appBar: widget.showAppBar ? AppBar(
@@ -433,7 +529,40 @@ void _handleKeyEvent(KeyEvent event) {
                     ),
                   ),
                  
-                 
+
+                  const SizedBox(width: 8),
+
+                  //Import button
+                  ElevatedButton.icon(
+                    onPressed: _isImporting ? null : _importInventory,
+                    icon: _isImporting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.upload_file, size: 18, color: Colors.white),
+                    label: Text(
+                      _isImporting ? 'Importando...' : 'Importar',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+
+
                   //Refresh list button 
                   Showcase(
                           key: _refreshListKey,
@@ -577,7 +706,7 @@ void _handleKeyEvent(KeyEvent event) {
                   ),
                 ),
                 const SizedBox(height: 24),
-                _buildStatGrid(allProducts, isMobile),
+                _buildStatGrid(provider.allProducts, isMobile),
                 const SizedBox(height: 24),
 
               // Tabla de productos
@@ -788,7 +917,11 @@ void _handleKeyEvent(KeyEvent event) {
                               itemCount: filteredProducts.length,
                               itemBuilder: (context, index) {
                                 final product = filteredProducts[index];
+
+                    
+
                                 return ProductListItem(
+                                 
                                   id: (product['_id'] ?? '').toString(),
                                   name: product['name'] ?? 'Sin nombre',
                                   category: product['category'] ?? 'Sin categoría',
@@ -1043,10 +1176,13 @@ void _handleKeyEvent(KeyEvent event) {
     );
   }
 
+
+
   Widget _buildStatGrid(List<dynamic> allProducts, bool isMobile) {
     final lowStockCount = allProducts
         .where((p) => (p['units'] ?? 0) < 5 && (p['units'] ?? 0) > 0)
         .length;
+
     final outOfStockCount = allProducts.where((p) => (p['units'] ?? 0) == 0).length;
 
     if (isMobile) {
