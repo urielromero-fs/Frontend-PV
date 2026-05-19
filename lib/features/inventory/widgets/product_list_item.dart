@@ -139,7 +139,13 @@ class ProductListItem extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.1))),
+          border: Border(
+            bottom: BorderSide(
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Theme.of(context).dividerColor
+                  : Theme.of(context).dividerColor.withOpacity(0.1),
+            ),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,7 +261,13 @@ class ProductListItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.1))),
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).brightness == Brightness.light
+                ? Theme.of(context).dividerColor
+                : Theme.of(context).dividerColor.withOpacity(0.1),
+          ),
+        ),
       ),
       child: Row(
         children: [

@@ -749,13 +749,23 @@ class _UsersScreenState extends State<UsersScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Search Bar
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Theme.of(context).dividerColor
+                        : Theme.of(context).dividerColor.withOpacity(0.1),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.04 : 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -827,7 +837,18 @@ class _UsersScreenState extends State<UsersScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Theme.of(context).dividerColor
+                          : Theme.of(context).dividerColor.withOpacity(0.1),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.04 : 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     children: [
@@ -836,7 +857,9 @@ class _UsersScreenState extends State<UsersScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).dividerColor.withOpacity(0.03),
+                            color: Theme.of(context).brightness == Brightness.light
+                                ? Theme.of(context).dividerColor.withOpacity(0.15)
+                                : Theme.of(context).dividerColor.withOpacity(0.03),
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(12),
                               topRight: Radius.circular(12),
@@ -1006,9 +1029,23 @@ class _UserStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? color.withOpacity(0.15)
+            : color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? color.withOpacity(0.4)
+              : color.withOpacity(0.18),
+          width: Theme.of(context).brightness == Brightness.dark ? 1.5 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1244,7 +1281,13 @@ class _UserRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.05))),
+          border: Border(
+            bottom: BorderSide(
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Theme.of(context).dividerColor
+                  : Theme.of(context).dividerColor.withOpacity(0.05),
+            ),
+          ),
         ),
         child: Row(
           children: [

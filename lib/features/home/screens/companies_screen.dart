@@ -1717,11 +1717,19 @@ Future<void> _showUploadProductsDialog(Map<String, dynamic> company, Map<String,
                   fillColor: theme.cardColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                    borderSide: BorderSide(
+                      color: theme.brightness == Brightness.light
+                          ? theme.dividerColor
+                          : theme.dividerColor.withOpacity(0.1),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+                    borderSide: BorderSide(
+                      color: theme.brightness == Brightness.light
+                          ? theme.dividerColor
+                          : theme.dividerColor.withOpacity(0.1),
+                    ),
                   ),
                 ),
               ),

@@ -1345,9 +1345,20 @@ Future<void> loadTickets() async {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(13),
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withAlpha(26)),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? Theme.of(context).dividerColor
+                            : Theme.of(context).dividerColor.withOpacity(0.1),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.04 : 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: TextField(
                       focusNode: _searchFocusNode,
@@ -1442,9 +1453,20 @@ Future<void> loadTickets() async {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).dividerColor.withOpacity(0.05),
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                          border: Border.all(
+                            color: Theme.of(context).brightness == Brightness.light
+                                ? Theme.of(context).dividerColor
+                                : Theme.of(context).dividerColor.withOpacity(0.1),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.04 : 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: TextField(
                           focusNode: _searchFocusNode,
@@ -1696,8 +1718,9 @@ Future<void> loadTickets() async {
                                   ],
                                 ),
                               )
-                            : ListView.builder(
+                            : ListView.separated(
                                 itemCount: currentTicket.items.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 8),
                                 itemBuilder: (context, index) {
                                   return CartItemWidget(
                                     item: currentTicket.items[index],
@@ -2331,8 +2354,9 @@ Future<void> loadTickets() async {
                                         ],
                                       ),
                                     )
-                                  : ListView.builder(
+                                  : ListView.separated(
                                       itemCount: currentTicket.items.length,
+                                      separatorBuilder: (context, index) => const SizedBox(height: 8),
                                       itemBuilder: (context, index) {
                                         return CartItemWidget(
                                           item: currentTicket.items[index],
@@ -3049,15 +3073,32 @@ Future<void> loadTickets() async {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           decoration: BoxDecoration(
             color: isActive
-                ? const Color(0xFF05e265).withOpacity(0.2)
-                : Theme.of(context).dividerColor.withOpacity(0.05),
+                ? const Color(0xFF05e265)
+                : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isActive
                   ? const Color(0xFF05e265)
-                  : Theme.of(context).dividerColor.withOpacity(0.1),
-              width: 2,
+                  : (Theme.of(context).brightness == Brightness.light
+                      ? Theme.of(context).dividerColor
+                      : Colors.white.withOpacity(0.15)),
+              width: isActive ? 2 : 1.5,
             ),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF05e265).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.02 : 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -3065,7 +3106,7 @@ Future<void> loadTickets() async {
               Icon(
                 icon,
                 color: isActive
-                    ? const Color(0xFF05e265)
+                    ? Colors.black
                     : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 size: 24,
               ),
@@ -3075,7 +3116,7 @@ Future<void> loadTickets() async {
                   label,
                   style: GoogleFonts.poppins(
                     color: isActive
-                        ? const Color(0xFF05e265)
+                        ? Colors.black
                         : Theme.of(context).colorScheme.onSurface,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                     fontSize: 12,
@@ -3131,7 +3172,7 @@ Future<void> loadTickets() async {
               
               return ListView.separated(
                 itemCount: sales.length,
-                separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final sale = sales[index] ?? {};
                   final DateTime date = sale['date'] != null
@@ -3167,22 +3208,39 @@ Future<void> loadTickets() async {
                     ? Theme.of(context).colorScheme.onSurface.withOpacity(0.7)
                     : Theme.of(context).colorScheme.onSurface.withOpacity(0.38);
 
-                final Color containerColor = sale['isActive'] == true
-                    ? Theme.of(context).dividerColor.withOpacity(0.03)
-                    : Theme.of(context).dividerColor.withOpacity(0.08);
+                final Color containerColor = Theme.of(context).cardColor;
 
                 final Color deleteColor = sale['isActive'] == true
                     ? Colors.red.withOpacity(0.1)
                     : Colors.grey.withOpacity(0.08);
                
                   return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: containerColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
-                    ),
+                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                     decoration: BoxDecoration(
+                       color: containerColor,
+                       borderRadius: BorderRadius.circular(12),
+                       border: Border.all(
+                         color: Theme.of(context).brightness == Brightness.light
+                             ? Theme.of(context).dividerColor
+                             : Colors.white.withOpacity(0.15),
+                       ),
+                       boxShadow: [
+                         BoxShadow(
+                           color: Theme.of(context).brightness == Brightness.light
+                               ? Colors.black.withOpacity(0.04)
+                               : Colors.white.withOpacity(0.03),
+                           blurRadius: 10,
+                           offset: const Offset(0, 4),
+                         ),
+                         BoxShadow(
+                           color: Theme.of(context).brightness == Brightness.light
+                               ? Colors.black.withOpacity(0.01)
+                               : Colors.white.withOpacity(0.01),
+                           blurRadius: 2,
+                           offset: const Offset(0, 1),
+                         ),
+                       ],
+                     ),
                     child: Row(
                       children: [
                         Container(

@@ -28,7 +28,8 @@ class AppTheme {
       foregroundColor: Colors.black,
       elevation: 0,
     ),
-    dividerTheme: const DividerThemeData(color: Colors.black12),
+    dividerColor: const Color(0xFFE2E8F0), // A clean slate grey for subtle dividers
+    dividerTheme: const DividerThemeData(color: Color(0xFFE2E8F0)),
   );
 
   static ThemeData darkTheme = ThemeData(

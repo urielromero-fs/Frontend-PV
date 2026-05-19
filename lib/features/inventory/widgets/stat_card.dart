@@ -18,9 +18,16 @@ class StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? color.withOpacity(0.15)
+            : color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? color.withOpacity(0.4)
+              : color.withOpacity(0.2),
+          width: Theme.of(context).brightness == Brightness.dark ? 1.5 : 1.0,
+        ),
       ),
       child: Row(
         children: [

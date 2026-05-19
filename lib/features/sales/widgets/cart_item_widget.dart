@@ -22,14 +22,27 @@ class CartItemWidget extends StatelessWidget {
         : item.quantity.toInt().toString();
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.light
+              ? Theme.of(context).dividerColor
+              : Colors.white.withOpacity(0.15),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.black.withOpacity(0.06)
+                : Colors.white.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.black.withOpacity(0.02)
+                : Colors.white.withOpacity(0.01),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),

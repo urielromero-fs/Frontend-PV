@@ -34,14 +34,25 @@ class ProductListTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: hasStock 
-                ? Theme.of(context).dividerColor.withOpacity(0.1) 
+                ? (Theme.of(context).brightness == Brightness.light
+                    ? Theme.of(context).dividerColor
+                    : Colors.white.withOpacity(0.15))
                 : Colors.red.withOpacity(0.2),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Colors.black.withOpacity(0.06)
+                  : Colors.white.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Colors.black.withOpacity(0.02)
+                  : Colors.white.withOpacity(0.01),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
