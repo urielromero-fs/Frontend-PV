@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../services/attendance_service.dart'; 
 
 
 class UsersScreen extends StatefulWidget {
@@ -37,7 +38,13 @@ class _UsersScreenState extends State<UsersScreen> {
       },
     };
 
-  
+    String? branchId; 
+
+    
+
+  List<dynamic> _attendanceHistory = [];
+  bool _loadingHistory = false;
+
 
 
   @override
@@ -53,9 +60,20 @@ class _UsersScreenState extends State<UsersScreen> {
     _searchController.addListener(_onSearchChanged);
     _loadUsers(); 
 
-
+    _initBranch(); 
 
   }
+
+
+    Future<void> _initBranch() async {
+ 
+      final prefs = await SharedPreferences.getInstance();
+    
+      branchId = prefs.getString('user_current_location');;
+        
+   
+  }
+
 
   Future<void> _initOnboarding() async {
 
@@ -121,6 +139,8 @@ class _UsersScreenState extends State<UsersScreen> {
       
       final List data = result['data']['users']; 
 
+    
+   
   
       setState(() {
         users = data.where((user) => user['role'] != 'creator').map((user) => {
@@ -134,7 +154,9 @@ class _UsersScreenState extends State<UsersScreen> {
           'joinDate':  user['createdAt'] != null
               ? DateFormat('dd-MM-yyyy').format(DateTime.parse(user['createdAt']))
               : 'Desconocida',
-          'isCheckedIn': user['isCheckedIn'] ?? false, // Assuming API provides this
+          'isCheckedIn': user['hasCheckIn'] ?? false, 
+
+          
         }).toList();
 
         _filteredUsers = users;
@@ -489,192 +511,400 @@ class _UsersScreenState extends State<UsersScreen> {
       ),
     );
   }
-  void _handleCheckIn(Map<String, dynamic> user) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Center(
-          child: Text(
-            'Registrar Entrada',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 22),
-          ),
+  
+  
+
+void _handleCheckIn(String user) {
+
+    final parentContext = context; 
+
+  showDialog(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: Theme.of(context).cardColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Center(
+        child: Text(
+          'Registrar Entrada',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 22),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Se marcará su entrada:',
-              style: GoogleFonts.poppins(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Se marcará su entrada:',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
-            const SizedBox(height: 12),
-            Text(
-              DateFormat('dd/MM/yyyy').format(DateTime.now()),
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            Text(
-              DateFormat('HH:mm').format(DateTime.now()),
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 32,
-                color: const Color(0xFF05e265),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              '¿Desea continuar?',
-              style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16)),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  final result = await UsersService.registerCheckIn(userId: user['id']);
-                  if (result['success']) {
-                    _loadUsers();
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(content: Text('Entrada registrada'), backgroundColor: Colors.green),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF05e265),
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text('Aceptar', style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
-            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          Text(
+            DateFormat('dd/MM/yyyy').format(DateTime.now()),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          Text(
+            DateFormat('HH:mm').format(DateTime.now()),
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 32,
+              color: const Color(0xFF05e265),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            '¿Desea continuar?',
+            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
-    );
-  }
-
-  void _handleCheckOut(Map<String, dynamic> user) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Center(
-          child: Text(
-            'Registrar Salida',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 22),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+      actions: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Text(
-              'Se marcará su salida:',
-              style: GoogleFonts.poppins(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              DateFormat('dd/MM/yyyy').format(DateTime.now()),
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            Text(
-              DateFormat('HH:mm').format(DateTime.now()),
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                fontSize: 32,
-                color: Colors.orange,
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancelar',
+                style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              '¿Desea continuar?',
-              style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancelar', style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16)),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  final result = await UsersService.registerCheckOut(userId: user['id']);
-                  if (result['success']) {
-                    _loadUsers();
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(content: Text('Salida registrada'), backgroundColor: Colors.orange),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text('Aceptar', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
 
-  void _showAttendanceHistory(Map<String, dynamic> user) async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardColor,
-        title: Text('Historial de Asistencia - ${user['name']}', 
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
-        content: SizedBox(
-          width: 500,
-          height: 400,
-          child: FutureBuilder<Map<String, dynamic>>(
-            future: UsersService.getAttendanceHistory(userId: user['id']),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final history = snapshot.data?['data']?['history'] as List? ?? [];
-              if (history.isEmpty) {
-                return Center(child: Text('Sin registros', style: GoogleFonts.poppins()));
-              }
-              return ListView.builder(
-                itemCount: history.length,
-                itemBuilder: (context, index) {
-                  final record = history[index];
-                  return ListTile(
-                    title: Text(DateFormat('dd/MM/yyyy').format(DateTime.parse(record['date'])), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                    subtitle: Text('Entrada: ${record['checkIn'] ?? '--'} | Salida: ${record['checkOut'] ?? '--'}', style: GoogleFonts.poppins()),
-                    leading: const Icon(Icons.calendar_today, size: 20),
+                final now = DateTime.now();
+
+                final result = await AttendanceService.checkIn(
+                  locationId: branchId!,
+                  checkInDate: now.toIso8601String(), 
+                  userId: user
+                );
+
+
+
+                if (!parentContext.mounted) return;
+
+
+                if (result['success']) {  
+                  _loadUsers();
+
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Entrada registrada'),
+                      backgroundColor: Colors.green,
+                    ),
                   );
-                },
-              );
-            },
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result['message']),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF05e265),
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Aceptar',
+                style: GoogleFonts.poppins(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+      ],
+    ),
+  );
+}
+
+
+void _handleCheckOut(String user) {
+
+  final parentContext = context;
+
+  showDialog(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: Theme.of(context).cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      title: Center(
+        child: Text(
+          'Registrar Salida',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
           ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cerrar', style: GoogleFonts.poppins())),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Se marcará su salida:',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Text(
+            DateFormat('dd/MM/yyyy').format(DateTime.now()),
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+
+          Text(
+            DateFormat('HH:mm').format(DateTime.now()),
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 32,
+              color: Colors.orange,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Text(
+            '¿Desea continuar?',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
+      actions: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                'Cancelar',
+                style: GoogleFonts.poppins(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+
+            ElevatedButton(
+              onPressed: () async {
+
+                Navigator.pop(dialogContext);
+
+                final now = DateTime.now();
+
+                final result = await AttendanceService.checkOut(
+                  locationId: branchId!,
+                  checkOutDate: now.toIso8601String(),
+                  userId: user,
+                );
+
+                if (!parentContext.mounted) return;
+            
+
+                if (result['success']) {
+
+                  _loadUsers();
+
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Salida registrada'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+
+                } else {
+
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    SnackBar(
+                      content: Text(result['message']),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Aceptar',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+      ],
+    ),
+  );
+}
+
+
+
+
+Future<void> _loadAttendanceHistory(String userId) async {
+  setState(() {
+    _loadingHistory = true;
+  });
+
+  try {
+    final result = await AttendanceService.getLast10AttendanceByUser(
+      userId: userId,
     );
+
+    setState(() {
+      _attendanceHistory = (result['data'] ?? []) as List<dynamic>;
+      _loadingHistory = false;
+    });
+  } catch (e) {
+    setState(() {
+      _attendanceHistory = [];
+      _loadingHistory = false;
+    });
   }
+}
+
+
+void _showAttendanceHistory(String userId) async {
+  await _loadAttendanceHistory(userId);
+
+  showDialog(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: Theme.of(context).cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Text(
+        'Historial de Asistencia',
+        style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+      ),
+      content: SizedBox(
+        width: 600,
+        height: 400,
+        child: _loadingHistory
+            ? const Center(child: CircularProgressIndicator())
+            : _attendanceHistory.isEmpty
+                ? Center(
+                    child: Text(
+                      'Sin registros',
+                      style: GoogleFonts.poppins(),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    child: DataTable(
+                      columns: [
+                        DataColumn(
+                          label: Text(
+                            'Fecha',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Entrada',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Salida',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                      rows: _attendanceHistory.map((record) {
+                        final checkIn = record['checkIn'] != null
+                            ? DateTime.parse(record['checkIn'])
+                            : null;
+
+                        final checkOut = record['checkOut'] != null
+                            ? DateTime.parse(record['checkOut'])
+                            : null;
+
+                        return DataRow(
+                          cells: [
+                            DataCell(
+                              Text(
+                                checkIn != null
+                                    ? DateFormat('dd/MM/yyyy').format(checkIn)
+                                    : '--',
+                              ),
+                            ),
+                            DataCell(
+                              Text(
+                                checkIn != null
+                                    ? DateFormat('HH:mm').format(checkIn)
+                                    : '--',
+                              ),
+                            ),
+                            DataCell(
+                              Text(
+                                checkOut != null
+                                    ? DateFormat('HH:mm').format(checkOut)
+                                    : '--',
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text('Cerrar', style: GoogleFonts.poppins()),
+        ),
+      ],
+    ),
+  );
+}
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -979,7 +1209,6 @@ class _UsersScreenState extends State<UsersScreen> {
                                   // Solo el primer producto tendrá showcase (por ejemplo)
                                   //final GlobalKey? actionMenuKey = index == 0 ? _optionsUserKey : null;
 
-
                                   return _UserRow(
                                     name: user['name'],
                                     email: user['email'],
@@ -992,9 +1221,9 @@ class _UsersScreenState extends State<UsersScreen> {
                                     onEdit: () => _showUserForm(user),
                                     onDelete: () => _deleteUser(user['id']),
                                     onSendPassword: () => _sendPassword(user['email']),
-                                    onCheckIn: () => _handleCheckIn(user),
-                                    onCheckOut: () => _handleCheckOut(user),
-                                    onShowHistory: () => _showAttendanceHistory(user),
+                                    onCheckIn: () => _handleCheckIn(user['id']),
+                                    onCheckOut: () => _handleCheckOut(user['id']),
+                                    onShowHistory: () => _showAttendanceHistory(user['id']),
                                   );
                                 },
                               ),
